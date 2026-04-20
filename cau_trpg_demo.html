@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAU TRPG — 중앙대 이면 세계</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #a0c4ff;
+      margin-bottom: 16px;
+      letter-spacing: 2px;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 위치 바 */
+    .location-bar {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 10px 16px;
+    }
+    .location-label {
+      font-size: 11px;
+      color: #6c8ebf;
+      margin-bottom: 2px;
+    }
+    .location-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: #a0c4ff;
+    }
+
+    /* 스탯 */
+    .stat-row {
+      display: flex;
+      gap: 8px;
+    }
+    .stat-card {
+      flex: 1;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 8px 12px;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: #6c8ebf;
+      margin-bottom: 3px;
+    }
+    .stat-val {
+      font-size: 14px;
+      font-weight: 500;
+      color: #e0e0e0;
+    }
+    .bar-bg {
+      height: 4px;
+      background: #0f3460;
+      border-radius: 2px;
+      margin-top: 4px;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* NPC 카드 */
+    .section-label {
+      font-size: 11px;
+      color: #6c8ebf;
+      margin-bottom: 4px;
+    }
+    .npc-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .npc-card {
+      flex: 1;
+      min-width: 130px;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .npc-card:hover {
+      border-color: #a0c4ff;
+      background: #1e2d50;
+    }
+    .npc-card.active {
+      border-color: #a0c4ff;
+      background: #1e2d50;
+    }
+    .npc-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #e0e0e0;
+      margin-bottom: 2px;
+    }
+    .npc-desc {
+      font-size: 11px;
+      color: #6c8ebf;
+      margin-bottom: 4px;
+    }
+    .npc-badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+    .badge-friend { background: #0d3b2e; color: #5dcaa5; }
+    .badge-enemy  { background: #3b0d0d; color: #f09595; }
+    .badge-neutral{ background: #2e2e0d; color: #ef9f27; }
+
+    /* 캐릭터 등장 씬 */
+    .character-scene {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      overflow: hidden;
+      display: none;
+    }
+    .character-scene.visible {
+      display: block;
+    }
+    .scene-bg {
+      background: linear-gradient(180deg, #0d1b2a 0%, #1a2744 100%);
+      padding: 20px 0 0 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 180px;
+      position: relative;
+    }
+
+    /* SVG 캐릭터 placeholder */
+    .char-figure {
+      width: 110px;
+      height: 140px;
+      transform: translateY(20px);
+      animation: slideUp 0.4s ease forwards;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0; }
+      to   { transform: translateY(20px); opacity: 1; }
+    }
+
+    /* 말풍선 */
+    .dialog-bubble {
+      background: #f5f0e8;
+      border-radius: 0 0 12px 12px;
+      padding: 14px 18px 16px;
+      position: relative;
+    }
+    .dialog-speaker-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #0f6e56;
+      margin-bottom: 6px;
+    }
+    .dialog-typing {
+      font-size: 14px;
+      color: #1a1a2e;
+      line-height: 1.65;
+      min-height: 44px;
+    }
+    .memory-pill {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 10px;
+      background: #e6f1fb;
+      color: #185fa5;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: #1a1a2e;
+      margin-left: 1px;
+      vertical-align: middle;
+      animation: blink 0.7s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* 행동 버튼 */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .action-btn {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #e0e0e0;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .action-btn:hover { background: #1e2d50; border-color: #a0c4ff; }
+    .action-btn.danger { border-color: #5a1a1a; color: #f09595; }
+    .action-btn.danger:hover { background: #2e1010; border-color: #f09595; }
+
+    /* 입력창 */
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .input-row input {
+      flex: 1;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #e0e0e0;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-row input:focus { border-color: #a0c4ff; }
+    .input-row input::placeholder { color: #3a5080; }
+    .input-row button {
+      background: #0f3460;
+      border: 1px solid #a0c4ff;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 13px;
+      color: #a0c4ff;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .input-row button:hover { background: #1a4a80; }
+
+    /* 시스템 로그 */
+    .log-box {
+      background: #0d1117;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #4a7a4a;
+      font-family: 'Courier New', monospace;
+      max-height: 80px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+<h1>CAU TRPG — 중앙대 이면 세계</h1>
+
+<div class="game-container">
+
+  <div class="location-bar">
+    <div class="location-label">현재 위치</div>
+    <div class="location-name" id="location-name">중앙대학교 — 청룡탕 앞 광장</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-label">HP</div>
+      <div class="stat-val" id="hp-val">80 / 100</div>
+      <div class="bar-bg"><div class="bar-fill" id="hp-bar" style="width:80%; background:#1d9e75;"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">SP</div>
+      <div class="stat-val" id="sp-val">45 / 60</div>
+      <div class="bar-bg"><div class="bar-fill" id="sp-bar" style="width:75%; background:#378add;"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">데이터 조각</div>
+      <div class="stat-val" id="data-val">12개</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">주변 NPC</div>
+    <div class="npc-row">
+      <div class="npc-card" id="npc-puang" onclick="talkTo('puang')">
+        <div class="npc-name">푸앙이</div>
+        <div class="npc-desc">차원 서버의 수호신</div>
+        <span class="npc-badge badge-friend">우호적</span>
+      </div>
+      <div class="npc-card" id="npc-ghost" onclick="talkTo('ghost')">
+        <div class="npc-name">학점귀신</div>
+        <div class="npc-desc">F의 망령 · Lv.7</div>
+        <span class="npc-badge badge-enemy">적대적</span>
+      </div>
+      <div class="npc-card" id="npc-prof" onclick="talkTo('prof')">
+        <div class="npc-name">과제부여자</div>
+        <div class="npc-desc">310관 9층 연구원</div>
+        <span class="npc-badge badge-neutral">중립</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 캐릭터 등장 씬 -->
+  <div class="character-scene" id="char-scene">
+    <div class="scene-bg">
+      <svg class="char-figure" id="char-svg" viewBox="0 0 110 140" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="dialog-bubble">
+      <div class="dialog-speaker-name" id="bubble-speaker">푸앙이</div>
+      <div class="dialog-typing" id="bubble-text"></div>
+      <div class="memory-pill" id="bubble-tag">RAG: 이전 세션 기록 참조됨</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">행동 선택</div>
+    <div class="action-grid" id="action-grid">
+      <button class="action-btn" onclick="doAction('talk')">대화 계속하기</button>
+      <button class="action-btn" onclick="doAction('item')">아이템 교환</button>
+      <button class="action-btn" onclick="doAction('move')">이동하기</button>
+      <button class="action-btn danger" onclick="doAction('enter')">이면 세계 진입</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">직접 입력</div>
+    <div class="input-row">
+      <input type="text" id="player-input" placeholder="행동을 입력하세요..." onkeydown="if(event.key==='Enter') submitInput()" />
+      <button onclick="submitInput()">전송</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-label">시스템 로그</div>
+    <div class="log-box" id="log-box">
+      [SYSTEM] RAG 엔진 초기화 완료<br>
+      [SYSTEM] ChromaDB 연결됨 — 세계관 설정집 로드 완료<br>
+      [SYSTEM] 에이전트 대기 중...
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const npcs = {
+    puang: {
+      name: '푸앙이',
+      tag: 'RAG: 저번 세션 아이템 교환 기록 참조됨',
+      lines: [
+        '어서 와~ 저번에 청룡탕에서 아메리카노 줬던 거 기억해! 그때 덕분에 버텼다구. 오늘은 뭐 도와줄까?',
+        '이면 세계가 요즘 좀 불안정해. 310관 쪽에서 이상한 버그들이 늘어나고 있거든...',
+        '데이터 조각 많이 모았네! 벨벳 서버실 가면 뭔가 교환할 수 있을 거야.'
+      ],
+      color: '#5dcaa5',
+      svgType: 'puang'
+    },
+    ghost: {
+      name: '학점귀신 (Lv.7)',
+      tag: '전투 돌입 가능 — 룰 판정 에이전트 대기 중',
+      lines: [
+        '...크르르. 이번 학기 네 학점을 노리고 있다. 전투를 피할 수 없을 것이야.',
+        '내 약점? ...그딴 거 RAG로 찾아봐야 소용없어. 이미 DB에서 지웠거든.',
+        '네가 마지막으로 F 받은 게 언제인지 기억나? 나는 기억해.'
+      ],
+      color: '#f09595',
+      svgType: 'ghost'
+    },
+    prof: {
+      name: '과제부여자',
+      tag: 'RAG: 퀘스트 로그 생성됨',
+      lines: [
+        '음... 마침 잘 왔네. 310관 9층 서버실에 이상한 버그가 생겼거든. 처리해줄 수 있겠나?',
+        '저번에 네가 처리한 버그 보고서 잘 받았어. 이번엔 좀 더 규모가 크지만... 믿을게.',
+        '보상은 데이터 조각 x5 줄게. 기한은 다음 세션까지.'
+      ],
+      color: '#ef9f27',
+      svgType: 'prof'
+    }
+  };
+
+  const svgShapes = {
+    puang: `
+      <ellipse cx="55" cy="55" rx="30" ry="30" fill="#5bb8d4"/>
+      <ellipse cx="55" cy="90" rx="22" ry="28" fill="#5bb8d4"/>
+      <ellipse cx="37" cy="42" rx="8" ry="12" fill="#7ecce0" transform="rotate(-15 37 42)"/>
+      <ellipse cx="73" cy="42" rx="8" ry="12" fill="#7ecce0" transform="rotate(15 73 42)"/>
+      <line x1="42" y1="38" x2="34" y2="22" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
+      <line x1="34" y1="22" x2="30" y2="12" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
+      <line x1="68" y1="38" x2="76" y2="22" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
+      <line x1="76" y1="22" x2="80" y2="12" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="44" cy="57" r="5" fill="#1a2744"/>
+      <circle cx="66" cy="57" r="5" fill="#1a2744"/>
+      <circle cx="45" cy="56" r="2" fill="white"/>
+      <circle cx="67" cy="56" r="2" fill="white"/>
+      <circle cx="41" cy="68" r="5" fill="#f4a0b0"/>
+      <circle cx="69" cy="68" r="5" fill="#f4a0b0"/>
+      <path d="M46 73 Q55 79 64 73" stroke="#1a2744" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="38" cy="110" rx="10" ry="16" fill="#5bb8d4"/>
+      <ellipse cx="72" cy="110" rx="10" ry="16" fill="#5bb8d4"/>
+      <rect x="38" y="80" width="34" height="22" rx="6" fill="#1a3a6e"/>
+      <rect x="47" y="80" width="16" height="22" fill="#e8e8e8"/>
+      <text x="55" y="95" text-anchor="middle" font-size="9" fill="#1a3a6e" font-weight="bold">C</text>
+    `,
+    ghost: `
+      <ellipse cx="55" cy="50" rx="28" ry="28" fill="#c0c0d0"/>
+      <path d="M27 50 Q27 100 35 115 Q42 130 55 120 Q68 130 75 115 Q83 100 83 50 Z" fill="#c0c0d0"/>
+      <path d="M27 110 Q32 100 37 110 Q42 100 47 110 Q52 100 57 110 Q62 100 67 110 Q72 100 77 110 Q82 100 83 110" fill="#c0c0d0"/>
+      <circle cx="44" cy="50" r="6" fill="#1a1a2e"/>
+      <circle cx="66" cy="50" r="6" fill="#1a1a2e"/>
+      <circle cx="44" cy="48" r="2" fill="white"/>
+      <circle cx="66" cy="48" r="2" fill="white"/>
+      <path d="M46 66 Q55 60 64 66" stroke="#1a1a2e" stroke-width="2" fill="none"/>
+      <text x="55" y="40" text-anchor="middle" font-size="18" fill="#e24b4a" opacity="0.6">F</text>
+    `,
+    prof: `
+      <ellipse cx="55" cy="48" rx="22" ry="24" fill="#c8a878"/>
+      <rect x="30" y="68" width="50" height="50" rx="8" fill="#2a4a7a"/>
+      <rect x="44" y="68" width="22" height="50" fill="#e8e8e8"/>
+      <ellipse cx="45" cy="38" rx="8" ry="10" fill="#c8a878"/>
+      <ellipse cx="65" cy="38" rx="8" ry="10" fill="#c8a878"/>
+      <ellipse cx="55" cy="30" rx="22" ry="10" fill="#2a2a1a"/>
+      <circle cx="44" cy="50" r="4" fill="#2a2a2a"/>
+      <circle cx="66" cy="50" r="4" fill="#2a2a2a"/>
+      <path d="M46 62 Q55 68 64 62" stroke="#2a2a2a" stroke-width="2" fill="none"/>
+      <rect x="42" y="43" width="26" height="3" rx="1" fill="#888" opacity="0.5"/>
+      <ellipse cx="40" cy="110" rx="11" ry="8" fill="#c8a878"/>
+      <ellipse cx="70" cy="110" rx="11" ry="8" fill="#c8a878"/>
+    `
+  };
+
+  let currentNpc = null;
+  let lineIdx = {};
+  let typingTimeout = null;
+
+  function talkTo(npcKey) {
+    document.querySelectorAll('.npc-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('npc-' + npcKey).classList.add('active');
+
+    currentNpc = npcKey;
+    if (lineIdx[npcKey] === undefined) lineIdx[npcKey] = 0;
+
+    const npc = npcs[npcKey];
+    const line = npc.lines[lineIdx[npcKey] % npc.lines.length];
+
+    document.getElementById('bubble-speaker').textContent = npc.name;
+    document.getElementById('bubble-speaker').style.color = npc.color;
+    document.getElementById('bubble-tag').textContent = npc.tag;
+    document.getElementById('char-svg').innerHTML = svgShapes[npc.svgType];
+
+    const scene = document.getElementById('char-scene');
+    scene.classList.add('visible');
+
+    const svg = document.getElementById('char-svg');
+    svg.style.animation = 'none';
+    svg.offsetHeight;
+    svg.style.animation = 'slideUp 0.4s ease forwards';
+
+    typeText('bubble-text', line);
+    addLog('[RAG] ' + npc.name + ' 대화 기록 검색 중... 완료');
+  }
+
+  function typeText(elId, text) {
+    if (typingTimeout) clearTimeout(typingTimeout);
+    const el = document.getElementById(elId);
+    el.innerHTML = '';
+    let i = 0;
+    const cursor = '<span class="cursor"></span>';
+
+    function step() {
+      if (i <= text.length) {
+        el.innerHTML = text.slice(0, i) + cursor;
+        i++;
+        typingTimeout = setTimeout(step, 28);
+      } else {
+        el.innerHTML = text;
+      }
+    }
+    step();
+  }
+
+  const actionTexts = {
+    talk: () => {
+      if (!currentNpc) {
+        showSystemMsg('먼저 NPC에게 말을 걸어보세요.');
+        return;
+      }
+      lineIdx[currentNpc] = (lineIdx[currentNpc] || 0) + 1;
+      talkTo(currentNpc);
+    },
+    item: () => {
+      showSystemMsg('[인벤토리] 얼어붙은 아메리카노 x2 · 수정 요청된 논문 x1 · 학생증 (특수) x1');
+      addLog('[AGENT] 아이템 에이전트 호출됨');
+    },
+    move: () => {
+      const locs = ['310관 9층 서버실', '중앙대 학생식당', '청룡탕 내부', '도서관 지하 B2', '벨벳 서버실'];
+      const next = locs[Math.floor(Math.random() * locs.length)];
+      document.getElementById('location-name').textContent = '중앙대학교 — ' + next;
+      showSystemMsg(next + '으로 이동했습니다.');
+      addLog('[SYSTEM] 위치 변경 → ' + next);
+      document.getElementById('char-scene').classList.remove('visible');
+      document.querySelectorAll('.npc-card').forEach(c => c.classList.remove('active'));
+      currentNpc = null;
+    },
+    enter: () => {
+      document.getElementById('location-name').textContent = '이면 세계 — 310관 이면';
+      showSystemMsg('학생증을 단말기에 찍는다... 주변이 흔들리며 이면 세계의 문이 열린다. 전투 모드로 전환됩니다.');
+      addLog('[AGENT] 룰 판정 에이전트 활성화');
+      addLog('[RAG] 몬스터 약점 DB 로드 중...');
+    }
+  };
+
+  function doAction(key) {
+    actionTexts[key]();
+  }
+
+  function showSystemMsg(msg) {
+    document.getElementById('bubble-speaker').textContent = '시스템';
+    document.getElementById('bubble-speaker').style.color = '#6c8ebf';
+    document.getElementById('bubble-tag').textContent = '에이전트 처리 중...';
+    document.getElementById('char-scene').classList.add('visible');
+    typeText('bubble-text', msg);
+  }
+
+  function submitInput() {
+    const val = document.getElementById('player-input').value.trim();
+    if (!val) return;
+    addLog('[PLAYER] ' + val);
+    showSystemMsg('입력을 처리 중입니다... (실제 구현 시 Groq API → RAG → 에이전트 응답)');
+    document.getElementById('player-input').value = '';
+  }
+
+  function addLog(msg) {
+    const box = document.getElementById('log-box');
+    box.innerHTML += '<br>' + msg;
+    box.scrollTop = box.scrollHeight;
+  }
+</script>
+
+</body>
+</html>
