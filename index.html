@@ -4,7 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CAU TRPG — 중앙대 이면 세계</title>
+
+  <!--
+  ================================================================
+  CAU TRPG — 중앙대 이면 세계 (프론트엔드 데모)
+  ================================================================
+  구조 개요:
+    [CSS]    화면 스타일 (다크 테마, 카드 UI, 애니메이션)
+    [HTML]   화면 레이아웃 (위치/스탯/NPC/대화창/입력창/로그)
+    [JS]     게임 로직 (NPC 대화, 행동 처리, 타이핑 효과)
+
+  나중에 백엔드 붙일 때:
+    submitInput() 함수 안에 fetch('/chat', ...) 추가하면 됨
+    → Groq API → RAG(ChromaDB) → 에이전트 응답 흐름으로 확장
+  ================================================================
+  -->
+
   <style>
+    /* 전체 초기화 */
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -34,29 +51,18 @@
       gap: 12px;
     }
 
-    /* 위치 바 */
+    /* ── 현재 위치 표시 바 ── */
     .location-bar {
       background: #16213e;
       border: 1px solid #0f3460;
       border-radius: 12px;
       padding: 10px 16px;
     }
-    .location-label {
-      font-size: 11px;
-      color: #6c8ebf;
-      margin-bottom: 2px;
-    }
-    .location-name {
-      font-size: 15px;
-      font-weight: 500;
-      color: #a0c4ff;
-    }
+    .location-label { font-size: 11px; color: #6c8ebf; margin-bottom: 2px; }
+    .location-name  { font-size: 15px; font-weight: 500; color: #a0c4ff; }
 
-    /* 스탯 */
-    .stat-row {
-      display: flex;
-      gap: 8px;
-    }
+    /* ── 스탯 카드 ── */
+    .stat-row { display: flex; gap: 8px; }
     .stat-card {
       flex: 1;
       background: #16213e;
@@ -64,39 +70,14 @@
       border-radius: 10px;
       padding: 8px 12px;
     }
-    .stat-label {
-      font-size: 10px;
-      color: #6c8ebf;
-      margin-bottom: 3px;
-    }
-    .stat-val {
-      font-size: 14px;
-      font-weight: 500;
-      color: #e0e0e0;
-    }
-    .bar-bg {
-      height: 4px;
-      background: #0f3460;
-      border-radius: 2px;
-      margin-top: 4px;
-    }
-    .bar-fill {
-      height: 100%;
-      border-radius: 2px;
-      transition: width 0.4s ease;
-    }
+    .stat-label { font-size: 10px; color: #6c8ebf; margin-bottom: 3px; }
+    .stat-val   { font-size: 14px; font-weight: 500; color: #e0e0e0; }
+    .bar-bg   { height: 4px; background: #0f3460; border-radius: 2px; margin-top: 4px; }
+    .bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
 
-    /* NPC 카드 */
-    .section-label {
-      font-size: 11px;
-      color: #6c8ebf;
-      margin-bottom: 4px;
-    }
-    .npc-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    /* ── NPC 카드 ── */
+    .section-label { font-size: 11px; color: #6c8ebf; margin-bottom: 4px; }
+    .npc-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .npc-card {
       flex: 1;
       min-width: 130px;
@@ -107,36 +88,18 @@
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
     }
-    .npc-card:hover {
+    .npc-card:hover, .npc-card.active {
       border-color: #a0c4ff;
       background: #1e2d50;
     }
-    .npc-card.active {
-      border-color: #a0c4ff;
-      background: #1e2d50;
-    }
-    .npc-name {
-      font-size: 13px;
-      font-weight: 500;
-      color: #e0e0e0;
-      margin-bottom: 2px;
-    }
-    .npc-desc {
-      font-size: 11px;
-      color: #6c8ebf;
-      margin-bottom: 4px;
-    }
-    .npc-badge {
-      display: inline-block;
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 6px;
-    }
+    .npc-name  { font-size: 13px; font-weight: 500; color: #e0e0e0; margin-bottom: 2px; }
+    .npc-desc  { font-size: 11px; color: #6c8ebf; margin-bottom: 4px; }
+    .npc-badge    { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; }
     .badge-friend { background: #0d3b2e; color: #5dcaa5; }
     .badge-enemy  { background: #3b0d0d; color: #f09595; }
     .badge-neutral{ background: #2e2e0d; color: #ef9f27; }
 
-    /* 캐릭터 등장 씬 */
+    /* ── 캐릭터 등장 씬 ── */
     .character-scene {
       background: #16213e;
       border: 1px solid #0f3460;
@@ -144,9 +107,8 @@
       overflow: hidden;
       display: none;
     }
-    .character-scene.visible {
-      display: block;
-    }
+    .character-scene.visible { display: block; }
+
     .scene-bg {
       background: linear-gradient(180deg, #0d1b2a 0%, #1a2744 100%);
       padding: 20px 0 0 0;
@@ -157,37 +119,46 @@
       position: relative;
     }
 
-    /* SVG 캐릭터 placeholder */
-    .char-figure {
+    /*
+     * 핵심 수정 포인트:
+     * .char-wrapper 를 새로 만들어서 이 div 자체를 교체하는 방식으로 애니메이션 재실행
+     * SVG/img 태그의 reflow 트릭이 불안정한 문제를 우회함
+     */
+    .char-wrapper {
       width: 110px;
       height: 140px;
-      transform: translateY(20px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
       animation: slideUp 0.4s ease forwards;
     }
+    /* 애니메이션: 아래서 위로 등장 */
     @keyframes slideUp {
       from { transform: translateY(40px); opacity: 0; }
-      to   { transform: translateY(20px); opacity: 1; }
+      to   { transform: translateY(0px);  opacity: 1; }
     }
 
-    /* 말풍선 */
+    /* SVG 캐릭터 (ghost, prof) */
+    .char-svg {
+      width: 110px;
+      height: 140px;
+    }
+
+    /* 이미지 캐릭터 (puang 등 실제 PNG) */
+    .char-img {
+      width: 110px;
+      height: 140px;
+      object-fit: contain;
+    }
+
+    /* ── 말풍선 ── */
     .dialog-bubble {
       background: #f5f0e8;
       border-radius: 0 0 12px 12px;
       padding: 14px 18px 16px;
-      position: relative;
     }
-    .dialog-speaker-name {
-      font-size: 13px;
-      font-weight: 500;
-      color: #0f6e56;
-      margin-bottom: 6px;
-    }
-    .dialog-typing {
-      font-size: 14px;
-      color: #1a1a2e;
-      line-height: 1.65;
-      min-height: 44px;
-    }
+    .dialog-speaker-name { font-size: 13px; font-weight: 500; color: #0f6e56; margin-bottom: 6px; }
+    .dialog-typing       { font-size: 14px; color: #1a1a2e; line-height: 1.65; min-height: 44px; }
     .memory-pill {
       display: inline-block;
       margin-top: 8px;
@@ -197,10 +168,10 @@
       padding: 2px 8px;
       border-radius: 6px;
     }
+    /* 타이핑 커서 */
     .cursor {
       display: inline-block;
-      width: 2px;
-      height: 14px;
+      width: 2px; height: 14px;
       background: #1a1a2e;
       margin-left: 1px;
       vertical-align: middle;
@@ -208,12 +179,8 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* 행동 버튼 */
-    .action-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+    /* ── 행동 버튼 ── */
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .action-btn {
       background: #16213e;
       border: 1px solid #0f3460;
@@ -226,15 +193,12 @@
       font-family: inherit;
       transition: border-color 0.2s, background 0.2s;
     }
-    .action-btn:hover { background: #1e2d50; border-color: #a0c4ff; }
-    .action-btn.danger { border-color: #5a1a1a; color: #f09595; }
+    .action-btn:hover        { background: #1e2d50; border-color: #a0c4ff; }
+    .action-btn.danger       { border-color: #5a1a1a; color: #f09595; }
     .action-btn.danger:hover { background: #2e1010; border-color: #f09595; }
 
-    /* 입력창 */
-    .input-row {
-      display: flex;
-      gap: 8px;
-    }
+    /* ── 입력창 ── */
+    .input-row { display: flex; gap: 8px; }
     .input-row input {
       flex: 1;
       background: #16213e;
@@ -247,7 +211,7 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .input-row input:focus { border-color: #a0c4ff; }
+    .input-row input:focus        { border-color: #a0c4ff; }
     .input-row input::placeholder { color: #3a5080; }
     .input-row button {
       background: #0f3460;
@@ -262,7 +226,7 @@
     }
     .input-row button:hover { background: #1a4a80; }
 
-    /* 시스템 로그 */
+    /* ── 시스템 로그 ── */
     .log-box {
       background: #0d1117;
       border: 1px solid #0f3460;
@@ -283,11 +247,13 @@
 
 <div class="game-container">
 
+  <!-- 현재 위치 -->
   <div class="location-bar">
     <div class="location-label">현재 위치</div>
     <div class="location-name" id="location-name">중앙대학교 — 청룡탕 앞 광장</div>
   </div>
 
+  <!-- 스탯 -->
   <div class="stat-row">
     <div class="stat-card">
       <div class="stat-label">HP</div>
@@ -305,6 +271,7 @@
     </div>
   </div>
 
+  <!-- NPC 카드 -->
   <div>
     <div class="section-label">주변 NPC</div>
     <div class="npc-row">
@@ -328,8 +295,11 @@
 
   <!-- 캐릭터 등장 씬 -->
   <div class="character-scene" id="char-scene">
-    <div class="scene-bg">
-      <svg class="char-figure" id="char-svg" viewBox="0 0 110 140" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="scene-bg" id="scene-bg">
+      <!--
+        char-wrapper 를 JS에서 통째로 교체함
+        → 새 DOM 요소 삽입 = 애니메이션 무조건 재실행
+      -->
     </div>
     <div class="dialog-bubble">
       <div class="dialog-speaker-name" id="bubble-speaker">푸앙이</div>
@@ -338,9 +308,10 @@
     </div>
   </div>
 
+  <!-- 행동 버튼 -->
   <div>
     <div class="section-label">행동 선택</div>
-    <div class="action-grid" id="action-grid">
+    <div class="action-grid">
       <button class="action-btn" onclick="doAction('talk')">대화 계속하기</button>
       <button class="action-btn" onclick="doAction('item')">아이템 교환</button>
       <button class="action-btn" onclick="doAction('move')">이동하기</button>
@@ -348,14 +319,17 @@
     </div>
   </div>
 
+  <!-- 입력창 -->
   <div>
     <div class="section-label">직접 입력</div>
     <div class="input-row">
-      <input type="text" id="player-input" placeholder="행동을 입력하세요..." onkeydown="if(event.key==='Enter') submitInput()" />
+      <input type="text" id="player-input" placeholder="행동을 입력하세요..."
+             onkeydown="if(event.key==='Enter') submitInput()" />
       <button onclick="submitInput()">전송</button>
     </div>
   </div>
 
+  <!-- 시스템 로그 -->
   <div>
     <div class="section-label">시스템 로그</div>
     <div class="log-box" id="log-box">
@@ -368,17 +342,21 @@
 </div>
 
 <script>
+  // ================================================================
+  // NPC 데이터 (실제 구현 시 ChromaDB RAG에서 불러옴)
+  // ================================================================
   const npcs = {
     puang: {
       name: '푸앙이',
       tag: 'RAG: 저번 세션 아이템 교환 기록 참조됨',
       lines: [
-        '어서 와~ 저번에 청룡탕에서 아메리카노 줬던 거 기억해! 그때 덕분에 버텼다구. 오늘은 뭐 도와줄까?',
-        '이면 세계가 요즘 좀 불안정해. 310관 쪽에서 이상한 버그들이 늘어나고 있거든...',
-        '데이터 조각 많이 모았네! 벨벳 서버실 가면 뭔가 교환할 수 있을 거야.'
+        '어서 와 푸앙~ 저번에 청룡탕에서 아메리카노 줬던 거 기억해 푸앙! 덕분에 하루를 잘 버텼다구 푸앙. 오늘은 뭐 도와줄까 푸앙?',
+        '이면 세계가 요즘 좀 불안정해 푸앙. 310관 쪽에서 이상한 버그들이 늘어나고 있거든 푸앙...',
+        '데이터 조각 많이 모았네 푸앙! 중앙 서버실 가면 뭔가 교환할 수 있을 거야 푸앙.'
       ],
       color: '#5dcaa5',
-      svgType: 'puang'
+      imageType: 'img',           // 실제 PNG 이미지 사용
+      src: 'images/puang/puang_normal.png'
     },
     ghost: {
       name: '학점귀신 (Lv.7)',
@@ -389,7 +367,7 @@
         '네가 마지막으로 F 받은 게 언제인지 기억나? 나는 기억해.'
       ],
       color: '#f09595',
-      svgType: 'ghost'
+      imageType: 'svg'            // SVG 도형 사용
     },
     prof: {
       name: '과제부여자',
@@ -400,33 +378,14 @@
         '보상은 데이터 조각 x5 줄게. 기한은 다음 세션까지.'
       ],
       color: '#ef9f27',
-      svgType: 'prof'
+      imageType: 'svg'            // SVG 도형 사용
     }
   };
 
+  // ================================================================
+  // SVG 도형 데이터 (실제 이미지 없는 NPC용 임시)
+  // ================================================================
   const svgShapes = {
-    puang: `
-      <ellipse cx="55" cy="55" rx="30" ry="30" fill="#5bb8d4"/>
-      <ellipse cx="55" cy="90" rx="22" ry="28" fill="#5bb8d4"/>
-      <ellipse cx="37" cy="42" rx="8" ry="12" fill="#7ecce0" transform="rotate(-15 37 42)"/>
-      <ellipse cx="73" cy="42" rx="8" ry="12" fill="#7ecce0" transform="rotate(15 73 42)"/>
-      <line x1="42" y1="38" x2="34" y2="22" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
-      <line x1="34" y1="22" x2="30" y2="12" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
-      <line x1="68" y1="38" x2="76" y2="22" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
-      <line x1="76" y1="22" x2="80" y2="12" stroke="#c8a050" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="44" cy="57" r="5" fill="#1a2744"/>
-      <circle cx="66" cy="57" r="5" fill="#1a2744"/>
-      <circle cx="45" cy="56" r="2" fill="white"/>
-      <circle cx="67" cy="56" r="2" fill="white"/>
-      <circle cx="41" cy="68" r="5" fill="#f4a0b0"/>
-      <circle cx="69" cy="68" r="5" fill="#f4a0b0"/>
-      <path d="M46 73 Q55 79 64 73" stroke="#1a2744" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <ellipse cx="38" cy="110" rx="10" ry="16" fill="#5bb8d4"/>
-      <ellipse cx="72" cy="110" rx="10" ry="16" fill="#5bb8d4"/>
-      <rect x="38" y="80" width="34" height="22" rx="6" fill="#1a3a6e"/>
-      <rect x="47" y="80" width="16" height="22" fill="#e8e8e8"/>
-      <text x="55" y="95" text-anchor="middle" font-size="9" fill="#1a3a6e" font-weight="bold">C</text>
-    `,
     ghost: `
       <ellipse cx="55" cy="50" rx="28" ry="28" fill="#c0c0d0"/>
       <path d="M27 50 Q27 100 35 115 Q42 130 55 120 Q68 130 75 115 Q83 100 83 50 Z" fill="#c0c0d0"/>
@@ -454,10 +413,21 @@
     `
   };
 
+  // ================================================================
+  // 게임 상태
+  // ================================================================
   let currentNpc = null;
   let lineIdx = {};
   let typingTimeout = null;
 
+  // ================================================================
+  // talkTo(npcKey): NPC 클릭 시 호출
+  //
+  // 애니메이션 핵심 원리:
+  //   .char-wrapper div를 통째로 새로 만들어서 scene-bg에 삽입
+  //   → 새 DOM 노드 = 브라우저가 애니메이션을 무조건 처음부터 실행
+  //   → reflow 트릭 없이도 매번 슬라이드업 재생됨
+  // ================================================================
   function talkTo(npcKey) {
     document.querySelectorAll('.npc-card').forEach(c => c.classList.remove('active'));
     document.getElementById('npc-' + npcKey).classList.add('active');
@@ -468,23 +438,51 @@
     const npc = npcs[npcKey];
     const line = npc.lines[lineIdx[npcKey] % npc.lines.length];
 
+    // 말풍선 업데이트
     document.getElementById('bubble-speaker').textContent = npc.name;
     document.getElementById('bubble-speaker').style.color = npc.color;
     document.getElementById('bubble-tag').textContent = npc.tag;
-    document.getElementById('char-svg').innerHTML = svgShapes[npc.svgType];
 
-    const scene = document.getElementById('char-scene');
-    scene.classList.add('visible');
+    // scene-bg 안의 기존 wrapper 제거 후 새로 삽입 → 애니메이션 재실행
+    const sceneBg = document.getElementById('scene-bg');
+    const oldWrapper = sceneBg.querySelector('.char-wrapper');
+    if (oldWrapper) sceneBg.removeChild(oldWrapper);
 
-    const svg = document.getElementById('char-svg');
-    svg.style.animation = 'none';
-    svg.offsetHeight;
-    svg.style.animation = 'slideUp 0.4s ease forwards';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'char-wrapper';
 
+    if (npc.imageType === 'img') {
+      // 실제 PNG 이미지 (푸앙이)
+      const img = document.createElement('img');
+      img.className = 'char-img';
+      img.src = npc.src;
+      img.alt = npc.name;
+      wrapper.appendChild(img);
+    } 
+    
+    else {
+      // SVG 도형 (학점귀신, 과제부여자)
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 110 140');
+      svg.className = 'char-svg';
+      svg.innerHTML = svgShapes[npcKey];
+      wrapper.appendChild(svg);
+    }
+
+    sceneBg.appendChild(wrapper);
+
+    // 캐릭터 씬 표시
+    document.getElementById('char-scene').classList.add('visible');
+
+    // 타이핑 효과
     typeText('bubble-text', line);
+
     addLog('[RAG] ' + npc.name + ' 대화 기록 검색 중... 완료');
   }
 
+  // ================================================================
+  // typeText: 한 글자씩 타이핑 효과
+  // ================================================================
   function typeText(elId, text) {
     if (typingTimeout) clearTimeout(typingTimeout);
     const el = document.getElementById(elId);
@@ -504,12 +502,13 @@
     step();
   }
 
+  // ================================================================
+  // 행동 버튼 핸들러
+  // 실제 구현 시 fetch('/api/action', ...) 로 교체
+  // ================================================================
   const actionTexts = {
     talk: () => {
-      if (!currentNpc) {
-        showSystemMsg('먼저 NPC에게 말을 걸어보세요.');
-        return;
-      }
+      if (!currentNpc) { showSystemMsg('먼저 NPC에게 말을 걸어보세요.'); return; }
       lineIdx[currentNpc] = (lineIdx[currentNpc] || 0) + 1;
       talkTo(currentNpc);
     },
@@ -535,10 +534,11 @@
     }
   };
 
-  function doAction(key) {
-    actionTexts[key]();
-  }
+  function doAction(key) { actionTexts[key](); }
 
+  // ================================================================
+  // showSystemMsg: 시스템 메시지를 말풍선에 표시
+  // ================================================================
   function showSystemMsg(msg) {
     document.getElementById('bubble-speaker').textContent = '시스템';
     document.getElementById('bubble-speaker').style.color = '#6c8ebf';
@@ -547,6 +547,16 @@
     typeText('bubble-text', msg);
   }
 
+  // ================================================================
+  // submitInput: 입력창 전송
+  // TODO: 실제 구현 시 아래 fetch 코드로 교체
+  //   const res = await fetch('/chat', {
+  //     method: 'POST',
+  //     body: JSON.stringify({ message: val, npc: currentNpc })
+  //   });
+  //   const data = await res.json();
+  //   typeText('bubble-text', data.response);
+  // ================================================================
   function submitInput() {
     const val = document.getElementById('player-input').value.trim();
     if (!val) return;
@@ -555,6 +565,7 @@
     document.getElementById('player-input').value = '';
   }
 
+  // addLog: 시스템 로그에 메시지 추가
   function addLog(msg) {
     const box = document.getElementById('log-box');
     box.innerHTML += '<br>' + msg;
