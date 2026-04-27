@@ -12,7 +12,9 @@
   구조 개요:
     [CSS]    화면 스타일 (다크 테마, 카드 UI, 애니메이션)
     [HTML]   화면 레이아웃 (위치/스탯/NPC/대화창/입력창/로그)
-    [JS]     게임 로직 (NPC 대화, 행동 처리, 타이핑 효과)
+              - .game-container : 일반 화면 (탐색/대화)
+              - #battle-container : 전투 화면
+    [JS]     게임 로직 (NPC 대화, 행동 처리, 타이핑 효과) + 전투 로
 
   나중에 백엔드 붙일 때:
     submitInput() 함수 안에 fetch('/chat', ...) 추가하면 됨
@@ -42,6 +44,10 @@
       margin-bottom: 16px;
       letter-spacing: 2px;
     }
+
+    /* ================================================================
+       일반 화면 스타일
+    ================================================================ */
 
     .game-container {
       width: 100%;
@@ -119,11 +125,7 @@
       position: relative;
     }
 
-    /*
-     * 핵심 수정 포인트:
-     * .char-wrapper 를 새로 만들어서 이 div 자체를 교체하는 방식으로 애니메이션 재실행
-     * SVG/img 태그의 reflow 트릭이 불안정한 문제를 우회함
-     */
+    /* char-wrapper: 매번 새로 생성해서 애니메이션 재실행 */
     .char-wrapper {
       width: 110px;
       height: 140px;
@@ -132,24 +134,14 @@
       justify-content: center;
       animation: slideUp 0.4s ease forwards;
     }
-    /* 애니메이션: 아래서 위로 등장 */
+
     @keyframes slideUp {
       from { transform: translateY(40px); opacity: 0; }
       to   { transform: translateY(0px);  opacity: 1; }
-    }
+    }  /* 애니메이션: 아래서 위로 등장 */
 
-    /* SVG 캐릭터 (ghost, prof) */
-    .char-svg {
-      width: 110px;
-      height: 140px;
-    }
-
-    /* 이미지 캐릭터 (puang 등 실제 PNG) */
-    .char-img {
-      width: 110px;
-      height: 140px;
-      object-fit: contain;
-    }
+    .char-svg { width: 110px; height: 140px; } /* SVG 캐릭터 (ghost, prof) */
+    .char-img { width: 110px; height: 140px; object-fit: contain; } /* 이미지 캐릭터 (실제 PNG) */
 
     /* ── 말풍선 ── */
     .dialog-bubble {
@@ -239,13 +231,149 @@
       overflow-y: auto;
       line-height: 1.6;
     }
+
+    /* ================================================================
+       전투 화면 스타일
+    ================================================================ */
+
+    /* 전투 컨테이너 (기본 숨김) */
+    #battle-container {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #battle-container.visible { display: flex; }
+
+    /* 전투 헤더 */
+    .battle-header {
+      background: #16213e;
+      border: 1px solid #3b0d0d;
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .battle-label { font-size: 11px; color: #f09595; }
+    .battle-title { font-size: 15px; font-weight: 500; color: #f09595; }
+    .battle-turn  { font-size: 12px; color: #6c8ebf; }
+
+    /* 전투 필드 */
+    .battle-field {
+      background: linear-gradient(180deg, #0d1117 0%, #1a0a0a 100%);
+      border: 1px solid #3b0d0d;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      min-height: 200px;
+    }
+    .fighter { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+    .fighter-name { font-size: 12px; color: #e0e0e0; font-weight: 500; }
+    .hp-bar-wrap { width: 100%; }
+    .hp-bar-label {
+      font-size: 10px; color: #6c8ebf; margin-bottom: 3px;
+      display: flex; justify-content: space-between;
+    }
+    .hp-bar-bg2   { height: 6px; background: #0f3460; border-radius: 3px; }
+    .hp-bar-fill2 { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .vs-badge { font-size: 18px; font-weight: 500; color: #f09595; padding: 0 12px; align-self: center; }
+
+    /* 전투 로그 */
+    .battle-log {
+      background: #0d1117;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #c0c0c0;
+      font-family: 'Courier New', monospace;
+      min-height: 80px;
+      max-height: 100px;
+      overflow-y: auto;
+      line-height: 1.7;
+    }
+    .log-damage  { color: #f09595; }
+    .log-success { color: #5dcaa5; }
+    .log-system2 { color: #4a7a4a; }
+    .log-dice    { color: #ef9f27; }
+
+    /* 주사위 + 커맨드 영역 */
+    .dice-area {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+    .dice-display {
+      font-size: 48px;
+      line-height: 1;
+      user-select: none;
+    }
+    .dice-display.rolling { animation: diceShake 0.4s ease; }
+    @keyframes diceShake {
+      0%,100% { transform: rotate(0deg); }
+      25% { transform: rotate(-15deg) scale(1.2); }
+      75% { transform: rotate(15deg) scale(1.2); }
+    }
+    .dice-result { font-size: 13px; color: #6c8ebf; min-height: 18px; text-align: center; }
+
+    /* 커맨드 버튼 */
+    .cmd-label { font-size: 11px; color: #6c8ebf; align-self: flex-start; }
+    .cmd-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+    .cmd-btn {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #e0e0e0;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: border-color 0.2s, background 0.2s;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .cmd-btn:hover        { background: #1e2d50; border-color: #a0c4ff; }
+    .cmd-btn:disabled     { opacity: 0.4; cursor: not-allowed; }
+    .cmd-btn.attack       { border-color: #5a1a1a; }
+    .cmd-btn.attack:hover { background: #2e1010; border-color: #f09595; }
+    .cmd-name { font-weight: 500; }
+    .cmd-desc { font-size: 10px; color: #6c8ebf; }
+
+    /* 전투 캐릭터 SVG */
+    .enemy-svg   { width: 90px; height: 110px; }
+    .player-svg2 { width: 70px; height: 90px; }
+
+    /* 피격 애니메이션 */
+    .shake-enemy  { animation: enemyShake 0.3s ease; }
+    @keyframes enemyShake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .flash-player { animation: playerFlash 0.3s ease; }
+    @keyframes playerFlash {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
   </style>
 </head>
 <body>
 
 <h1>CAU TRPG — 중앙대 이면 세계</h1>
 
-<div class="game-container">
+<!-- ================================================================
+     일반 화면
+================================================================ -->
+<div class="game-container" id="game-container">
 
   <!-- 현재 위치 -->
   <div class="location-bar">
@@ -295,12 +423,7 @@
 
   <!-- 캐릭터 등장 씬 -->
   <div class="character-scene" id="char-scene">
-    <div class="scene-bg" id="scene-bg">
-      <!--
-        char-wrapper 를 JS에서 통째로 교체함
-        → 새 DOM 요소 삽입 = 애니메이션 무조건 재실행
-      -->
-    </div>
+    <div class="scene-bg" id="scene-bg"></div>
     <div class="dialog-bubble">
       <div class="dialog-speaker-name" id="bubble-speaker">푸앙이</div>
       <div class="dialog-typing" id="bubble-text"></div>
@@ -337,6 +460,107 @@
       [SYSTEM] ChromaDB 연결됨 — 세계관 설정집 로드 완료<br>
       [SYSTEM] 에이전트 대기 중...
     </div>
+  </div>
+
+</div>
+
+<!-- ================================================================
+     전투 화면 (이면 세계 진입 버튼 누르면 표시)
+================================================================ -->
+<div id="battle-container">
+
+  <!-- 전투 헤더 -->
+  <div class="battle-header">
+    <div>
+      <div class="battle-label">전투 발생</div>
+      <div class="battle-title">이면 세계 — 310관 이면</div>
+    </div>
+    <div class="battle-turn" id="turn-display">턴 1</div>
+  </div>
+
+  <!-- 전투 필드: 적 vs 플레이어 -->
+  <div class="battle-field">
+    <div class="fighter">
+      <svg class="enemy-svg" id="enemy-svg" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="45" cy="38" rx="26" ry="26" fill="#c0c0d0"/>
+        <path d="M19 38 Q19 80 26 92 Q33 105 45 97 Q57 105 64 92 Q71 80 71 38 Z" fill="#c0c0d0"/>
+        <path d="M19 88 Q24 79 29 88 Q34 79 39 88 Q44 79 49 88 Q54 79 59 88 Q64 79 69 88 Q71 79 71 88" fill="#c0c0d0"/>
+        <circle cx="35" cy="38" r="5" fill="#1a1a2e"/>
+        <circle cx="55" cy="38" r="5" fill="#1a1a2e"/>
+        <circle cx="35" cy="36" r="2" fill="white"/>
+        <circle cx="55" cy="36" r="2" fill="white"/>
+        <path d="M38 52 Q45 46 52 52" stroke="#1a1a2e" stroke-width="1.5" fill="none"/>
+        <text x="45" y="29" text-anchor="middle" font-size="16" fill="#e24b4a" opacity="0.8">F</text>
+      </svg>
+      <div class="fighter-name">학점귀신 Lv.7</div>
+      <div class="hp-bar-wrap">
+        <div class="hp-bar-label"><span>HP</span><span id="enemy-hp-text">60 / 60</span></div>
+        <div class="hp-bar-bg2"><div class="hp-bar-fill2" id="enemy-hp-bar" style="width:100%; background:#e24b4a;"></div></div>
+      </div>
+    </div>
+
+    <div class="vs-badge">VS</div>
+
+    <div class="fighter">
+      <!-- 플레이어 SVG (이미지로 교체 시 img 태그 사용) -->
+      <svg class="player-svg2" id="player-svg2" viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="35" cy="28" rx="18" ry="18" fill="#5bb8d4"/>
+        <ellipse cx="35" cy="60" rx="14" ry="18" fill="#5bb8d4"/>
+        <ellipse cx="22" cy="18" rx="5" ry="8" fill="#7ecce0" transform="rotate(-15 22 18)"/>
+        <ellipse cx="48" cy="18" rx="5" ry="8" fill="#7ecce0" transform="rotate(15 48 18)"/>
+        <line x1="26" y1="16" x2="21" y2="7" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
+        <line x1="21" y1="7" x2="18" y2="2" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
+        <line x1="44" y1="16" x2="49" y2="7" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
+        <line x1="49" y1="7" x2="52" y2="2" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="28" cy="30" r="4" fill="#1a2744"/>
+        <circle cx="42" cy="30" r="4" fill="#1a2744"/>
+        <circle cx="29" cy="29" r="1.5" fill="white"/>
+        <circle cx="43" cy="29" r="1.5" fill="white"/>
+        <circle cx="26" cy="38" r="3" fill="#f4a0b0"/>
+        <circle cx="44" cy="38" r="3" fill="#f4a0b0"/>
+        <path d="M30 42 Q35 47 40 42" stroke="#1a2744" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <rect x="24" y="52" width="22" height="14" rx="4" fill="#1a3a6e"/>
+        <rect x="30" y="52" width="10" height="14" fill="#e8e8e8"/>
+        <text x="35" y="63" text-anchor="middle" font-size="6" fill="#1a3a6e" font-weight="bold">C</text>
+      </svg>
+      <div class="fighter-name">플레이어</div>
+      <div class="hp-bar-wrap">
+        <div class="hp-bar-label"><span>HP</span><span id="battle-player-hp-text">80 / 100</span></div>
+        <div class="hp-bar-bg2"><div class="hp-bar-fill2" id="battle-player-hp-bar" style="width:80%; background:#1d9e75;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 전투 로그 -->
+  <div class="battle-log" id="battle-log">
+    <span class="log-system2">[SYSTEM] 전투 시작! 학점귀신이 나타났다.</span><br>
+    <span class="log-system2">[RAG] 학점귀신 약점 DB 로드 완료 → 집중력 속성에 취약</span><br>
+    <span class="log-system2">[AGENT] 룰 판정 에이전트 대기 중...</span>
+  </div>
+
+  <!-- 주사위 + 커맨드 -->
+  <div class="dice-area">
+    <div class="cmd-label">커맨드 선택</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn attack" onclick="doCmd('attack')">
+        <span class="cmd-name">벡터 캐논</span>
+        <span class="cmd-desc">물리 공격 · 데미지 d20</span>
+      </button>
+      <button class="cmd-btn" onclick="doCmd('rag')">
+        <span class="cmd-name">RAG 리커버리</span>
+        <span class="cmd-desc">HP 회복 · 회복량 d10</span>
+      </button>
+      <button class="cmd-btn attack" onclick="doCmd('hyper')">
+        <span class="cmd-name">하이퍼 프롬프트</span>
+        <span class="cmd-desc">버프 · 다음 턴 데미지 2배</span>
+      </button>
+      <button class="cmd-btn" onclick="doCmd('run')">
+        <span class="cmd-name">이면 세계 탈출</span>
+        <span class="cmd-desc">전투 종료 · 50% 확률</span>
+      </button>
+    </div>
+    <div class="dice-display" id="dice-display">🎲</div>
+    <div class="dice-result" id="dice-result">커맨드를 선택하세요</div>
   </div>
 
 </div>
@@ -414,20 +638,14 @@
   };
 
   // ================================================================
-  // 게임 상태
+  // 일반 화면 상태
   // ================================================================
   let currentNpc = null;
   let lineIdx = {};
   let typingTimeout = null;
 
-  // ================================================================
-  // talkTo(npcKey): NPC 클릭 시 호출
-  //
-  // 애니메이션 핵심 원리:
-  //   .char-wrapper div를 통째로 새로 만들어서 scene-bg에 삽입
-  //   → 새 DOM 노드 = 브라우저가 애니메이션을 무조건 처음부터 실행
-  //   → reflow 트릭 없이도 매번 슬라이드업 재생됨
-  // ================================================================
+
+  // talkTo(npcKey): NPC 클릭 → 캐릭터 등장 + 대사 출력
   function talkTo(npcKey) {
     document.querySelectorAll('.npc-card').forEach(c => c.classList.remove('active'));
     document.getElementById('npc-' + npcKey).classList.add('active');
@@ -443,7 +661,7 @@
     document.getElementById('bubble-speaker').style.color = npc.color;
     document.getElementById('bubble-tag').textContent = npc.tag;
 
-    // scene-bg 안의 기존 wrapper 제거 후 새로 삽입 → 애니메이션 재실행
+    // char-wrapper 통째로 교체 → 애니메이션 무조건 재실행
     const sceneBg = document.getElementById('scene-bg');
     const oldWrapper = sceneBg.querySelector('.char-wrapper');
     if (oldWrapper) sceneBg.removeChild(oldWrapper);
@@ -451,8 +669,7 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'char-wrapper';
 
-    if (npc.imageType === 'img') {
-      // 실제 PNG 이미지 (푸앙이)
+    if (npc.imageType === 'img') { // 실제 PNG 이미지 (푸앙이)
       const img = document.createElement('img');
       img.className = 'char-img';
       img.src = npc.src;
@@ -460,8 +677,7 @@
       wrapper.appendChild(img);
     } 
     
-    else {
-      // SVG 도형 (학점귀신, 과제부여자)
+    else { // SVG 도형 (학점귀신, 과제부여자)
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 110 140');
       svg.className = 'char-svg';
@@ -476,13 +692,10 @@
 
     // 타이핑 효과
     typeText('bubble-text', line);
-
     addLog('[RAG] ' + npc.name + ' 대화 기록 검색 중... 완료');
   }
 
-  // ================================================================
-  // typeText: 한 글자씩 타이핑 효과
-  // ================================================================
+  // typeText: 한 글자씩 타이핑 효과 애니메이션
   function typeText(elId, text) {
     if (typingTimeout) clearTimeout(typingTimeout);
     const el = document.getElementById(elId);
@@ -504,18 +717,24 @@
 
   // ================================================================
   // 행동 버튼 핸들러
-  // 실제 구현 시 fetch('/api/action', ...) 로 교체
+  // 지금은 미리 써둔 텍스트 출력
+  // 실제 구현 시 FastAPI 서버 처리하여 fetch('/api/action', ...) 로 교체
   // ================================================================
   const actionTexts = {
+    // '대화 계속하기' 버튼
     talk: () => {
       if (!currentNpc) { showSystemMsg('먼저 NPC에게 말을 걸어보세요.'); return; }
       lineIdx[currentNpc] = (lineIdx[currentNpc] || 0) + 1;
       talkTo(currentNpc);
     },
+
+    // '아이템 교환' 버튼
     item: () => {
       showSystemMsg('[인벤토리] 얼어붙은 아메리카노 x2 · 수정 요청된 논문 x1 · 학생증 (특수) x1');
       addLog('[AGENT] 아이템 에이전트 호출됨');
     },
+
+    // '이동하기' 버튼
     move: () => {
       const locs = ['310관 9층 서버실', '중앙대 학생식당', '청룡탕 내부', '도서관 지하 B2', '벨벳 서버실'];
       const next = locs[Math.floor(Math.random() * locs.length)];
@@ -526,19 +745,29 @@
       document.querySelectorAll('.npc-card').forEach(c => c.classList.remove('active'));
       currentNpc = null;
     },
-    enter: () => {
-      document.getElementById('location-name').textContent = '이면 세계 — 310관 이면';
+
+    // '이면 세계 진입' 버튼 : 일반 화면 숨기고 전투 화면 표시
+    enter: async () => {
+      // 1. 연출 메세지 출력
       showSystemMsg('학생증을 단말기에 찍는다... 주변이 흔들리며 이면 세계의 문이 열린다. 전투 모드로 전환됩니다.');
-      addLog('[AGENT] 룰 판정 에이전트 활성화');
-      addLog('[RAG] 몬스터 약점 DB 로드 중...');
+      // 2. 타이핑 끝날 때까지 대기 (텍스트 길이 * 28ms + 여유 500ms)
+      await new Promise(r => setTimeout(r, 2500));
+      // 3. 전투 화면으로 전환
+      document.getElementById('game-container').style.display = 'none';
+      document.getElementById('battle-container').classList.add('visible');
+      initBattle();
     }
   };
 
-  function doAction(key) { actionTexts[key](); }
+  // 전투 끝난 후 복귀 (승리 or 패배)
+  function returnToGame() {
+    document.getElementById('battle-container').classList.remove('visible');
+    document.getElementById('game-container').style.display = 'flex';  
+  }
 
-  // ================================================================
+  function doAction(key) { actionTexts[key](); }  // 버튼 클릭 시 해당 함수 실행
+
   // showSystemMsg: 시스템 메시지를 말풍선에 표시
-  // ================================================================
   function showSystemMsg(msg) {
     document.getElementById('bubble-speaker').textContent = '시스템';
     document.getElementById('bubble-speaker').style.color = '#6c8ebf';
@@ -570,6 +799,173 @@
     const box = document.getElementById('log-box');
     box.innerHTML += '<br>' + msg;
     box.scrollTop = box.scrollHeight;
+  }
+
+  // ================================================================
+  // 전투 화면 로직
+  // ================================================================
+  let battlePlayerHp = 80, battlePlayerMaxHp = 100;
+  let enemyHp = 60, enemyMaxHp = 60;
+  let battleTurn = 1;
+  let buffActive = false;
+  let battleBusy = false;
+
+  // 전투 초기화
+  function initBattle() {
+    battlePlayerHp = 80; battlePlayerMaxHp = 100;
+    enemyHp = 60; enemyMaxHp = 60;
+    battleTurn = 1; buffActive = false; battleBusy = false;
+    updateBattleBars();
+    document.getElementById('turn-display').textContent = '턴 1';
+    document.getElementById('dice-display').textContent = '🎲';
+    document.getElementById('dice-result').textContent = '커맨드를 선택하세요';
+    document.getElementById('battle-log').innerHTML =
+      '<span class="log-system2">[SYSTEM] 전투 시작! 학점귀신이 나타났다.</span><br>' +
+      '<span class="log-system2">[RAG] 학점귀신 약점 DB 로드 완료 → 집중력 속성에 취약</span><br>' +
+      '<span class="log-system2">[AGENT] 룰 판정 에이전트 대기 중...</span>';
+    setBattleButtons(false);
+  }
+
+  function updateBattleBars() {
+    const ep = Math.max(0, Math.round(enemyHp / enemyMaxHp * 100));
+    const pp = Math.max(0, Math.round(battlePlayerHp / battlePlayerMaxHp * 100));
+    document.getElementById('enemy-hp-bar').style.width = ep + '%';
+    document.getElementById('battle-player-hp-bar').style.width = pp + '%';
+    document.getElementById('enemy-hp-text').textContent = Math.max(0, enemyHp) + ' / ' + enemyMaxHp;
+    document.getElementById('battle-player-hp-text').textContent = Math.max(0, battlePlayerHp) + ' / ' + battlePlayerMaxHp;
+  }
+
+  function setBattleButtons(disabled) {
+    document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = disabled);
+  }
+
+  function addBattleLog(msg, cls) {
+    const box = document.getElementById('battle-log');
+    box.innerHTML += '<br><span class="' + (cls || '') + '">' + msg + '</span>';
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function sleepMs(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // 주사위 굴리기 애니메이션
+  async function animateDice(sides) {
+    const el = document.getElementById('dice-display');
+    const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+    el.classList.add('rolling');
+    for (let i = 0; i < 8; i++) {
+      el.textContent = faces[Math.floor(Math.random() * faces.length)];
+      await sleepMs(50);
+    }
+    el.classList.remove('rolling');
+    const result = Math.floor(Math.random() * sides) + 1;
+    el.textContent = faces[Math.min(result - 1, 5)];
+    return result;
+  }
+
+  // 적 턴 자동 처리
+  async function enemyTurn() {
+    await sleepMs(600);
+    const roll = Math.floor(Math.random() * 12) + 1;
+    const dmg = Math.max(1, roll - 5); // 몹 딜량 너프할 때 사용
+    addBattleLog('[룰 판정] 학점귀신 공격! 주사위: ' + roll, 'log-dice');
+    await sleepMs(400);
+    document.getElementById('player-svg2').classList.add('flash-player');
+    setTimeout(() => document.getElementById('player-svg2').classList.remove('flash-player'), 300);
+    battlePlayerHp -= dmg;
+    updateBattleBars();
+    addBattleLog('[결과] 플레이어가 ' + dmg + ' 데미지를 받았다!', 'log-damage');
+
+    if (battlePlayerHp <= 0) { // 플레이어 사망 (패배)
+      addBattleLog('[SYSTEM] 플레이어가 쓰러졌다... 3초 후 복귀합니다.', 'log-damage');
+      document.getElementById('dice-result').textContent = '전투 패배...';
+      await sleepMs(3000);
+      returnToGame();
+      return;
+    }
+
+    battleTurn++;
+    document.getElementById('turn-display').textContent = '턴 ' + battleTurn;
+    document.getElementById('dice-result').textContent = '커맨드를 선택하세요';
+    setBattleButtons(false);
+    battleBusy = false;
+  }
+
+  // 커맨드 버튼 핸들러
+  async function doCmd(cmd) {
+    if (battleBusy) return;
+    battleBusy = true;
+    setBattleButtons(true);
+
+    if (cmd === 'attack') {
+      document.getElementById('dice-result').textContent = 'd20 굴리는 중...';
+      const roll = await animateDice(20);
+      addBattleLog('[룰 판정] 벡터 캐논! 주사위: ' + roll + '/20', 'log-dice');
+      await sleepMs(300);
+      if (roll >= 8) {
+        let dmg = Math.floor(roll / 1.5);  // 주인공 딜량 상향시 사용
+        if (buffActive) {
+          dmg *= 2; buffActive = false;
+          addBattleLog('[버프] 하이퍼 프롬프트 발동! 데미지 2배', 'log-success');
+        }
+        document.getElementById('enemy-svg').classList.add('shake-enemy');
+        setTimeout(() => document.getElementById('enemy-svg').classList.remove('shake-enemy'), 300);
+        enemyHp -= dmg;
+        updateBattleBars();
+        addBattleLog('[결과] 학점귀신에게 ' + dmg + ' 데미지!', 'log-success');
+        document.getElementById('dice-result').textContent = '명중! ' + dmg + ' 데미지';
+      } else {
+        addBattleLog('[결과] 빗나갔다! (판정 실패: ' + roll + ' < 8)', 'log-damage');
+        document.getElementById('dice-result').textContent = '빗나감 (roll: ' + roll + ')';
+      }
+      if (enemyHp <= 0) {  // 전투 승리
+        addBattleLog('[SYSTEM] 학점귀신을 물리쳤다! 데이터 조각 x5 획득', 'log-success');
+        document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀합니다.';
+        document.getElementById('dice-display').textContent = '🎉';
+        await sleepMs(3000);
+        returnToGame();
+        battleBusy = false;
+        return;
+      }
+    } 
+    
+    else if (cmd === 'rag') {
+      document.getElementById('dice-result').textContent = 'd10 굴리는 중...';
+      const roll = await animateDice(10);
+      addBattleLog('[RAG] 과거 데이터 검색 중... 완료', 'log-system2');
+      const heal = roll + 2;
+      battlePlayerHp = Math.min(battlePlayerMaxHp, battlePlayerHp + heal);
+      updateBattleBars();
+      addBattleLog('[결과] HP ' + heal + ' 회복!', 'log-success');
+      document.getElementById('dice-result').textContent = 'HP +' + heal + ' 회복';
+    } 
+    
+    else if (cmd === 'hyper') {
+      buffActive = true;
+      addBattleLog('[버프] 하이퍼 프롬프트! 다음 공격 데미지 2배', 'log-success');
+      document.getElementById('dice-result').textContent = '다음 공격 데미지 2배!';
+      document.getElementById('dice-display').textContent = '⚡';
+    } 
+    
+    else if (cmd === 'run') {
+      document.getElementById('dice-result').textContent = 'd2 굴리는 중...';
+      const roll = await animateDice(2);
+      if (roll === 2) {
+        addBattleLog('[결과] 이면 세계에서 탈출했다!', 'log-success');
+        document.getElementById('dice-result').textContent = '탈출 성공!';
+        // 탈출 성공 시 일반 화면으로 복귀
+        document.getElementById('battle-container').classList.remove('visible');
+        document.getElementById('game-container').style.display = 'flex';
+        battleBusy = false;
+        return;
+      } 
+      
+      else {
+        addBattleLog('[결과] 탈출 실패! 학점귀신이 가로막았다.', 'log-damage');
+        document.getElementById('dice-result').textContent = '탈출 실패...';
+      }
+    }
+
+    await enemyTurn();
   }
 </script>
 
