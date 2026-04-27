@@ -350,7 +350,6 @@
 
     /* 전투 캐릭터 SVG */
     .enemy-svg   { width: 90px; height: 110px; }
-    .player-svg2 { width: 70px; height: 90px; }
 
     /* 피격 애니메이션 */
     .shake-enemy  { animation: enemyShake 0.3s ease; }
@@ -502,27 +501,8 @@
     <div class="vs-badge">VS</div>
 
     <div class="fighter">
-      <!-- 플레이어 SVG (이미지로 교체 시 img 태그 사용) -->
-      <svg class="player-svg2" id="player-svg2" viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="35" cy="28" rx="18" ry="18" fill="#5bb8d4"/>
-        <ellipse cx="35" cy="60" rx="14" ry="18" fill="#5bb8d4"/>
-        <ellipse cx="22" cy="18" rx="5" ry="8" fill="#7ecce0" transform="rotate(-15 22 18)"/>
-        <ellipse cx="48" cy="18" rx="5" ry="8" fill="#7ecce0" transform="rotate(15 48 18)"/>
-        <line x1="26" y1="16" x2="21" y2="7" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
-        <line x1="21" y1="7" x2="18" y2="2" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
-        <line x1="44" y1="16" x2="49" y2="7" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
-        <line x1="49" y1="7" x2="52" y2="2" stroke="#c8a050" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="28" cy="30" r="4" fill="#1a2744"/>
-        <circle cx="42" cy="30" r="4" fill="#1a2744"/>
-        <circle cx="29" cy="29" r="1.5" fill="white"/>
-        <circle cx="43" cy="29" r="1.5" fill="white"/>
-        <circle cx="26" cy="38" r="3" fill="#f4a0b0"/>
-        <circle cx="44" cy="38" r="3" fill="#f4a0b0"/>
-        <path d="M30 42 Q35 47 40 42" stroke="#1a2744" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-        <rect x="24" y="52" width="22" height="14" rx="4" fill="#1a3a6e"/>
-        <rect x="30" y="52" width="10" height="14" fill="#e8e8e8"/>
-        <text x="35" y="63" text-anchor="middle" font-size="6" fill="#1a3a6e" font-weight="bold">C</text>
-      </svg>
+      <img id="player-svg2" src="images/player/player_male_battle.png" 
+          style="width:110px; height:140px; object-fit:contain;"> <!-- 플레이어 PNG 파일 -->
       <div class="fighter-name">플레이어</div>
       <div class="hp-bar-wrap">
         <div class="hp-bar-label"><span>HP</span><span id="battle-player-hp-text">80 / 100</span></div>
@@ -815,6 +795,10 @@
     battlePlayerHp = 80; battlePlayerMaxHp = 100;
     enemyHp = 60; enemyMaxHp = 60;
     battleTurn = 1; buffActive = false; battleBusy = false;
+
+    document.getElementById('player-svg2').outerHTML =  // 플레이어 이미지 PNG 파일로 교체
+    '<img id="player-svg2" class="player-svg2" src="images/player/player_male_battle.png" style="object-fit:contain;">';
+
     updateBattleBars();
     document.getElementById('turn-display').textContent = '턴 1';
     document.getElementById('dice-display').textContent = '🎲';
