@@ -349,7 +349,7 @@
     .cmd-desc { font-size: 10px; color: #6c8ebf; }
 
     /* 전투 캐릭터 SVG */
-    .enemy-svg { width: auto; height: 120px; }  /* 크기 조절 */
+    .enemy-svg { width: auto; height: 160px; }  /* 몬스터 크기 조절 */
 
     /* 피격 애니메이션 */
     .shake-enemy  { animation: enemyShake 0.3s ease; }
@@ -504,7 +504,7 @@
 
     <div class="fighter"> <!-- 플레이어 PNG 파일 -->
       <img id="player-svg2" src="images/player/player_male_battle.png" 
-          style="width:auto; height:120px; object-fit:contain;"> <!-- 크기 조절 -->
+          style="width:auto; height:160px; object-fit:contain;"> <!-- 크기 조절 -->
       <div class="fighter-name">플레이어</div>
       <div class="hp-bar-wrap">
         <div class="hp-bar-label"><span>HP</span><span id="battle-player-hp-text">80 / 100</span></div>
@@ -797,9 +797,6 @@
     battlePlayerHp = 80; battlePlayerMaxHp = 100;
     enemyHp = 60; enemyMaxHp = 60;
     battleTurn = 1; buffActive = false; battleBusy = false;
-
-    document.getElementById('player-svg2').outerHTML =  // 플레이어 이미지 PNG 파일로 교체
-    '<img id="player-svg2" class="player-svg2" src="images/player/player_male_battle.png" style="object-fit:contain;">';
 
     updateBattleBars();
     document.getElementById('turn-display').textContent = '턴 1';
