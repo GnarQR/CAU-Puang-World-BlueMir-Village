@@ -45,6 +45,228 @@
       letter-spacing: 2px;
     }
 
+    /* ── 블루미르 홀 : 푸앙이의 방 컨테이너 (기본 숨김) ── */
+    #puang-room {
+      display: none;
+      width: 100%;
+      max-width: 680px;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #puang-room.visible { display: flex; }
+
+    /* 방 헤더 */
+    .room-header {
+      background: #16213e;
+      border: 1px solid #d4537e;
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .room-title { font-size: 15px; font-weight: 500; color: #d4537e; }
+    .room-back-btn {
+      background: rgba(212,83,126,0.15);
+      border: 1px solid #d4537e;
+      border-radius: 8px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: #d4537e;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .room-back-btn:hover { background: rgba(212,83,126,0.3); }
+
+    /* 방 메인 영역: 푸앙이 + 채팅 */
+    .room-main {
+      display: flex;
+      gap: 12px;
+      min-height: 300px;
+    }
+
+    /* 왼쪽: 푸앙이 캐릭터 + 컨디션 */
+    .room-left {
+      width: 180px;
+      flex-shrink: 0;
+      background: linear-gradient(180deg, #0d1b2a 0%, #1a2744 100%);
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px;
+      gap: 10px;
+    }
+    .puang-char-img {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      transition: transform 0.3s;
+    }
+    .puang-char-img:hover { transform: scale(1.05); }
+
+    /* 컨디션 게이지 */
+    .condition-label { font-size: 11px; color: #6c8ebf; text-align: center; }
+    .condition-gauge {
+      width: 100%;
+      height: 8px;
+      background: #0f3460;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .condition-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease, background 0.5s ease;
+    }
+    .condition-emoji { font-size: 24px; text-align: center; }
+    .condition-text { font-size: 11px; color: #a0a0a0; text-align: center; line-height: 1.4; }
+
+    /* 호감도 별 */
+    .favor-stars { font-size: 18px; letter-spacing: 2px; text-align: center; }
+
+    /* 오늘의 아이템 현황 */
+    .item-status {
+      width: 100%;
+      background: rgba(15,52,96,0.4);
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 10px;
+      color: #6c8ebf;
+      line-height: 1.6;
+    }
+    .item-status span { color: #e0e0e0; font-weight: 500; }
+
+    /* 오른쪽: 채팅창 */
+    .room-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* 채팅 로그 */
+    .chat-log {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 220px;
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* 푸앙이 메시지 */
+    .chat-puang {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .chat-puang-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #1a3a6e;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .chat-puang-bubble {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 0 10px 10px 10px;
+      padding: 8px 12px;
+      color: #e0e0e0;
+      max-width: 85%;
+    }
+    .chat-puang-name { font-size: 10px; color: #5dcaa5; margin-bottom: 3px; font-weight: 500; }
+
+    /* 플레이어 메시지 */
+    .chat-player {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .chat-player-bubble {
+      background: #0f3460;
+      border-radius: 10px 0 10px 10px;
+      padding: 8px 12px;
+      color: #e0e0e0;
+      max-width: 85%;
+      font-size: 13px;
+    }
+
+    /* 호감도 변동 알림 */
+    .chat-favor-change {
+      text-align: center;
+      font-size: 11px;
+      color: #6c8ebf;
+      padding: 2px 0;
+    }
+    .favor-up   { color: #d4537e; }
+    .favor-down { color: #f09595; }
+
+    /* 아이템 버튼 영역 */
+    .item-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .item-btn {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #e0e0e0;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .item-btn:hover { background: #1e2d50; border-color: #a0c4ff; }
+    .item-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* 채팅 입력창 */
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-row input {
+      flex: 1;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #e0e0e0;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .chat-input-row input:focus { border-color: #d4537e; }
+    .chat-input-row input::placeholder { color: #3a5080; }
+    .chat-input-row button {
+      background: rgba(212,83,126,0.2);
+      border: 1px solid #d4537e;
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #d4537e;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .chat-input-row button:hover { background: rgba(212,83,126,0.4); }
+
     /* ================================================================
        일반 화면 스타일
     ================================================================ */
@@ -679,8 +901,7 @@
       alert('🔒 ' + info.desc);
       return;
     }
-    if (place === 'battle') {
-      // 이면 세계 진입 → 기존 전투 로직 호출
+    if (place === 'battle') {  // 이면 세계 진입 → 전투 로직 호출
       showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 문이 열린다.');
       setTimeout(() => {
         document.getElementById('game-container').style.display = 'none';
@@ -689,6 +910,12 @@
       }, 2000);
       return;
     }
+
+    if (place === 'dormitory') {  // 블루미르홀 입장 -> 푸앙이 호감도 로직 호출
+      enterRoom();
+      return;
+    }
+
     // 나머지 장소는 추후 구현 (일단 알림)
     showSystemMsgOnMap('[' + info.label + '] ' + info.desc + ' (추후 구현 예정)');
   }
@@ -1128,7 +1355,251 @@
 
     await enemyTurn();
   }
+
+  // ================================================================
+  // 푸앙이 상태 (나중에 백엔드로 이동)
+  // ================================================================
+  const puangState = {
+    favorability: 60,       // 전체 호감도 (0~100)
+    moodToday: 75,          // 오늘의 기분 (매일 랜덤, 0~100)
+    itemGivenToday: { coffee: 0, snack: 0 }
+  };
+
+  // 호감도 → 별 표시
+  function getFavorStars(fav) {
+    const stars = Math.round(fav / 20); // 0~5개
+    return '♥'.repeat(stars) + '♡'.repeat(5 - stars);
+  }
+
+  // 컨디션 → 이모지 + 텍스트 + 색상
+  function getConditionInfo(mood) {
+    if (mood >= 80) return { emoji: '😄', text: '기분 최고 푸앙!', color: '#5dcaa5' };
+    if (mood >= 60) return { emoji: '😊', text: '기분 좋음 푸앙~', color: '#5dcaa5' };
+    if (mood >= 40) return { emoji: '😐', text: '그냥 보통 푸앙.', color: '#ef9f27' };
+    if (mood >= 20) return { emoji: '😒', text: '오늘 기분 별로 푸앙...', color: '#f09595' };
+    return { emoji: '😠', text: '건드리지 마 푸앙!!', color: '#e24b4a' };
+  }
+
+  // UI 업데이트
+  function updateRoomUI() {
+    const cond = getConditionInfo(puangState.moodToday);
+    document.getElementById('condition-emoji').textContent = cond.emoji;
+    document.getElementById('condition-text').textContent = cond.text;
+    document.getElementById('condition-fill').style.width = puangState.moodToday + '%';
+    document.getElementById('condition-fill').style.background = cond.color;
+    document.getElementById('room-favor-stars').textContent = getFavorStars(puangState.favorability);
+    document.getElementById('coffee-count').textContent = puangState.itemGivenToday.coffee;
+    document.getElementById('snack-count').textContent = puangState.itemGivenToday.snack;
+    // 맵 상단 호감도도 업데이트
+    document.getElementById('favor-display').textContent = getFavorStars(puangState.favorability);
+  }
+
+  // 채팅 로그에 메시지 추가
+  function addChatMsg(who, text, favorChange) {
+    const log = document.getElementById('chat-log');
+
+    if (who === 'puang') {
+      log.innerHTML += `
+        <div class="chat-puang">
+          <div class="chat-puang-avatar">🐉</div>
+          <div class="chat-puang-bubble">
+            <div class="chat-puang-name">푸앙이</div>
+            ${text}
+          </div>
+        </div>`;
+    } else {
+      log.innerHTML += `
+        <div class="chat-player">
+          <div class="chat-player-bubble">${text}</div>
+        </div>`;
+    }
+
+    if (favorChange !== undefined && favorChange !== 0) {
+      const sign = favorChange > 0 ? '+' : '';
+      const cls = favorChange > 0 ? 'favor-up' : 'favor-down';
+      log.innerHTML += `
+        <div class="chat-favor-change">
+          <span class="${cls}">호감도 ${sign}${favorChange}</span>
+        </div>`;
+    }
+
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // 호감도 변경
+  function changeFavor(amount) {
+    puangState.favorability = Math.max(0, Math.min(100, puangState.favorability + amount));
+    updateRoomUI();
+  }
+
+  // ── 아이템 주기 ──
+  // TODO: 백엔드 연결 시 fetch('/api/give_item') 로 교체
+  function giveItem(itemId) {
+    const mood = puangState.moodToday;
+
+    if (itemId === 'coffee') {
+      const count = puangState.itemGivenToday.coffee;
+      puangState.itemGivenToday.coffee++;
+
+      // 기분에 따라 허용 횟수 달라짐
+      const maxCoffee = mood >= 70 ? 4 : mood >= 40 ? 2 : 0;
+
+      if (count < maxCoffee) {
+        addChatMsg('player', '☕ 커피를 건넸다');
+        addChatMsg('puang', '와! 커피다 푸앙~ 고마워 푸앙! 💙', +8);
+        changeFavor(+8);
+      } else if (count === maxCoffee) {
+        addChatMsg('player', '☕ 커피를 건넸다');
+        addChatMsg('puang', '어... 또 커피야 푸앙? 오늘은 좀 많이 마신 것 같은데... 푸앙.', +1);
+        changeFavor(+1);
+      } else {
+        addChatMsg('player', '☕ 커피를 건넸다');
+        addChatMsg('puang', '야!! 나 카페인 과다라고!! 그만 좀 줘 푸앙!! 💢', -15);
+        changeFavor(-15);
+      }
+
+    } else if (itemId === 'snack') {
+      const count = puangState.itemGivenToday.snack;
+      puangState.itemGivenToday.snack++;
+
+      if (count < 2) {
+        addChatMsg('player', '🍪 간식을 건넸다');
+        addChatMsg('puang', '오~ 간식이다 푸앙!! 완전 맛있겠다 푸앙 😋', +10);
+        changeFavor(+10);
+      } else {
+        addChatMsg('player', '🍪 간식을 건넸다');
+        addChatMsg('puang', '배불러... 푸앙. 다이어트 중이라고 했잖아 푸앙...', -5);
+        changeFavor(-5);
+      }
+
+    } else if (itemId === 'praise') {
+      const responses = [
+        '에헴~ 당연하지 푸앙! 나는 원래 잘생겼거든 푸앙~ 😤',
+        '히히 푸앙~ 고마워! 기분 좋다 푸앙 💙',
+        '그렇지 그렇지 푸앙~ 역시 눈 높은 유저야 푸앙!',
+      ];
+      const resp = responses[Math.floor(Math.random() * responses.length)];
+      addChatMsg('player', '👏 푸앙이를 칭찬했다');
+      addChatMsg('puang', resp, +5);
+      changeFavor(+5);
+    }
+
+    updateRoomUI();
+  }
+
+  // ── 채팅 전송 ──
+  // TODO: 백엔드 연결 시 Groq API 호출로 교체
+  function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    addChatMsg('player', text);
+    input.value = '';
+
+    // 더미 응답 (백엔드 없을 때)
+    const dummies = [
+      { dialog: '푸앙~ 그런 말은 처음 들어봤어 푸앙!', change: +3 },
+      { dialog: '음... 그게 무슨 말이야 푸앙?', change: 0 },
+      { dialog: '히히 푸앙~ 재밌다 푸앙!', change: +5 },
+      { dialog: '...푸앙. 그냥 넘어갈게 푸앙.', change: -2 },
+    ];
+    const resp = dummies[Math.floor(Math.random() * dummies.length)];
+
+    setTimeout(() => {
+      addChatMsg('puang', resp.dialog, resp.change);
+      changeFavor(resp.change);
+    }, 600);
+  }
+
+  // ── 방 입장 ──
+  function enterRoom() {
+    // 오늘의 기분 랜덤 결정 (실제로는 날마다 한 번만)
+    puangState.moodToday = Math.floor(Math.random() * 100);
+    updateRoomUI();
+
+    document.getElementById('game-container').style.display = 'none';
+    document.getElementById('puang-room').classList.add('visible');
+  }
+
+  // ── 방 퇴장 ──
+  function leaveRoom() {
+    document.getElementById('puang-room').classList.remove('visible');
+    document.getElementById('game-container').style.display = 'flex';
+  }
+
 </script>
+
+<!-- 블루미르 홀 : 푸앙이의 방 (블루미르홀 클릭 시 표시) -->
+<div id="puang-room">
+
+  <!-- 헤더 -->
+  <div class="room-header">
+    <div class="room-title">🐉 푸앙이의 방 — 블루미르홀</div>
+    <button class="room-back-btn" onclick="leaveRoom()">← 맵으로</button>
+  </div>
+
+  <!-- 메인: 푸앙이 + 채팅 -->
+  <div class="room-main">
+
+    <!-- 왼쪽: 푸앙이 캐릭터 + 상태 -->
+    <div class="room-left">
+      <img class="puang-char-img" id="puang-room-img"
+           src="images/puang/puang_normal.png" alt="푸앙이"
+           onerror="this.style.display='none'"/>
+
+      <div class="condition-emoji" id="condition-emoji">😊</div>
+
+      <div style="width:100%">
+        <div class="condition-label">오늘의 컨디션</div>
+        <div class="condition-gauge">
+          <div class="condition-fill" id="condition-fill"
+               style="width:75%; background:#5dcaa5;"></div>
+        </div>
+        <div class="condition-text" id="condition-text">기분 좋음 푸앙~</div>
+      </div>
+
+      <div>
+        <div class="condition-label">호감도</div>
+        <div class="favor-stars" id="room-favor-stars">♥♥♥♡♡</div>
+      </div>
+
+      <div class="item-status" id="item-status">
+        ☕ 커피: <span id="coffee-count">0</span>/3<br>
+        🍪 간식: <span id="snack-count">0</span>/2
+      </div>
+    </div>
+
+    <!-- 오른쪽: 채팅 -->
+    <div class="room-right">
+      <div class="chat-log" id="chat-log">
+        <!-- 첫 인사 메시지 -->
+        <div class="chat-puang">
+          <div class="chat-puang-avatar">🐉</div>
+          <div class="chat-puang-bubble">
+            <div class="chat-puang-name">푸앙이</div>
+            어서 와 푸앙~ 오늘도 잘 부탁해 푸앙!
+          </div>
+        </div>
+      </div>
+
+      <!-- 아이템 버튼 -->
+      <div class="item-buttons">
+        <button class="item-btn" onclick="giveItem('coffee')">☕ 커피 주기</button>
+        <button class="item-btn" onclick="giveItem('snack')">🍪 간식 주기</button>
+        <button class="item-btn" onclick="giveItem('praise')">👏 칭찬하기</button>
+      </div>
+
+      <!-- 채팅 입력 -->
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="푸앙이에게 말을 걸어보세요..."
+               onkeydown="if(event.key==='Enter') sendChat()" />
+        <button onclick="sendChat()">말걸기</button>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 </body>
 </html>
