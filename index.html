@@ -498,26 +498,26 @@
 
   <!-- 상단 스탯 바 : 지금은 고정값 구현, 나중에는 수치 저장되도록 -->
   <div class="map-stat-bar">
-    <div class="map-stat-pill">HP <span id="hp-val">80 / 100</span></div>
-    <div class="map-stat-pill">SP <span id="sp-val">45 / 60</span></div>
-    <div class="map-stat-pill">데이터 조각 <span id="data-val">12개</span></div>
-    <div class="map-stat-pill">푸앙이 호감도 <span id="favor-display" style="color:#d4537e;">★★★☆☆</span></div>
+    <div class="map-stat-pill"> HP <span id="hp-val">80 / 100</span></div>
+    <div class="map-stat-pill"> SP <span id="sp-val">45 / 60</span></div>
+    <div class="map-stat-pill"> 데이터 조각 <span id="data-val">12개</span></div>
+    <div class="map-stat-pill"> 푸앙이 호감도 <span id="favor-display" style="color:#d4537e;"> ♥♥♥♡♡ </span></div>
   </div>
 
   <!-- 맵 배경 + 장소 버튼 -->
   <div class="map-bg" id="map-bg">
     <img class="map-image" src="images/map/cau_map.png" alt="중앙대 이면 세계 맵" />
 
-    <!-- 푸앙이네 (중앙 광장 분수대 근처) // 위치 조정 필요 (노가다) -->
-    <button class="map-spot" style="left:48%; top:62%;" onclick="enterPlace('puang')">
+    <!-- 블루미르홀 (푸앙이와 호감도작 하는 곳) // 위치 조정 필요 (노가다) -->
+    <button class="map-spot" style="left:48%; top:62%;" onclick="enterPlace('dormitory')">
       <div class="map-spot-wrap">
         <div class="map-spot-icon" style="background: rgba(13,45,74,0.85);">
           <img src="images/puang/puang_normal.png" style="width:36px;height:36px;object-fit:contain;"
                onerror="this.style.display='none';this.parentNode.innerHTML='🐉'"/>
         </div>
-        <div class="map-badge badge-heart">♥</div>
+        <div class="map-badge badge-heart"> ♥ </div>
       </div>
-      <div class="map-spot-label">푸앙이네</div>
+      <div class="map-spot-label"> 블루미르홀 </div>
     </button>
 
     <!-- 310관 연구실 (우측 상단) // 위치 조정 필요 (노가다) -->
@@ -534,7 +534,7 @@
         <div class="map-spot-icon" style="background: rgba(74,13,13,0.85);">⚔️</div>
         <div class="map-badge badge-danger">!</div>
       </div>
-      <div class="map-spot-label">이면 세계</div>
+      <div class="map-spot-label"> 205관 이면 세계 </div>
     </button>
 
     <!-- 학생식당 (중앙 큰 건물) // 위치 조정 필요 (노가다) -->
@@ -542,7 +542,7 @@
       <div class="map-spot-wrap">
         <div class="map-spot-icon" style="background: rgba(13,32,13,0.85);">🍚</div>
       </div>
-      <div class="map-spot-label">학생식당</div>
+      <div class="map-spot-label"> 학생 식당 </div>
     </button>
 
     <!-- 아이템 가게 // 위치 조정 필요 (노가다) -->
@@ -550,7 +550,7 @@
       <div class="map-spot-wrap">
         <div class="map-spot-icon" style="background: rgba(58,42,13,0.85);">🛒</div>
       </div>
-      <div class="map-spot-label">아이템 가게</div>
+      <div class="map-spot-label"> 아이템 가게 </div>
     </button>
 
     <!-- 도서관 (좌측) // 위치 조정 필요 (노가다) -->
@@ -558,16 +558,16 @@
       <div class="map-spot-wrap">
         <div class="map-spot-icon" style="background: rgba(13,26,37,0.85);">📚</div>
       </div>
-      <div class="map-spot-label">도서관</div>
+      <div class="map-spot-label"> 중앙도서관 </div>
     </button>
 
     <!-- 추후에 업데이트 됩니다. (잠김) // 위치 조정 필요 (노가다) -->
-    <button class="map-spot locked" style="left:58%; top:42%;" onclick="enterPlace('server')">
+    <button class="map-spot locked" style="left:58%; top:42%;" onclick="enterPlace('bluedragonlake')">
       <div class="map-spot-wrap">
         <div class="map-spot-icon" style="background: rgba(13,13,37,0.85);">🔒</div>
         <div class="map-badge badge-mystery">?</div>
       </div>
-      <div class="map-spot-label">벨벳 서버실</div>
+      <div class="map-spot-label"> 청룡호 </div>
     </button>
 
     <!-- 툴팁 -->
@@ -663,13 +663,13 @@
 <script>
   // ── 맵 장소 데이터 ──
   const placeInfo = {
-    puang:     { label: '푸앙이네',     desc: '푸앙이와 대화하고 호감도를 올려보세요!',        locked: false },
-    lab:       { label: '310관 연구실', desc: '베이스캠프 — 세이브 & 스탯 확인',              locked: false },
-    battle:    { label: '이면 세계',    desc: '학점귀신이 기다리고 있다! 전투 진입',            locked: false },
-    cafeteria: { label: '학생식당',     desc: 'HP/SP 회복 — 얼어붙은 아메리카노 판매 중',      locked: false },
-    store:     { label: '아이템 가게',  desc: '아이템 구매 — 데이터 조각으로 교환',             locked: false },
-    library:   { label: '도서관',       desc: '공부하면 데이터 조각 획득!',                    locked: false },
-    server:    { label: '벨벳 서버실',  desc: '🔒 푸앙이 호감도 MAX 달성 시 개방',             locked: true  },
+    dormitory:         { label: '블루미르홀',     desc: '푸앙 수호신과 대화하고 호감도를 올려보세요!',        locked: false },
+    lab:               { label: '207관 연구실', desc: '베이스캠프 — 세이브 & 스탯 확인',              locked: false },
+    battle:            { label: '205관 이면 세계',    desc: '공사중인 건물에서 이상 반응이?! 전투 진입',            locked: false },
+    cafeteria:         { label: '학생식당',     desc: 'HP/SP 회복 — 얼어붙은 아메리카노 판매 중',      locked: false },
+    store:             { label: '아이템 가게',  desc: '아이템 구매 — 데이터 조각으로 교환',             locked: false },
+    library:           { label: '중앙도서관',       desc: '공부하면 데이터 조각 획득!',                    locked: false },
+    bluedragonlake:    { label: '청룡호',  desc: '🔒 푸앙이 호감도 MAX 달성 시 개방',             locked: true  },
   };
 
   // ── 장소 진입 함수 ──
@@ -896,7 +896,7 @@
 
     // '이동하기' 버튼
     move: () => {
-      const locs = ['310관 9층 서버실', '중앙대 학생식당', '청룡탕 내부', '도서관 지하 B2', '벨벳 서버실'];
+      const locs = ['310관 9층 서버실', '중앙대 학생식당', '청룡탕 내부', '도서관 지하 B2', '청룡호'];
       const next = locs[Math.floor(Math.random() * locs.length)];
       document.getElementById('location-name').textContent = '중앙대학교 — ' + next;
       showSystemMsg(next + '으로 이동했습니다.');
