@@ -48,6 +48,128 @@
     /* ================================================================
        일반 화면 스타일
     ================================================================ */
+    /* ── 맵 화면 전체 ── */
+    .map-container {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 상단 스탯 바 */
+    .map-stat-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .map-stat-pill {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      color: #6c8ebf;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .map-stat-pill span { font-weight: 500; color: #e0e0e0; }
+
+    /* 맵 배경 + 버튼 컨테이너 */
+    .map-bg {
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #0f3460;
+    }
+    .map-bg img.map-image {
+      width: 100%;
+      display: block;
+      filter: brightness(0.75) saturate(0.8); /* 이면 세계 분위기 */
+    }
+
+    /* 맵 버튼 공통 */
+    .map-spot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .map-spot-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: 2px solid rgba(255,255,255,0.25);
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .map-spot:hover .map-spot-icon {
+      transform: scale(1.2);
+      border-color: rgba(255,255,255,0.8);
+      box-shadow: 0 4px 16px rgba(160,196,255,0.4);
+    }
+    .map-spot-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: white;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.55);
+      padding: 2px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    /* 뱃지 (!, ♥, ?) */
+    .map-spot-wrap { position: relative; }
+    .map-badge {
+      position: absolute;
+      top: -3px; right: -3px;
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid white;
+      color: white;
+    }
+    .badge-danger  { background: #e24b4a; }
+    .badge-heart   { background: #d4537e; }
+    .badge-mystery { background: #534ab7; }
+
+    /* 잠긴 장소 */
+    .map-spot.locked .map-spot-icon { filter: grayscale(1); opacity: 0.5; }
+    .map-spot.locked { cursor: not-allowed; }
+    .map-spot.locked:hover .map-spot-icon { transform: none; box-shadow: none; border-color: rgba(255,255,255,0.25); }
+
+    /* 툴팁 */
+    .map-tooltip {
+      position: absolute;
+      background: rgba(10,14,26,0.93);
+      color: #e0e0e0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 20;
+      white-space: nowrap;
+      border: 1px solid rgba(160,196,255,0.2);
+      transform: translate(-50%, 0);
+      line-height: 1.5;
+    }
 
     .game-container {
       width: 100%;
@@ -372,93 +494,84 @@
 <!-- ================================================================
      일반 화면
 ================================================================ -->
-<div class="game-container" id="game-container">
+<div class="map-container" id="game-container">
 
-  <!-- 현재 위치 -->
-  <div class="location-bar">
-    <div class="location-label">현재 위치</div>
-    <div class="location-name" id="location-name">중앙대학교 — 청룡탕 앞 광장</div>
+  <!-- 상단 스탯 바 : 지금은 고정값 구현, 나중에는 수치 저장되도록 -->
+  <div class="map-stat-bar">
+    <div class="map-stat-pill">HP <span id="hp-val">80 / 100</span></div>
+    <div class="map-stat-pill">SP <span id="sp-val">45 / 60</span></div>
+    <div class="map-stat-pill">데이터 조각 <span id="data-val">12개</span></div>
+    <div class="map-stat-pill">푸앙이 호감도 <span id="favor-display" style="color:#d4537e;">★★★☆☆</span></div>
   </div>
 
-  <!-- 스탯 -->
-  <div class="stat-row">
-    <div class="stat-card">
-      <div class="stat-label">HP</div>
-      <div class="stat-val" id="hp-val">80 / 100</div>
-      <div class="bar-bg"><div class="bar-fill" id="hp-bar" style="width:80%; background:#1d9e75;"></div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">SP</div>
-      <div class="stat-val" id="sp-val">45 / 60</div>
-      <div class="bar-bg"><div class="bar-fill" id="sp-bar" style="width:75%; background:#378add;"></div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">데이터 조각</div>
-      <div class="stat-val" id="data-val">12개</div>
-    </div>
-  </div>
+  <!-- 맵 배경 + 장소 버튼 -->
+  <div class="map-bg" id="map-bg">
+    <img class="map-image" src="images/map/cau_map.png" alt="중앙대 이면 세계 맵" />
 
-  <!-- NPC 카드 -->
-  <div>
-    <div class="section-label">주변 NPC</div>
-    <div class="npc-row">
-      <div class="npc-card" id="npc-puang" onclick="talkTo('puang')">
-        <div class="npc-name">푸앙이</div>
-        <div class="npc-desc">차원 서버의 수호신</div>
-        <span class="npc-badge badge-friend">우호적</span>
+    <!-- 푸앙이네 (중앙 광장 분수대 근처) // 위치 조정 필요 (노가다) -->
+    <button class="map-spot" style="left:48%; top:62%;" onclick="enterPlace('puang')">
+      <div class="map-spot-wrap">
+        <div class="map-spot-icon" style="background: rgba(13,45,74,0.85);">
+          <img src="images/puang/puang_normal.png" style="width:36px;height:36px;object-fit:contain;"
+               onerror="this.style.display='none';this.parentNode.innerHTML='🐉'"/>
+        </div>
+        <div class="map-badge badge-heart">♥</div>
       </div>
-      <div class="npc-card" id="npc-ghost" onclick="talkTo('ghost')">
-        <div class="npc-name">학점귀신</div>
-        <div class="npc-desc">F의 망령 · Lv.7</div>
-        <span class="npc-badge badge-enemy">적대적</span>
+      <div class="map-spot-label">푸앙이네</div>
+    </button>
+
+    <!-- 310관 연구실 (우측 상단) // 위치 조정 필요 (노가다) -->
+    <button class="map-spot" style="left:72%; top:28%;" onclick="enterPlace('lab')">
+      <div class="map-spot-wrap">
+        <div class="map-spot-icon" style="background: rgba(26,13,46,0.85);">💻</div>
       </div>
-      <div class="npc-card" id="npc-prof" onclick="talkTo('prof')">
-        <div class="npc-name">과제부여자</div>
-        <div class="npc-desc">310관 9층 연구원</div>
-        <span class="npc-badge badge-neutral">중립</span>
+      <div class="map-spot-label">310관 연구실</div>
+    </button>
+
+    <!-- 이면 세계 진입 (산 쪽) // 위치 조정 필요 (노가다) -->
+    <button class="map-spot" style="left:82%; top:18%;" onclick="enterPlace('battle')">
+      <div class="map-spot-wrap">
+        <div class="map-spot-icon" style="background: rgba(74,13,13,0.85);">⚔️</div>
+        <div class="map-badge badge-danger">!</div>
       </div>
-    </div>
-  </div>
+      <div class="map-spot-label">이면 세계</div>
+    </button>
 
-  <!-- 캐릭터 등장 씬 -->
-  <div class="character-scene" id="char-scene">
-    <div class="scene-bg" id="scene-bg"></div>
-    <div class="dialog-bubble">
-      <div class="dialog-speaker-name" id="bubble-speaker">푸앙이</div>
-      <div class="dialog-typing" id="bubble-text"></div>
-      <div class="memory-pill" id="bubble-tag">RAG: 이전 세션 기록 참조됨</div>
-    </div>
-  </div>
+    <!-- 학생식당 (중앙 큰 건물) // 위치 조정 필요 (노가다) -->
+    <button class="map-spot" style="left:40%; top:75%;" onclick="enterPlace('cafeteria')">
+      <div class="map-spot-wrap">
+        <div class="map-spot-icon" style="background: rgba(13,32,13,0.85);">🍚</div>
+      </div>
+      <div class="map-spot-label">학생식당</div>
+    </button>
 
-  <!-- 행동 버튼 -->
-  <div>
-    <div class="section-label">행동 선택</div>
-    <div class="action-grid">
-      <button class="action-btn" onclick="doAction('talk')">대화 계속하기</button>
-      <button class="action-btn" onclick="doAction('item')">아이템 교환</button>
-      <button class="action-btn" onclick="doAction('move')">이동하기</button>
-      <button class="action-btn danger" onclick="doAction('enter')">이면 세계 진입</button>
-    </div>
-  </div>
+    <!-- 아이템 가게 // 위치 조정 필요 (노가다) -->
+    <button class="map-spot" style="left:62%; top:70%;" onclick="enterPlace('store')">
+      <div class="map-spot-wrap">
+        <div class="map-spot-icon" style="background: rgba(58,42,13,0.85);">🛒</div>
+      </div>
+      <div class="map-spot-label">아이템 가게</div>
+    </button>
 
-  <!-- 입력창 -->
-  <div>
-    <div class="section-label">직접 입력</div>
-    <div class="input-row">
-      <input type="text" id="player-input" placeholder="행동을 입력하세요..."
-             onkeydown="if(event.key==='Enter') submitInput()" />
-      <button onclick="submitInput()">전송</button>
-    </div>
-  </div>
+    <!-- 도서관 (좌측) // 위치 조정 필요 (노가다) -->
+    <button class="map-spot" style="left:22%; top:65%;" onclick="enterPlace('library')">
+      <div class="map-spot-wrap">
+        <div class="map-spot-icon" style="background: rgba(13,26,37,0.85);">📚</div>
+      </div>
+      <div class="map-spot-label">도서관</div>
+    </button>
 
-  <!-- 시스템 로그 -->
-  <div>
-    <div class="section-label">시스템 로그</div>
-    <div class="log-box" id="log-box">
-      [SYSTEM] RAG 엔진 초기화 완료<br>
-      [SYSTEM] ChromaDB 연결됨 — 세계관 설정집 로드 완료<br>
-      [SYSTEM] 에이전트 대기 중...
-    </div>
+    <!-- 추후에 업데이트 됩니다. (잠김) // 위치 조정 필요 (노가다) -->
+    <button class="map-spot locked" style="left:58%; top:42%;" onclick="enterPlace('server')">
+      <div class="map-spot-wrap">
+        <div class="map-spot-icon" style="background: rgba(13,13,37,0.85);">🔒</div>
+        <div class="map-badge badge-mystery">?</div>
+      </div>
+      <div class="map-spot-label">벨벳 서버실</div>
+    </button>
+
+    <!-- 툴팁 -->
+    <div class="map-tooltip" id="map-tooltip"></div>
   </div>
 
 </div>
@@ -548,6 +661,71 @@
 </div>
 
 <script>
+  // ── 맵 장소 데이터 ──
+  const placeInfo = {
+    puang:     { label: '푸앙이네',     desc: '푸앙이와 대화하고 호감도를 올려보세요!',        locked: false },
+    lab:       { label: '310관 연구실', desc: '베이스캠프 — 세이브 & 스탯 확인',              locked: false },
+    battle:    { label: '이면 세계',    desc: '학점귀신이 기다리고 있다! 전투 진입',            locked: false },
+    cafeteria: { label: '학생식당',     desc: 'HP/SP 회복 — 얼어붙은 아메리카노 판매 중',      locked: false },
+    store:     { label: '아이템 가게',  desc: '아이템 구매 — 데이터 조각으로 교환',             locked: false },
+    library:   { label: '도서관',       desc: '공부하면 데이터 조각 획득!',                    locked: false },
+    server:    { label: '벨벳 서버실',  desc: '🔒 푸앙이 호감도 MAX 달성 시 개방',             locked: true  },
+  };
+
+  // ── 장소 진입 함수 ──
+  function enterPlace(place) {
+    const info = placeInfo[place];
+    if (info.locked) {
+      alert('🔒 ' + info.desc);
+      return;
+    }
+    if (place === 'battle') {
+      // 이면 세계 진입 → 기존 전투 로직 호출
+      showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 문이 열린다.');
+      setTimeout(() => {
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('battle-container').classList.add('visible');
+        initBattle();
+      }, 2000);
+      return;
+    }
+    // 나머지 장소는 추후 구현 (일단 알림)
+    showSystemMsgOnMap('[' + info.label + '] ' + info.desc + ' (추후 구현 예정)');
+  }
+
+  // ── 맵에서 시스템 메시지 표시 (툴팁 재활용) ──
+  function showSystemMsgOnMap(msg) {
+    const tip = document.getElementById('map-tooltip');
+    tip.textContent = msg;
+    tip.style.left = '50%';
+    tip.style.top = '50%';
+    tip.style.opacity = '1';
+    setTimeout(() => { tip.style.opacity = '0'; }, 2500);
+  }
+
+  // ── 툴팁 호버 ──
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.map-spot').forEach(btn => {
+      const place = btn.getAttribute('onclick').match(/'(\w+)'/)[1];
+      const tip = document.getElementById('map-tooltip');
+      btn.addEventListener('mouseenter', () => {
+        tip.textContent = placeInfo[place].desc;
+        const bRect = btn.getBoundingClientRect();
+        const mRect = document.getElementById('map-bg').getBoundingClientRect();
+        tip.style.left = (bRect.left - mRect.left + bRect.width / 2) + 'px';
+        tip.style.top  = (bRect.bottom - mRect.top + 8) + 'px';
+        tip.style.opacity = '1';
+      });
+      btn.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+    });
+  });
+
+  // returnToGame 오버라이드: 전투 끝나면 맵으로 복귀
+  function returnToGame() {
+    document.getElementById('battle-container').classList.remove('visible');
+    document.getElementById('game-container').style.display = 'flex';
+  }
+
   // ================================================================
   // NPC 데이터 (실제 구현 시 ChromaDB RAG에서 불러옴)
   // ================================================================
