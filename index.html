@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CAU TRPG — 중앙대 이면 세계</title>
+  <title>CAU RPG — 중앙대 이면 세계 탐험</title>
 
   <!--
   ================================================================
@@ -125,7 +125,7 @@
     .condition-text { font-size: 11px; color: #a0a0a0; text-align: center; line-height: 1.4; }
 
     /* 호감도 별 */
-    .favor-stars { font-size: 18px; letter-spacing: 2px; text-align: center; }
+    .favor-hearts { font-size: 18px; letter-spacing: 2px; text-align: center; }
 
     /* 오늘의 아이템 현황 */
     .item-status {
@@ -425,31 +425,7 @@
     .bar-bg   { height: 4px; background: #0f3460; border-radius: 2px; margin-top: 4px; }
     .bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
 
-    /* ── NPC 카드 ── */
-    .section-label { font-size: 11px; color: #6c8ebf; margin-bottom: 4px; }
-    .npc-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .npc-card {
-      flex: 1;
-      min-width: 130px;
-      background: #16213e;
-      border: 1px solid #0f3460;
-      border-radius: 12px;
-      padding: 10px 14px;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .npc-card:hover, .npc-card.active {
-      border-color: #a0c4ff;
-      background: #1e2d50;
-    }
-    .npc-name  { font-size: 13px; font-weight: 500; color: #e0e0e0; margin-bottom: 2px; }
-    .npc-desc  { font-size: 11px; color: #6c8ebf; margin-bottom: 4px; }
-    .npc-badge    { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; }
-    .badge-friend { background: #0d3b2e; color: #5dcaa5; }
-    .badge-enemy  { background: #3b0d0d; color: #f09595; }
-    .badge-neutral{ background: #2e2e0d; color: #ef9f27; }
-
-    /* ── 캐릭터 등장 씬 ── */
+    /* ── 캐릭터 등장 씬 : 지금은 아래 -> 위 슬라이드인데 방향 변경 가능 ── */
     .character-scene {
       background: #16213e;
       border: 1px solid #0f3460;
@@ -482,7 +458,7 @@
     @keyframes slideUp {
       from { transform: translateY(40px); opacity: 0; }
       to   { transform: translateY(0px);  opacity: 1; }
-    }  /* 애니메이션: 아래서 위로 등장 */
+    }  /* 애니메이션: 아래서 위로 등장 (방향 변경 가능) */
 
     .char-svg { width: 110px; height: 140px; } /* SVG 캐릭터 (ghost, prof) */
     .char-img { width: 110px; height: 140px; object-fit: contain; } /* 이미지 캐릭터 (실제 PNG) */
@@ -711,7 +687,7 @@
 </head>
 <body>
 
-<h1>CAU RPG — 중앙대 이면 세계</h1>
+<h1> CAU RPG — 중앙대 이면 세계 </h1>  <!-- 대제목 -->
 
 <!-- ================================================================
      일반 화면
@@ -747,7 +723,7 @@
       <div class="map-spot-wrap">
         <div class="map-spot-icon" style="background: rgba(26,13,46,0.85);">💻</div>
       </div>
-      <div class="map-spot-label">310관 연구실</div>
+      <div class="map-spot-label"> 310관 연구실 </div>
     </button>
 
     <!-- 이면 세계 진입 (산 쪽) // 위치 조정 필요 (노가다) -->
@@ -806,10 +782,10 @@
   <!-- 전투 헤더 -->
   <div class="battle-header">
     <div>
-      <div class="battle-label">전투 발생</div>
-      <div class="battle-title">이면 세계 — 310관 이면</div>
+      <div class="battle-label"> 전투 발생 </div>
+      <div class="battle-title"> 205관 이면 세계 </div>
     </div>
-    <div class="battle-turn" id="turn-display">턴 1</div>
+    <div class="battle-turn" id="turn-display"> 턴 1 </div>
   </div>
 
   <!-- 전투 필드: 적 vs 플레이어 -->
@@ -841,6 +817,7 @@
       <img id="player-svg2" src="images/player/player_male_battle.png" 
           style="width:auto; height:160px; object-fit:contain;"> <!-- 크기 조절 -->
       <div class="fighter-name">플레이어</div>
+      <!-- 지금은 고정 값인데 나중에는 값 저장해서 반영하도록 구현하기 (플레이어는 HP 유지, 몬스터는 초기화) -->
       <div class="hp-bar-wrap">
         <div class="hp-bar-label"><span>HP</span><span id="battle-player-hp-text">80 / 100</span></div>
         <div class="hp-bar-bg2"><div class="hp-bar-fill2" id="battle-player-hp-bar" style="width:80%; background:#1d9e75;"></div></div>
@@ -848,7 +825,7 @@
     </div>
   </div>
 
-  <!-- 전투 로그 -->
+  <!-- 전투 로그 (초기 데모)-->
   <div class="battle-log" id="battle-log">
     <span class="log-system2">[SYSTEM] 전투 시작! 학점귀신이 나타났다.</span><br>
     <span class="log-system2">[RAG] 학점귀신 약점 DB 로드 완료 → 집중력 속성에 취약</span><br>
@@ -856,6 +833,7 @@
   </div>
 
   <!-- 주사위 + 커맨드 -->
+  <!-- 기술 변경 시 같이 변경할 것 -->
   <div class="dice-area">
     <div class="cmd-label">커맨드 선택</div>
     <div class="cmd-grid">
@@ -930,7 +908,7 @@
     setTimeout(() => { tip.style.opacity = '0'; }, 2500);
   }
 
-  // ── 툴팁 호버 ──
+  // ── 툴팁 호버 : 장소 버튼에 마우스를 올리면 설명 텍스트 출력 (모바일에서는 출력 안 됨) ──
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.map-spot').forEach(btn => {
       const place = btn.getAttribute('onclick').match(/'(\w+)'/)[1];
@@ -1033,6 +1011,7 @@
 
 
   // talkTo(npcKey): NPC 클릭 → 캐릭터 등장 + 대사 출력
+  // 바뀐 UI에서는 안 쓰는 코드이지만 일단 남겨둠.
   function talkTo(npcKey) {
     document.querySelectorAll('.npc-card').forEach(c => c.classList.remove('active'));
     document.getElementById('npc-' + npcKey).classList.add('active');
@@ -1064,7 +1043,7 @@
       wrapper.appendChild(img);
     } 
     
-    else { // SVG 도형 (학점귀신, 과제부여자)
+    else { // SVG 도형 (학점귀신, 과제부여자) -> 나중에 실제 이미지로 만드는게 나을 듯
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 110 140');
       svg.className = 'char-svg';
@@ -1184,6 +1163,7 @@
   // addLog: 시스템 로그에 메시지 추가
   function addLog(msg) {
     const box = document.getElementById('log-box');
+    if (!box) return; // log-box 없으면 그냥 무시
     box.innerHTML += '<br>' + msg;
     box.scrollTop = box.scrollHeight;
   }
@@ -1289,22 +1269,28 @@
       const roll = await animateDice(20);
       addBattleLog('[룰 판정] 벡터 캐논! 주사위: ' + roll + '/20', 'log-dice');
       await sleepMs(300);
-      if (roll >= 8) {
-        let dmg = Math.floor(roll / 1.5);  // 주인공 딜량 상향시 사용
-        if (buffActive) {
+      
+      if (roll >= 8) {  // 일단은 주사위가 8 이상 나올 때 딜량 들어가게 해놨는데 추후 밸런스 패치 가능
+        let dmg = Math.floor(roll / 1.5);  // 주인공 딜량 상향시 값 수정
+        
+        if (buffActive) { // 버프 발동 : 데미지 2배 (수정 가능) -> 버프 사용 후 빗나가도 다음 공격에 2배 적용됨
           dmg *= 2; buffActive = false;
           addBattleLog('[버프] 하이퍼 프롬프트 발동! 데미지 2배', 'log-success');
         }
+
         document.getElementById('enemy-svg').classList.add('shake-enemy');
         setTimeout(() => document.getElementById('enemy-svg').classList.remove('shake-enemy'), 300);
         enemyHp -= dmg;
         updateBattleBars();
         addBattleLog('[결과] 학점귀신에게 ' + dmg + ' 데미지!', 'log-success');
         document.getElementById('dice-result').textContent = '명중! ' + dmg + ' 데미지';
-      } else {
+      } 
+      
+      else {  // 주사위 수 낮게 나와서 빗나갔을 때
         addBattleLog('[결과] 빗나갔다! (판정 실패: ' + roll + ' < 8)', 'log-damage');
         document.getElementById('dice-result').textContent = '빗나감 (roll: ' + roll + ')';
       }
+
       if (enemyHp <= 0) {  // 전투 승리
         addBattleLog('[SYSTEM] 학점귀신을 물리쳤다! 데이터 조각 x5 획득', 'log-success');
         document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀합니다.';
@@ -1316,7 +1302,7 @@
       }
     } 
     
-    else if (cmd === 'rag') {
+    else if (cmd === 'rag') {  // 힐량 기술 (수정 가능)
       document.getElementById('dice-result').textContent = 'd10 굴리는 중...';
       const roll = await animateDice(10);
       addBattleLog('[RAG] 과거 데이터 검색 중... 완료', 'log-system2');
@@ -1327,17 +1313,18 @@
       document.getElementById('dice-result').textContent = 'HP +' + heal + ' 회복';
     } 
     
-    else if (cmd === 'hyper') {
+    else if (cmd === 'hyper') {  // 버프 기술 (수정 가능)
       buffActive = true;
       addBattleLog('[버프] 하이퍼 프롬프트! 다음 공격 데미지 2배', 'log-success');
       document.getElementById('dice-result').textContent = '다음 공격 데미지 2배!';
       document.getElementById('dice-display').textContent = '⚡';
     } 
     
-    else if (cmd === 'run') {
+    else if (cmd === 'run') {  // 도망가기 (수정 가능)
       document.getElementById('dice-result').textContent = 'd2 굴리는 중...';
       const roll = await animateDice(2);
-      if (roll === 2) {
+
+      if (roll === 2) {  // 탈출 성공 - 50%
         addBattleLog('[결과] 이면 세계에서 탈출했다!', 'log-success');
         document.getElementById('dice-result').textContent = '탈출 성공!';
         // 탈출 성공 시 일반 화면으로 복귀
@@ -1347,7 +1334,7 @@
         return;
       } 
       
-      else {
+      else {  // 탈출 실패 - 50%
         addBattleLog('[결과] 탈출 실패! 학점귀신이 가로막았다.', 'log-damage');
         document.getElementById('dice-result').textContent = '탈출 실패...';
       }
@@ -1365,10 +1352,10 @@
     itemGivenToday: { coffee: 0, snack: 0 }
   };
 
-  // 호감도 → 별 표시
-  function getFavorStars(fav) {
-    const stars = Math.round(fav / 20); // 0~5개
-    return '♥'.repeat(stars) + '♡'.repeat(5 - stars);
+  // 호감도 → 하트 표시
+  function getFavorHearts(fav) {
+    const hearts = Math.round(fav / 20); // 0~5개
+    return '♥'.repeat(hearts) + '♡'.repeat(5 - hearts);
   }
 
   // 컨디션 → 이모지 + 텍스트 + 색상
@@ -1387,27 +1374,29 @@
     document.getElementById('condition-text').textContent = cond.text;
     document.getElementById('condition-fill').style.width = puangState.moodToday + '%';
     document.getElementById('condition-fill').style.background = cond.color;
-    document.getElementById('room-favor-stars').textContent = getFavorStars(puangState.favorability);
+    document.getElementById('room-favor-hearts').textContent = getFavorHearts(puangState.favorability);
     document.getElementById('coffee-count').textContent = puangState.itemGivenToday.coffee;
     document.getElementById('snack-count').textContent = puangState.itemGivenToday.snack;
     // 맵 상단 호감도도 업데이트
-    document.getElementById('favor-display').textContent = getFavorStars(puangState.favorability);
+    document.getElementById('favor-display').textContent = getFavorHearts(puangState.favorability);
   }
 
   // 채팅 로그에 메시지 추가
   function addChatMsg(who, text, favorChange) {
     const log = document.getElementById('chat-log');
 
-    if (who === 'puang') {
+    if (who === 'puang') {  // 푸앙이의 응답
       log.innerHTML += `
         <div class="chat-puang">
           <div class="chat-puang-avatar">🐉</div>
           <div class="chat-puang-bubble">
-            <div class="chat-puang-name">푸앙이</div>
+            <div class="chat-puang-name">푸앙</div>
             ${text}
           </div>
         </div>`;
-    } else {
+    } 
+    
+    else {  // 플레이어의 메세지
       log.innerHTML += `
         <div class="chat-player">
           <div class="chat-player-bubble">${text}</div>
@@ -1421,7 +1410,7 @@
         <div class="chat-favor-change">
           <span class="${cls}">호감도 ${sign}${favorChange}</span>
         </div>`;
-    }
+    }  // 대사 밑에 호감도 +/- 수치 출력
 
     log.scrollTop = log.scrollHeight;
   }
@@ -1437,28 +1426,33 @@
   function giveItem(itemId) {
     const mood = puangState.moodToday;
 
+    // Item : Coffee
     if (itemId === 'coffee') {
       const count = puangState.itemGivenToday.coffee;
       puangState.itemGivenToday.coffee++;
 
-      // 기분에 따라 허용 횟수 달라짐
+      // 기분에 따라 허용 횟수 달라지도록 logic 구현 (일단 데모니까 고정값으로.. agent 만들시 수정)
       const maxCoffee = mood >= 70 ? 4 : mood >= 40 ? 2 : 0;
 
       if (count < maxCoffee) {
         addChatMsg('player', '☕ 커피를 건넸다');
         addChatMsg('puang', '와! 커피다 푸앙~ 고마워 푸앙! 💙', +8);
         changeFavor(+8);
-      } else if (count === maxCoffee) {
+      } 
+      else if (count === maxCoffee) {
         addChatMsg('player', '☕ 커피를 건넸다');
         addChatMsg('puang', '어... 또 커피야 푸앙? 오늘은 좀 많이 마신 것 같은데... 푸앙.', +1);
         changeFavor(+1);
-      } else {
+      } 
+      else {
         addChatMsg('player', '☕ 커피를 건넸다');
         addChatMsg('puang', '야!! 나 카페인 과다라고!! 그만 좀 줘 푸앙!! 💢', -15);
         changeFavor(-15);
       }
-
-    } else if (itemId === 'snack') {
+    } 
+    
+    // Item : Snack
+    else if (itemId === 'snack') {
       const count = puangState.itemGivenToday.snack;
       puangState.itemGivenToday.snack++;
 
@@ -1466,14 +1460,17 @@
         addChatMsg('player', '🍪 간식을 건넸다');
         addChatMsg('puang', '오~ 간식이다 푸앙!! 완전 맛있겠다 푸앙 😋', +10);
         changeFavor(+10);
-      } else {
+      } 
+      else {
         addChatMsg('player', '🍪 간식을 건넸다');
         addChatMsg('puang', '배불러... 푸앙. 다이어트 중이라고 했잖아 푸앙...', -5);
         changeFavor(-5);
       }
-
-    } else if (itemId === 'praise') {
-      const responses = [
+    } 
+    
+    // Item : Praise
+    else if (itemId === 'praise') {
+      const responses = [  // 나중에 푸앙이 agent 구현시 수정. 일단 데모니까 고정 대사로.
         '에헴~ 당연하지 푸앙! 나는 원래 잘생겼거든 푸앙~ 😤',
         '히히 푸앙~ 고마워! 기분 좋다 푸앙 💙',
         '그렇지 그렇지 푸앙~ 역시 눈 높은 유저야 푸앙!',
@@ -1497,8 +1494,7 @@
     addChatMsg('player', text);
     input.value = '';
 
-    // 더미 응답 (백엔드 없을 때)
-    const dummies = [
+    const dummies = [   // 아직은 backend 구현 안 했으니까 고정 더미 응답으로.
       { dialog: '푸앙~ 그런 말은 처음 들어봤어 푸앙!', change: +3 },
       { dialog: '음... 그게 무슨 말이야 푸앙?', change: 0 },
       { dialog: '히히 푸앙~ 재밌다 푸앙!', change: +5 },
@@ -1530,7 +1526,7 @@
 
 </script>
 
-<!-- 블루미르 홀 : 푸앙이의 방 (블루미르홀 클릭 시 표시) -->
+<!-- 블루미르 홀 (블루미르홀 버튼 클릭 시 표시) -->
 <div id="puang-room">
 
   <!-- 헤더 -->
@@ -1546,9 +1542,9 @@
     <div class="room-left">
       <img class="puang-char-img" id="puang-room-img"
            src="images/puang/puang_normal.png" alt="푸앙이"
-           onerror="this.style.display='none'"/>
+           onerror="this.style.display='none'"/>  <!-- 나중에 컨디션에 따라 출력되는 이미지 변경되게 구현할 것 -->
 
-      <div class="condition-emoji" id="condition-emoji">😊</div>
+      <div class="condition-emoji" id="condition-emoji">😊</div>  <!-- 나중에 컨디션에 따라 이모지 변경되게 구현할 것 -->
 
       <div style="width:100%">
         <div class="condition-label">오늘의 컨디션</div>
@@ -1556,17 +1552,19 @@
           <div class="condition-fill" id="condition-fill"
                style="width:75%; background:#5dcaa5;"></div>
         </div>
-        <div class="condition-text" id="condition-text">기분 좋음 푸앙~</div>
+        <div class="condition-text" id="condition-text">기분 좋음 푸앙~</div>  <!-- 이모지와 함께 문구 변경되게 구현할 것 -->
       </div>
 
+      <!-- 변경되는 수치는 반영되는데 puangState가 JS 변수라 페이지 새로고침하면 초기화 되니까 
+           Backend DB에 저장해서 변경된 값이 유지가 되도록 나중에 구현하기 -->
       <div>
         <div class="condition-label">호감도</div>
-        <div class="favor-stars" id="room-favor-stars">♥♥♥♡♡</div>
+        <div class="favor-hearts" id="room-favor-hearts">♥♥♥♡♡</div>  
       </div>
 
-      <div class="item-status" id="item-status">
+      <div class="item-status" id="item-status">  <!-- '오늘 줄 수 있는 커피 / 간식 횟수' 라는 문구 추가하기 -->
         ☕ 커피: <span id="coffee-count">0</span>/3<br>
-        🍪 간식: <span id="snack-count">0</span>/2
+        🍪 간식: <span id="snack-count">0</span>/2  <!-- 이것도 기분에 따라서 최대값 바뀌도록 -->
       </div>
     </div>
 
@@ -1584,7 +1582,7 @@
       </div>
 
       <!-- 아이템 버튼 -->
-      <div class="item-buttons">
+      <div class="item-buttons">  <!-- 아이디어에 따라 선택지 추가할 예정 -->
         <button class="item-btn" onclick="giveItem('coffee')">☕ 커피 주기</button>
         <button class="item-btn" onclick="giveItem('snack')">🍪 간식 주기</button>
         <button class="item-btn" onclick="giveItem('praise')">👏 칭찬하기</button>
