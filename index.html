@@ -830,6 +830,179 @@
       0%,100% { opacity: 1; }
       50% { opacity: 0.3; }
     }
+
+    /* ================================================================
+   학생식당 스타일 (추가)
+================================================================ */
+#cafeteria-container {
+  display: none; width: 100%; max-width: 680px;
+  flex-direction: column; gap: 12px;
+}
+#cafeteria-container.visible { display: flex; }
+.caf-header {
+  background: #16251a; border: 1px solid #2a5a30; border-radius: 12px;
+  padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+}
+.caf-title { font-size: 15px; font-weight: 500; color: #5dcaa5; }
+.caf-back-btn {
+  background: rgba(93,202,165,0.15); border: 1px solid #5dcaa5; border-radius: 8px;
+  padding: 4px 12px; font-size: 12px; color: #5dcaa5;
+  cursor: pointer; font-family: inherit; transition: background 0.2s;
+}
+.caf-back-btn:hover { background: rgba(93,202,165,0.3); }
+.caf-stat-row { display: flex; gap: 8px; }
+.caf-stat-card {
+  flex: 1; background: #16251a; border: 1px solid #2a5a30;
+  border-radius: 10px; padding: 10px 14px;
+}
+.caf-stat-label { font-size: 10px; color: #5dcaa5; margin-bottom: 4px; }
+.caf-stat-val   { font-size: 15px; font-weight: 600; color: #e0e0e0; margin-bottom: 4px; }
+.caf-bar-bg   { height: 5px; background: #0f3020; border-radius: 3px; }
+.caf-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.caf-menu-title { font-size: 11px; color: #5dcaa5; letter-spacing: 1px; }
+.caf-menu-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.caf-menu-item {
+  background: #16251a; border: 1px solid #2a5a30; border-radius: 12px;
+  padding: 12px 14px; cursor: pointer; font-family: inherit;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  text-align: left; color: #e0e0e0; display: flex; flex-direction: column; gap: 4px;
+}
+.caf-menu-item:hover { background: #1e3a24; border-color: #5dcaa5; transform: translateY(-2px); }
+.caf-menu-emoji { font-size: 26px; }
+.caf-menu-name  { font-size: 13px; font-weight: 500; }
+.caf-menu-desc  { font-size: 10px; color: #5dcaa5; }
+.caf-menu-cost  { font-size: 10px; color: #ef9f27; margin-top: 2px; }
+.caf-log {
+  background: #0a1a0d; border: 1px solid #2a5a30; border-radius: 10px;
+  padding: 10px 14px; font-size: 12px; color: #5dcaa5;
+  font-family: 'Courier New', monospace; min-height: 60px; max-height: 80px;
+  overflow-y: auto; line-height: 1.7;
+}
+.caf-log-hp  { color: #5dcaa5; }
+.caf-log-sp  { color: #a0c4ff; }
+.caf-log-err { color: #f09595; }
+
+/* ================================================================
+   중앙도서관 스타일 (추가)
+================================================================ */
+#library-container {
+  display: none; width: 100%; max-width: 680px;
+  flex-direction: column; gap: 12px;
+}
+#library-container.visible { display: flex; }
+.lib-header {
+  background: #10142a; border: 1px solid #1e2d6e; border-radius: 12px;
+  padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+}
+.lib-title { font-size: 15px; font-weight: 500; color: #a0c4ff; }
+.lib-back-btn {
+  background: rgba(160,196,255,0.1); border: 1px solid #a0c4ff; border-radius: 8px;
+  padding: 4px 12px; font-size: 12px; color: #a0c4ff;
+  cursor: pointer; font-family: inherit; transition: background 0.2s;
+}
+.lib-back-btn:hover { background: rgba(160,196,255,0.2); }
+.lib-info-row { display: flex; gap: 8px; }
+.lib-info-card {
+  flex: 1; background: #10142a; border: 1px solid #1e2d6e;
+  border-radius: 10px; padding: 10px 14px; text-align: center;
+}
+.lib-info-label { font-size: 10px; color: #6c8ebf; margin-bottom: 4px; }
+.lib-info-val   { font-size: 18px; font-weight: 600; color: #e0e0e0; }
+.lib-info-sub   { font-size: 10px; color: #4a5a7a; margin-top: 2px; }
+.lib-study-panel {
+  background: #10142a; border: 1px solid #1e2d6e; border-radius: 12px;
+  padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.lib-subject-title { font-size: 11px; color: #6c8ebf; letter-spacing: 1px; }
+.lib-subject-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lib-subject-btn {
+  background: #16213e; border: 1px solid #1e2d6e; border-radius: 10px;
+  padding: 12px; cursor: pointer; font-family: inherit; text-align: left;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  color: #e0e0e0; display: flex; flex-direction: column; gap: 4px;
+}
+.lib-subject-btn:hover { background: #1e2d50; border-color: #a0c4ff; transform: translateY(-2px); }
+.lib-subject-btn.studying { border-color: #a0c4ff; background: #1e2d50; animation: libPulse 1s ease infinite; }
+.lib-subject-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+@keyframes libPulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+.lib-subject-icon   { font-size: 22px; }
+.lib-subject-name   { font-size: 13px; font-weight: 500; }
+.lib-subject-reward { font-size: 10px; color: #ef9f27; }
+.lib-subject-time   { font-size: 10px; color: #6c8ebf; }
+.lib-progress-wrap  { display: flex; flex-direction: column; gap: 4px; }
+.lib-progress-label { font-size: 11px; color: #6c8ebf; display: flex; justify-content: space-between; }
+.lib-progress-bg    { height: 8px; background: #0f1a30; border-radius: 4px; overflow: hidden; }
+.lib-progress-fill  { height: 100%; width: 0%; border-radius: 4px; background: #a0c4ff; }
+.lib-log {
+  background: #080b18; border: 1px solid #1e2d6e; border-radius: 10px;
+  padding: 10px 14px; font-size: 12px; color: #6c8ebf;
+  font-family: 'Courier New', monospace; min-height: 60px; max-height: 80px;
+  overflow-y: auto; line-height: 1.7;
+}
+.lib-log-reward { color: #ef9f27; }
+.lib-log-info   { color: #a0c4ff; }
+
+/* ================================================================
+   310관 연구실 스타일 (추가)
+================================================================ */
+#lab-container {
+  display: none; width: 100%; max-width: 680px;
+  flex-direction: column; gap: 12px;
+}
+#lab-container.visible { display: flex; }
+.lab-header {
+  background: #1a1030; border: 1px solid #3a1e6e; border-radius: 12px;
+  padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+}
+.lab-title { font-size: 15px; font-weight: 500; color: #c4a0ff; }
+.lab-back-btn {
+  background: rgba(196,160,255,0.1); border: 1px solid #c4a0ff; border-radius: 8px;
+  padding: 4px 12px; font-size: 12px; color: #c4a0ff;
+  cursor: pointer; font-family: inherit; transition: background 0.2s;
+}
+.lab-back-btn:hover { background: rgba(196,160,255,0.2); }
+.lab-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lab-stat-card {
+  background: #1a1030; border: 1px solid #2e1a5e; border-radius: 12px;
+  padding: 14px; display: flex; flex-direction: column; gap: 6px;
+}
+.lab-stat-icon  { font-size: 22px; }
+.lab-stat-label { font-size: 10px; color: #8060b0; }
+.lab-stat-val   { font-size: 20px; font-weight: 600; color: #e0e0e0; }
+.lab-stat-sub   { font-size: 10px; color: #8060b0; }
+.lab-bar-bg   { height: 4px; background: #1a0a3a; border-radius: 2px; margin-top: 2px; }
+.lab-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.lab-action-title { font-size: 11px; color: #8060b0; letter-spacing: 1px; }
+.lab-action-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lab-action-btn {
+  background: #1a1030; border: 1px solid #2e1a5e; border-radius: 10px;
+  padding: 14px 12px; cursor: pointer; font-family: inherit; text-align: left;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  color: #e0e0e0; display: flex; flex-direction: column; gap: 4px;
+}
+.lab-action-btn:hover { background: #251545; border-color: #c4a0ff; transform: translateY(-2px); }
+.lab-btn-icon { font-size: 20px; }
+.lab-btn-name { font-size: 13px; font-weight: 500; }
+.lab-btn-desc { font-size: 10px; color: #8060b0; }
+.lab-log {
+  background: #080510; border: 1px solid #2e1a5e; border-radius: 10px;
+  padding: 10px 14px; font-size: 12px; color: #8060b0;
+  font-family: 'Courier New', monospace; min-height: 60px; max-height: 80px;
+  overflow-y: auto; line-height: 1.7;
+}
+.lab-log-save    { color: #c4a0ff; }
+.lab-log-info    { color: #a0c4ff; }
+.lab-log-warning { color: #ef9f27; }
+@keyframes savePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(196,160,255,0.5); }
+  70%  { box-shadow: 0 0 0 16px rgba(196,160,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(196,160,255,0); }
+}
+.save-flash { animation: savePulse 0.6s ease; }
+
+
+
+
   </style>
 
 </head>
@@ -1077,6 +1250,209 @@
 
 </div>
 
+<!-- ================================================================
+     학생식당 화면 (추가)
+================================================================ -->
+<div id="cafeteria-container">
+  <div class="caf-header">
+    <div>
+      <div style="font-size:11px;color:#5dcaa5;letter-spacing:1px;">LOCATION</div>
+      <div class="caf-title">🍚 중앙대 학생식당</div>
+    </div>
+    <button class="caf-back-btn" onclick="leaveCafeteria()">← 맵으로</button>
+  </div>
+  <div class="caf-stat-row">
+    <div class="caf-stat-card">
+      <div class="caf-stat-label">HP</div>
+      <div class="caf-stat-val" id="caf-hp-val">80 / 100</div>
+      <div class="caf-bar-bg"><div class="caf-bar-fill" id="caf-hp-bar" style="width:80%;background:#1d9e75;"></div></div>
+    </div>
+    <div class="caf-stat-card">
+      <div class="caf-stat-label">SP</div>
+      <div class="caf-stat-val" id="caf-sp-val">45 / 60</div>
+      <div class="caf-bar-bg"><div class="caf-bar-fill" id="caf-sp-bar" style="width:75%;background:#a0c4ff;"></div></div>
+    </div>
+    <div class="caf-stat-card" style="text-align:center;">
+      <div class="caf-stat-label">데이터 조각</div>
+      <div class="caf-stat-val" id="caf-data-val" style="color:#ef9f27;">12</div>
+      <div style="font-size:10px;color:#4a5a7a;margin-top:2px;">보유 중</div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="caf-menu-title">📋 오늘의 메뉴</div>
+    <div class="caf-menu-grid">
+      <button class="caf-menu-item" onclick="orderFood('rice')">
+        <div class="caf-menu-emoji">🍚</div>
+        <div class="caf-menu-name">학식 정식</div>
+        <div class="caf-menu-desc">HP +20 · SP +10</div>
+        <div class="caf-menu-cost">💎 데이터 조각 3개</div>
+      </button>
+      <button class="caf-menu-item" onclick="orderFood('ramen')">
+        <div class="caf-menu-emoji">🍜</div>
+        <div class="caf-menu-name">얼큰 라면</div>
+        <div class="caf-menu-desc">HP +10 · SP +20</div>
+        <div class="caf-menu-cost">💎 데이터 조각 2개</div>
+      </button>
+      <button class="caf-menu-item" onclick="orderFood('coffee')">
+        <div class="caf-menu-emoji">☕</div>
+        <div class="caf-menu-name">아이스 아메리카노</div>
+        <div class="caf-menu-desc">SP +30</div>
+        <div class="caf-menu-cost">💎 데이터 조각 1개</div>
+      </button>
+      <button class="caf-menu-item" onclick="orderFood('special')">
+        <div class="caf-menu-emoji">🍱</div>
+        <div class="caf-menu-name">특선 도시락</div>
+        <div class="caf-menu-desc">HP +40 · SP +20</div>
+        <div class="caf-menu-cost">💎 데이터 조각 6개</div>
+      </button>
+    </div>
+  </div>
+  <div class="caf-log" id="caf-log">
+    <span style="color:#2a5a30;">[식당] 어서오세요! 오늘도 맛있게 드세요.</span>
+  </div>
+</div>
+
+<!-- ================================================================
+     중앙도서관 화면 (추가)
+================================================================ -->
+<div id="library-container">
+  <div class="lib-header">
+    <div>
+      <div style="font-size:11px;color:#6c8ebf;letter-spacing:1px;">LOCATION</div>
+      <div class="lib-title">📚 중앙대학교 도서관</div>
+    </div>
+    <button class="lib-back-btn" onclick="leaveLibrary()">← 맵으로</button>
+  </div>
+  <div class="lib-info-row">
+    <div class="lib-info-card">
+      <div class="lib-info-label">데이터 조각</div>
+      <div class="lib-info-val" id="lib-data-val" style="color:#ef9f27;">12</div>
+      <div class="lib-info-sub">보유 중</div>
+    </div>
+    <div class="lib-info-card">
+      <div class="lib-info-label">오늘 공부 횟수</div>
+      <div class="lib-info-val" id="lib-study-count">0</div>
+      <div class="lib-info-sub">/ 5 최대</div>
+    </div>
+    <div class="lib-info-card">
+      <div class="lib-info-label">집중력</div>
+      <div class="lib-info-val" id="lib-focus-val" style="color:#a0c4ff;">100%</div>
+      <div class="lib-info-sub">공부할수록 감소</div>
+    </div>
+  </div>
+  <div class="lib-study-panel">
+    <div class="lib-subject-title">📖 공부할 과목 선택</div>
+    <div class="lib-subject-grid">
+      <button class="lib-subject-btn" id="study-btn-cs" onclick="startStudy('cs')">
+        <div class="lib-subject-icon">💻</div>
+        <div class="lib-subject-name">컴퓨터공학</div>
+        <div class="lib-subject-reward">💎 데이터 조각 +3~6</div>
+        <div class="lib-subject-time">⏱ 5초 집중</div>
+      </button>
+      <button class="lib-subject-btn" id="study-btn-math" onclick="startStudy('math')">
+        <div class="lib-subject-icon">📐</div>
+        <div class="lib-subject-name">수학 / 통계</div>
+        <div class="lib-subject-reward">💎 데이터 조각 +2~4</div>
+        <div class="lib-subject-time">⏱ 4초 집중</div>
+      </button>
+      <button class="lib-subject-btn" id="study-btn-eng" onclick="startStudy('eng')">
+        <div class="lib-subject-icon">🌐</div>
+        <div class="lib-subject-name">영어 / 교양</div>
+        <div class="lib-subject-reward">💎 데이터 조각 +1~3</div>
+        <div class="lib-subject-time">⏱ 3초 집중</div>
+      </button>
+      <button class="lib-subject-btn" id="study-btn-rest" onclick="startStudy('rest')">
+        <div class="lib-subject-icon">😴</div>
+        <div class="lib-subject-name">잠깐 쉬기</div>
+        <div class="lib-subject-reward">집중력 +40% 회복</div>
+        <div class="lib-subject-time">⏱ 3초 휴식</div>
+      </button>
+    </div>
+    <div class="lib-progress-wrap">
+      <div class="lib-progress-label">
+        <span id="lib-progress-label">과목을 선택하세요</span>
+        <span id="lib-progress-pct"></span>
+      </div>
+      <div class="lib-progress-bg">
+        <div class="lib-progress-fill" id="lib-progress-fill"></div>
+      </div>
+    </div>
+  </div>
+  <div class="lib-log" id="lib-log">
+    <span class="lib-log-info">[도서관] 조용히 해주세요. 공부할 과목을 선택하세요.</span>
+  </div>
+</div>
+
+<!-- ================================================================
+     310관 연구실 화면 (추가)
+================================================================ -->
+<div id="lab-container">
+  <div class="lab-header">
+    <div>
+      <div style="font-size:11px;color:#8060b0;letter-spacing:1px;">LOCATION</div>
+      <div class="lab-title">💻 310관 연구실</div>
+    </div>
+    <button class="lab-back-btn" onclick="leaveLab()">← 맵으로</button>
+  </div>
+  <div class="lab-stat-grid">
+    <div class="lab-stat-card">
+      <div class="lab-stat-icon">❤️</div>
+      <div class="lab-stat-label">HP</div>
+      <div class="lab-stat-val" id="lab-hp-val">80</div>
+      <div class="lab-stat-sub" id="lab-hp-max">/ 100</div>
+      <div class="lab-bar-bg"><div class="lab-bar-fill" id="lab-hp-bar" style="width:80%;background:#1d9e75;"></div></div>
+    </div>
+    <div class="lab-stat-card">
+      <div class="lab-stat-icon">💧</div>
+      <div class="lab-stat-label">SP</div>
+      <div class="lab-stat-val" id="lab-sp-val">45</div>
+      <div class="lab-stat-sub" id="lab-sp-max">/ 60</div>
+      <div class="lab-bar-bg"><div class="lab-bar-fill" id="lab-sp-bar" style="width:75%;background:#a0c4ff;"></div></div>
+    </div>
+    <div class="lab-stat-card">
+      <div class="lab-stat-icon">💎</div>
+      <div class="lab-stat-label">데이터 조각</div>
+      <div class="lab-stat-val" id="lab-data-val" style="color:#ef9f27;">12</div>
+      <div class="lab-stat-sub">개 보유</div>
+    </div>
+    <div class="lab-stat-card">
+      <div class="lab-stat-icon">🐉</div>
+      <div class="lab-stat-label">푸앙이 호감도</div>
+      <div class="lab-stat-val" id="lab-favor-val" style="color:#d4537e;font-size:16px;">♥♥♥♡♡</div>
+      <div class="lab-stat-sub" id="lab-favor-num">60 / 100</div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="lab-action-title">⚙ 연구실 기능</div>
+    <div class="lab-action-grid">
+      <button class="lab-action-btn" onclick="doLabAction('save')">
+        <div class="lab-btn-icon">💾</div>
+        <div class="lab-btn-name">게임 저장</div>
+        <div class="lab-btn-desc">현재 상태를 저장합니다</div>
+      </button>
+      <button class="lab-action-btn" onclick="doLabAction('load')">
+        <div class="lab-btn-icon">📂</div>
+        <div class="lab-btn-name">불러오기</div>
+        <div class="lab-btn-desc">마지막 저장 시점으로</div>
+      </button>
+      <button class="lab-action-btn" onclick="doLabAction('upgrade-hp')">
+        <div class="lab-btn-icon">❤️‍🔥</div>
+        <div class="lab-btn-name">HP 상한 강화</div>
+        <div class="lab-btn-desc">최대 HP +20 · 💎 10개</div>
+      </button>
+      <button class="lab-action-btn" onclick="doLabAction('upgrade-sp')">
+        <div class="lab-btn-icon">⚡</div>
+        <div class="lab-btn-name">SP 상한 강화</div>
+        <div class="lab-btn-desc">최대 SP +10 · 💎 8개</div>
+      </button>
+    </div>
+  </div>
+  <div class="lab-log" id="lab-log">
+    <span class="lab-log-info">[연구실] 이곳에서 강화 및 세이브가 가능합니다.</span>
+  </div>
+</div>
+
+
 <script>
   let GROQ_API_KEY = '';  // Groq API Key로 계정 정보 저장
   
@@ -1220,6 +1596,10 @@
       enterRoom();
       return;
     }
+
+    if (place === 'cafeteria') { enterCafeteria(); return; }
+    if (place === 'library')   { enterLibrary();   return; }
+    if (place === 'lab')       { enterLab();        return; }
 
     // 나머지 장소는 추후 구현 (일단 알림)
     showSystemMsgOnMap('[' + info.label + '] ' + info.desc + ' (추후 구현 예정)');
@@ -1948,6 +2328,200 @@
   function leaveRoom() {
     document.getElementById('puang-room').classList.remove('visible');
     document.getElementById('game-container').style.display = 'flex';
+  }
+
+  // ================================================================
+  // 전역 게임 스탯 — 화면 간 수치 공유 (추가)
+  // ================================================================
+  const G = {
+    hp: 80, maxHp: 100,
+    sp: 45, maxSp: 60,
+    data: 12
+  };
+  function updateMapStats() {
+    document.getElementById('hp-val').textContent   = G.hp + ' / ' + G.maxHp;
+    document.getElementById('sp-val').textContent   = G.sp + ' / ' + G.maxSp;
+    document.getElementById('data-val').textContent = G.data + '개';
+  }
+
+  // ================================================================
+  // 학생식당 로직 (추가)
+  // ================================================================
+  const cafMenu = {
+    rice:    { hp:20, sp:10, cost:3, name:'학식 정식' },
+    ramen:   { hp:10, sp:20, cost:2, name:'얼큰 라면' },
+    coffee:  { hp:0,  sp:30, cost:1, name:'아이스 아메리카노' },
+    special: { hp:40, sp:20, cost:6, name:'특선 도시락' },
+  };
+  function enterCafeteria() {
+    document.getElementById('game-container').style.display = 'none';
+    document.getElementById('cafeteria-container').classList.add('visible');
+    syncCafStats();
+  }
+  function leaveCafeteria() {
+    document.getElementById('cafeteria-container').classList.remove('visible');
+    document.getElementById('game-container').style.display = 'flex';
+  }
+  function syncCafStats() {
+    document.getElementById('caf-hp-val').textContent   = G.hp + ' / ' + G.maxHp;
+    document.getElementById('caf-sp-val').textContent   = G.sp + ' / ' + G.maxSp;
+    document.getElementById('caf-data-val').textContent = G.data;
+    document.getElementById('caf-hp-bar').style.width   = (G.hp / G.maxHp * 100) + '%';
+    document.getElementById('caf-sp-bar').style.width   = (G.sp / G.maxSp * 100) + '%';
+  }
+  function addCafLog(msg, cls) {
+    const box = document.getElementById('caf-log');
+    box.innerHTML += '<br><span class="' + (cls||'') + '">' + msg + '</span>';
+    box.scrollTop = box.scrollHeight;
+  }
+  function orderFood(id) {
+    const item = cafMenu[id];
+    if (G.data < item.cost) {
+      addCafLog('[실패] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + G.data + '개)', 'caf-log-err');
+      return;
+    }
+    G.data -= item.cost;
+    const hpGain = Math.min(item.hp, G.maxHp - G.hp);
+    const spGain = Math.min(item.sp, G.maxSp - G.sp);
+    G.hp = Math.min(G.maxHp, G.hp + item.hp);
+    G.sp = Math.min(G.maxSp, G.sp + item.sp);
+    syncCafStats(); updateMapStats();
+    let msg = '[' + item.name + '] ';
+    if (hpGain > 0) msg += 'HP +' + hpGain + ' ';
+    if (spGain > 0) msg += 'SP +' + spGain + ' ';
+    msg += '· 데이터 조각 -' + item.cost;
+    addCafLog(msg, hpGain > 0 ? 'caf-log-hp' : 'caf-log-sp');
+  }
+
+  // ================================================================
+  // 도서관 로직 (추가)
+  // ================================================================
+  const libSubjects = {
+    cs:   { name:'컴퓨터공학', minR:3, maxR:6, time:5000 },
+    math: { name:'수학/통계',  minR:2, maxR:4, time:4000 },
+    eng:  { name:'영어/교양',  minR:1, maxR:3, time:3000 },
+    rest: { name:'휴식',       minR:0, maxR:0, time:3000, isRest:true },
+  };
+  let libStudyCount = 0, libFocus = 100, libBusy = false;
+
+  function enterLibrary() {
+    document.getElementById('game-container').style.display = 'none';
+    document.getElementById('library-container').classList.add('visible');
+    syncLibStats();
+  }
+  function leaveLibrary() {
+    document.getElementById('library-container').classList.remove('visible');
+    document.getElementById('game-container').style.display = 'flex';
+  }
+  function syncLibStats() {
+    document.getElementById('lib-data-val').textContent    = G.data;
+    document.getElementById('lib-study-count').textContent = libStudyCount;
+    document.getElementById('lib-focus-val').textContent   = libFocus + '%';
+  }
+  function addLibLog(msg, cls) {
+    const box = document.getElementById('lib-log');
+    box.innerHTML += '<br><span class="' + (cls||'') + '">' + msg + '</span>';
+    box.scrollTop = box.scrollHeight;
+  }
+  function setLibButtons(disabled) {
+    ['cs','math','eng','rest'].forEach(id => {
+      document.getElementById('study-btn-' + id).disabled = disabled;
+    });
+  }
+  function startStudy(subjectId) {
+    if (libBusy) return;
+    if (libStudyCount >= 5 && subjectId !== 'rest') {
+      addLibLog('[도서관] 오늘은 너무 많이 공부했어요!', ''); return;
+    }
+    if (libFocus <= 0 && subjectId !== 'rest') {
+      addLibLog('[도서관] 집중력이 바닥났습니다. 먼저 쉬어야 해요!', ''); return;
+    }
+    libBusy = true; setLibButtons(true);
+    const sub = libSubjects[subjectId];
+    const btn = document.getElementById('study-btn-' + subjectId);
+    btn.classList.add('studying');
+    const fill  = document.getElementById('lib-progress-fill');
+    const label = document.getElementById('lib-progress-label');
+    const pct   = document.getElementById('lib-progress-pct');
+    fill.style.width = '0%';
+    label.textContent = sub.isRest ? '😴 휴식 중...' : '📖 ' + sub.name + ' 공부 중...';
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const progress = Math.min(100, (Date.now() - start) / sub.time * 100);
+      fill.style.width = progress + '%';
+      pct.textContent  = Math.round(progress) + '%';
+      if (progress >= 100) clearInterval(interval);
+    }, 50);
+    setTimeout(() => {
+      btn.classList.remove('studying'); fill.style.width = '100%'; clearInterval(interval);
+      if (sub.isRest) {
+        libFocus = Math.min(100, libFocus + 40);
+        addLibLog('[휴식] 집중력 회복! 현재 집중력: ' + libFocus + '%', 'lib-log-info');
+      } else {
+        const focusBonus = libFocus >= 70 ? 1 : libFocus >= 40 ? 0.7 : 0.4;
+        const base   = sub.minR + Math.floor(Math.random() * (sub.maxR - sub.minR + 1));
+        const reward = Math.max(1, Math.round(base * focusBonus));
+        G.data += reward; libStudyCount++; libFocus = Math.max(0, libFocus - 25);
+        addLibLog('[' + sub.name + '] 완료! 💎 데이터 조각 +' + reward + '  (집중력: ' + libFocus + '%)', 'lib-log-reward');
+        updateMapStats();
+      }
+      label.textContent = '완료!'; pct.textContent = ''; fill.style.width = '0%';
+      syncLibStats(); setLibButtons(false); libBusy = false;
+    }, sub.time);
+  }
+
+  // ================================================================
+  // 310관 연구실 로직 (추가)
+  // ================================================================
+  function enterLab() {
+    document.getElementById('game-container').style.display = 'none';
+    document.getElementById('lab-container').classList.add('visible');
+    syncLabStats();
+  }
+  function leaveLab() {
+    document.getElementById('lab-container').classList.remove('visible');
+    document.getElementById('game-container').style.display = 'flex';
+  }
+  function syncLabStats() {
+    document.getElementById('lab-hp-val').textContent   = G.hp;
+    document.getElementById('lab-hp-max').textContent   = '/ ' + G.maxHp;
+    document.getElementById('lab-sp-val').textContent   = G.sp;
+    document.getElementById('lab-sp-max').textContent   = '/ ' + G.maxSp;
+    document.getElementById('lab-data-val').textContent = G.data;
+    document.getElementById('lab-hp-bar').style.width   = (G.hp / G.maxHp * 100) + '%';
+    document.getElementById('lab-sp-bar').style.width   = (G.sp / G.maxSp * 100) + '%';
+    const fav = puangState.favorability;
+    document.getElementById('lab-favor-val').textContent = getFavorHearts(fav);
+    document.getElementById('lab-favor-num').textContent = fav + ' / 100';
+  }
+  function addLabLog(msg, cls) {
+    const box = document.getElementById('lab-log');
+    box.innerHTML += '<br><span class="' + (cls||'') + '">' + msg + '</span>';
+    box.scrollTop = box.scrollHeight;
+  }
+  function doLabAction(action) {
+    if (action === 'save') {
+      const saveData = { G, puangFav: puangState.favorability, ts: new Date().toLocaleTimeString() };
+      localStorage.setItem('cau_save', JSON.stringify(saveData));
+      addLabLog('[SAVE] 저장 완료 (' + saveData.ts + ')', 'lab-log-save');
+      const header = document.querySelector('#lab-container .lab-header');
+      header.classList.remove('save-flash'); void header.offsetWidth; header.classList.add('save-flash');
+    } else if (action === 'load') {
+      const raw = localStorage.getItem('cau_save');
+      if (!raw) { addLabLog('[LOAD] 저장 데이터가 없습니다.', 'lab-log-warning'); return; }
+      const save = JSON.parse(raw);
+      Object.assign(G, save.G); puangState.favorability = save.puangFav; savePuangState();
+      syncLabStats(); updateMapStats();
+      addLabLog('[LOAD] 불러오기 완료 (' + save.ts + ')', 'lab-log-save');
+    } else if (action === 'upgrade-hp') {
+      if (G.data < 10) { addLabLog('[강화 실패] 데이터 조각 부족 (필요: 10개)', 'lab-log-warning'); return; }
+      G.data -= 10; G.maxHp += 20; syncLabStats(); updateMapStats();
+      addLabLog('[강화] 최대 HP +20 → ' + G.maxHp, 'lab-log-save');
+    } else if (action === 'upgrade-sp') {
+      if (G.data < 8) { addLabLog('[강화 실패] 데이터 조각 부족 (필요: 8개)', 'lab-log-warning'); return; }
+      G.data -= 8; G.maxSp += 10; syncLabStats(); updateMapStats();
+      addLabLog('[강화] 최대 SP +10 → ' + G.maxSp, 'lab-log-save');
+    }
   }
 
 </script>
