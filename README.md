@@ -1,5 +1,20 @@
 # CAU-RPG
 
+CAU-RPG/
+├── index.html          ← HTML 구조만 (레이아웃)
+├── css/
+│   └── style.css       ← 모든 CSS
+├── js/
+│   ├── intro.js        ← 인트로 로직
+│   ├── map.js          ← 맵/장소 로직
+│   ├── battle.js       ← 전투 로직
+│   ├── puang.js        ← 푸앙이 방 + Groq API
+│   ├── locations.js    ← 식당/도서관/체육관 등
+│   └── state.js        ← G, puangState, dailyUsage 전역 변수
+└── images/
+
+
+
 이면 세계로 로그인하기 [초기 로그인 화면]
 
 <div align="center">
