@@ -299,6 +299,25 @@
       }
     }
 
+    /* ── 현재 시간 표시 ── */
+    .map-datetime {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(160, 196, 255, 0.3);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #a0c4ff;
+      letter-spacing: 2px;
+      line-height: 1.6;
+      pointer-events: none;
+    }
+
     /* ── 블루미르 홀 : 푸앙이의 방 컨테이너 (기본 숨김) ── */
     #puang-room {
       display: none;
@@ -1965,6 +1984,9 @@
     <div class="map-bg" id="map-bg">
       <img class="map-image" src="images/map/cau_map.png" alt="중앙대 이면 세계 맵" />
 
+      <!-- 날짜/시간 표시 (맵 좌측 상단) -->
+      <div id="datetime-display" class="map-datetime"></div>
+
       <!-- 블루미르홀 (푸앙이와 호감도작 하는 곳) // 위치 조정 필요 (노가다) -->
       <button class="map-spot" style="left:48%; top:62%;" onclick="enterPlace('dormitory')">
         <div class="map-spot-wrap">
@@ -2572,6 +2594,27 @@
       document.getElementById('name-input')
         ?.addEventListener('keydown', e => { if (e.key === 'Enter') submitName(); });
     });
+
+    // 실시간 날짜/시간 표시 (페르소나 스타일)
+    function updateDatetime() {  // 게임 내 시간으로 바꿀 떈 여기 로직 고치기
+      const now = new Date();
+      const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+      
+      const month = months[now.getMonth()];
+      const date  = now.getDate();
+      const day   = days[now.getDay()];
+      const hour  = String(now.getHours()).padStart(2, '0');
+      const min   = String(now.getMinutes()).padStart(2, '0');
+
+      document.getElementById('datetime-display').textContent
+        = `${month}${date}日 ${day} ${hour}:${min}`;
+    }
+
+    // 1분마다 갱신
+    updateDatetime();
+    setInterval(updateDatetime, 60000);
+
 
     // ── 맵 장소 데이터 ──
     const placeInfo = {
@@ -3385,6 +3428,11 @@
       box.scrollTop = box.scrollHeight;
     }
     function doGym(type) {
+      if (type !== 'rest' && !useDaily('gym')) {  // 한도 체크
+        addGymLog('[체육관] 오늘은 충분히 훈련했어요!', '#f09595');
+        return;
+      }
+
       if (type === 'rest') {
         gymStamina = Math.min(100, gymStamina + 50);
         addGymLog('[휴식] 체력 회복! 현재 체력: ' + gymStamina + '%', '#a0c4ff');
@@ -3427,7 +3475,6 @@
     // ================================================================
     // 의무실 로직 (추가)
     // ================================================================
-    let clinicFreeUsed = false;
     function enterClinic() {
       document.getElementById('game-container').style.display = 'none';
       document.getElementById('clinic-container').style.display = 'flex';
@@ -3450,8 +3497,16 @@
       box.scrollTop = box.scrollHeight;
     }
     function clinicTreat(type) {
+      if (type === 'free' && !useDaily('clinic')) {  // 한도 체크
+        addClinicLog('[거절] 오늘 무료 응급처치는 이미 사용했습니다.', '#6c8ebf');
+        return;
+      }
+
       if (type === 'free') {
-        if (clinicFreeUsed) { addClinicLog('[거절] 오늘 무료 응급처치는 이미 사용했습니다.', '#6c8ebf'); return; }
+        if (!useDaily('clinic')) { 
+          addClinicLog('[거절] 오늘 무료 응급처치는 이미 사용했습니다.', '#6c8ebf'); 
+          return; 
+        }
         G.hp = Math.min(G.maxHp, G.hp + 15);
         clinicFreeUsed = true;
         addClinicLog('[응급처치] HP +15 회복 (오늘 사용 완료)', '#5dcaa5');
@@ -3495,6 +3550,10 @@
       lucky: { name: '행운의 시약', icon: '🍀', cost: 6, desc: '도서관 보상 2배' },
     };
     function craftItem(id) {
+      if (!useDaily('lab2')) {  // 한도 체크
+        addLab2Log('[실험실] 오늘 제조는 다 했어요! (일일 3회 한도)');
+        return;
+      }
       const r = craftRecipes[id];
       if (G.data < r.cost) { addLab2Log('[실패] 데이터 조각 부족 (필요: ' + r.cost + '개)'); return; }
       G.data -= r.cost;
@@ -3533,6 +3592,12 @@
       ['quiz-panel', 'janken-panel', 'slot-panel'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
+
+      if (!useDaily('festival')) { // 한도 체크
+        addFestivalLog('[축제] 오늘은 더 이상 게임을 할 수 없어요!', '#f09595');
+        return;
+      }
+
       if (game === 'quiz') {
         currentQuiz = quizData[Math.floor(Math.random() * quizData.length)];
         document.getElementById('quiz-question').textContent = currentQuiz.q;
@@ -3639,6 +3704,11 @@
       box.scrollTop = box.scrollHeight;
     }
     function buyUnion(id) {
+      if (!useDaily('union')) {  // 한도 체크
+        addUnionLog('[학생회관] 오늘 구매 한도를 초과했어요!', '#f09595');
+        return;
+      }
+
       const items = {
         puang_doll: { cost: 25, name: '푸앙이 인형' },
         hp_max: { cost: 20, name: '생명력 결정' },
@@ -3716,6 +3786,60 @@
       sp: 45, maxSp: 60,
       data: 12
     };
+
+    // ================================================================
+    // 일일 한도 시스템 — 날짜 바뀌면 자동 초기화
+    // ================================================================
+    const dailyLimits = {
+      cafeteria:  3,   // 식당 주문
+      library:    5,   // 도서관 공부 (기존 libStudyCount와 통합)
+      gym:        3,   // 체육관 운동 (휴식 제외)
+      clinic:     1,   // 의무실 무료 응급처치 (유료는 무제한)
+      festival:   5,   // 축제 미니게임
+      lab2:       3,   // 공대 실험실 제조
+      union:      2,   // 학생회관 구매
+    };
+
+    const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
+      date: '',
+      cafeteria: 0,
+      library: 0,
+      gym: 0,
+      clinic: 0,
+      festival: 0,
+      lab2: 0,
+      union: 0,
+    };
+
+    function checkAndResetDaily() {
+      const today = new Date().toDateString();
+      if (dailyUsage.date !== today) {
+        // 날짜 바뀌면 전부 초기화
+        Object.keys(dailyUsage).forEach(k => { dailyUsage[k] = 0; });
+        dailyUsage.date = today;
+        saveDailyUsage();
+      }
+    }
+
+    function saveDailyUsage() {
+      localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage));
+    }
+
+    // 한도 체크 헬퍼 — true면 사용 가능, false면 한도 초과
+    function useDaily(key) {
+      checkAndResetDaily();
+      if (dailyUsage[key] >= dailyLimits[key]) return false;
+      dailyUsage[key]++;
+      saveDailyUsage();
+      return true;
+    }
+
+    // 남은 횟수 반환
+    function remainDaily(key) {
+      checkAndResetDaily();
+      return dailyLimits[key] - dailyUsage[key];
+    }
+
     function updateMapStats() {
       document.getElementById('hp-val').textContent = G.hp + ' / ' + G.maxHp;
       document.getElementById('sp-val').textContent = G.sp + ' / ' + G.maxSp;
@@ -3735,6 +3859,7 @@
       document.getElementById('game-container').style.display = 'none';
       document.getElementById('cafeteria-container').classList.add('visible');
       syncCafStats();
+      addCafLog('[식당] 오늘 남은 주문 횟수: ' + remainDaily('cafeteria') + '회', 'caf-log-hp');
     }
     function leaveCafeteria() {
       document.getElementById('cafeteria-container').classList.remove('visible');
@@ -3753,6 +3878,11 @@
       box.scrollTop = box.scrollHeight;
     }
     function orderFood(id) {
+      if (!useDaily('cafeteria')) {  // 한도 체크
+        addCafLog('[식당] 오늘은 더 이상 주문할 수 없어요!', 'caf-log-err');
+        return;
+      }
+
       const item = cafMenu[id];
       if (G.data < item.cost) {
         addCafLog('[실패] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + G.data + '개)', 'caf-log-err');
@@ -3807,6 +3937,11 @@
       });
     }
     function startStudy(subjectId) {
+      if (subjectId !== 'rest' && !useDaily('library')) {  // 한도 체크
+        addLibLog('[도서관] 오늘 공부는 충분히 했어요!', '');
+        return;
+      }
+
       if (libBusy) return;
       if (libStudyCount >= 5 && subjectId !== 'rest') {
         addLibLog('[도서관] 오늘은 너무 많이 공부했어요!', ''); return;
@@ -3814,6 +3949,7 @@
       if (libFocus <= 0 && subjectId !== 'rest') {
         addLibLog('[도서관] 집중력이 바닥났습니다. 먼저 쉬어야 해요!', ''); return;
       }
+
       libBusy = true; setLibButtons(true);
       const sub = libSubjects[subjectId];
       const btn = document.getElementById('study-btn-' + subjectId);
