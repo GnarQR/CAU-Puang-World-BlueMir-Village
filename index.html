@@ -2054,6 +2054,14 @@
         <div class="map-spot-label">청룡산</div>
       </button>
 
+      <!-- 체육관 -->
+      <button class="map-spot" style="left:50%; top:25%;" onclick="enterPlace('gym')">
+        <div class="map-spot-wrap">
+          <div class="map-spot-icon" style="background:rgba(13,37,50,0.85);">🏃</div>
+        </div>
+        <div class="map-spot-label">체육관</div>
+      </button>
+
       <!-- 툴팁 -->
       <div class="map-tooltip" id="map-tooltip"></div>
     </div>
@@ -2214,6 +2222,85 @@
     </div>
     <div class="caf-log" id="caf-log">
       <span style="color:#2a5a30;">[식당] 어서오세요! 오늘도 맛있게 드세요.</span>
+    </div>
+  </div>
+
+
+  <!-- ================================================================
+     체육관 화면 (추가)
+================================================================ -->
+  <div id="gym-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
+    <div
+      style="background:#16213e;border:1px solid #5dcaa5;border-radius:12px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:11px;color:#5dcaa5;letter-spacing:1px;">LOCATION</div>
+        <div style="font-size:15px;font-weight:500;color:#5dcaa5;">🏃 중앙대 체육관</div>
+      </div>
+      <button onclick="leaveGym()"
+        style="background:rgba(93,202,165,0.15);border:1px solid #5dcaa5;border-radius:8px;padding:4px 12px;font-size:12px;color:#5dcaa5;cursor:pointer;font-family:inherit;">←
+        맵으로</button>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <div
+        style="flex:1;background:#16213e;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;text-align:center;">
+        <div style="font-size:10px;color:#5dcaa5;">최대 HP</div>
+        <div style="font-size:18px;font-weight:600;color:#e0e0e0;" id="gym-maxhp-val">100</div>
+      </div>
+      <div
+        style="flex:1;background:#16213e;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;text-align:center;">
+        <div style="font-size:10px;color:#5dcaa5;">체력</div>
+        <div style="font-size:18px;font-weight:600;color:#a0c4ff;" id="gym-stamina-val">100%</div>
+      </div>
+      <div
+        style="flex:1;background:#16213e;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;text-align:center;">
+        <div style="font-size:10px;color:#5dcaa5;">데이터 조각</div>
+        <div style="font-size:18px;font-weight:600;color:#ef9f27;" id="gym-data-val">12</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button onclick="doGym('run')"
+        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
+        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
+        <div style="font-size:26px;">🏃</div>
+        <div style="font-size:13px;font-weight:500;margin-top:4px;">달리기</div>
+        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">최대 HP +5</div>
+        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개 · 체력 -20%</div>
+      </button>
+      <button onclick="doGym('weight')"
+        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
+        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
+        <div style="font-size:26px;">🏋️</div>
+        <div style="font-size:13px;font-weight:500;margin-top:4px;">웨이트</div>
+        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">최대 HP +10</div>
+        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 8개 · 체력 -35%</div>
+      </button>
+      <button onclick="doGym('yoga')"
+        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
+        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
+        <div style="font-size:26px;">🧘</div>
+        <div style="font-size:13px;font-weight:500;margin-top:4px;">요가</div>
+        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">최대 SP +5</div>
+        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개 · 체력 -15%</div>
+      </button>
+      <button onclick="doGym('rest')"
+        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
+        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
+        <div style="font-size:26px;">💤</div>
+        <div style="font-size:13px;font-weight:500;margin-top:4px;">휴식</div>
+        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">체력 +50% 회복</div>
+        <div style="font-size:10px;color:#6c8ebf;margin-top:2px;">무료</div>
+      </button>
+    </div>
+
+    <div id="gym-log"
+      style="background:#0a1a0d;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;font-size:12px;color:#5dcaa5;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
+      <span>[체육관] 훈련으로 최대 HP/SP를 올려보세요!</span>
     </div>
   </div>
 
@@ -2487,6 +2574,7 @@
       festival: { label: '중앙 축제', desc: '미니게임으로 데이터 조각 획득!', locked: false },
       union: { label: '학생회관', desc: '프리미엄 아이템 구매', locked: false },
       mountain: { label: '청룡산', desc: '⚠ 보스 던전 — 강한 적, 큰 보상', locked: false },
+      gym: { label: '체육관', desc: '훈련으로 최대 HP/SP 영구 증가!', locked: false },
     };
 
     // ── 장소 진입 함수 ──
@@ -2519,6 +2607,7 @@
       if (place === 'festival') { enterFestival(); return; }
       if (place === 'union') { enterUnion(); return; }
       if (place === 'mountain') { enterMountain(); return; }
+      if (place === 'gym') { enterGym(); return; }
 
       // 나머지 장소는 추후 구현 (일단 알림)
       showSystemMsgOnMap('[' + info.label + '] ' + info.desc + ' (추후 구현 예정)');
@@ -3247,6 +3336,59 @@
     function leaveRoom() {
       document.getElementById('puang-room').classList.remove('visible');
       document.getElementById('game-container').style.display = 'flex';
+    }
+
+    // ================================================================
+    // 체육관 로직 (추가)
+    // ================================================================
+    let gymStamina = 100;
+
+    function enterGym() {
+      document.getElementById('game-container').style.display = 'none';
+      document.getElementById('gym-container').style.display = 'flex';
+      syncGymStats();
+    }
+    function leaveGym() {
+      document.getElementById('gym-container').style.display = 'none';
+      document.getElementById('game-container').style.display = 'flex';
+    }
+    function syncGymStats() {
+      document.getElementById('gym-maxhp-val').textContent = G.maxHp;
+      document.getElementById('gym-stamina-val').textContent = gymStamina + '%';
+      document.getElementById('gym-data-val').textContent = G.data;
+    }
+    function addGymLog(msg, color) {
+      const box = document.getElementById('gym-log');
+      box.innerHTML += '<br><span style="color:' + (color || '#5dcaa5') + '">' + msg + '</span>';
+      box.scrollTop = box.scrollHeight;
+    }
+    function doGym(type) {
+      if (type === 'rest') {
+        gymStamina = Math.min(100, gymStamina + 50);
+        addGymLog('[휴식] 체력 회복! 현재 체력: ' + gymStamina + '%', '#a0c4ff');
+        syncGymStats(); return;
+      }
+      const trains = {
+        run: { cost: 4, stamina: 20, hpUp: 5, spUp: 0, name: '달리기' },
+        weight: { cost: 8, stamina: 35, hpUp: 10, spUp: 0, name: '웨이트' },
+        yoga: { cost: 4, stamina: 15, hpUp: 0, spUp: 5, name: '요가' },
+      };
+      const t = trains[type];
+      if (G.data < t.cost) {
+        addGymLog('[실패] 데이터 조각 부족 (필요: ' + t.cost + '개)', '#f09595'); return;
+      }
+      if (gymStamina < t.stamina) {
+        addGymLog('[실패] 체력 부족! 먼저 휴식하세요. (필요: ' + t.stamina + '%)', '#f09595'); return;
+      }
+      G.data -= t.cost;
+      gymStamina = Math.max(0, gymStamina - t.stamina);
+      if (t.hpUp > 0) G.maxHp += t.hpUp;
+      if (t.spUp > 0) G.maxSp += t.spUp;
+      syncGymStats(); updateMapStats();
+      let msg = '[' + t.name + '] 훈련 완료! ';
+      if (t.hpUp > 0) msg += '최대 HP +' + t.hpUp + ' → ' + G.maxHp;
+      if (t.spUp > 0) msg += '최대 SP +' + t.spUp + ' → ' + G.maxSp;
+      addGymLog(msg, '#5dcaa5');
     }
 
     // ================================================================
