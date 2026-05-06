@@ -3497,20 +3497,15 @@
       box.scrollTop = box.scrollHeight;
     }
     function clinicTreat(type) {
-      if (type === 'free' && !useDaily('clinic')) {  // 한도 체크
-        addClinicLog('[거절] 오늘 무료 응급처치는 이미 사용했습니다.', '#6c8ebf');
-        return;
-      }
-
-      if (type === 'free') {
+      if (type === 'free') {  // 한도 체크
         if (!useDaily('clinic')) { 
           addClinicLog('[거절] 오늘 무료 응급처치는 이미 사용했습니다.', '#6c8ebf'); 
           return; 
         }
         G.hp = Math.min(G.maxHp, G.hp + 15);
-        clinicFreeUsed = true;
         addClinicLog('[응급처치] HP +15 회복 (오늘 사용 완료)', '#5dcaa5');
-      } else if (type === 'hp') {
+      } 
+      else if (type === 'hp') {
         if (G.data < 15) { addClinicLog('[실패] 데이터 조각 부족 (필요: 15개)', '#f09595'); return; }
         G.data -= 15; G.hp = G.maxHp;
         addClinicLog('[치료] HP 완전 회복! · 데이터 조각 -15', '#5dcaa5');
