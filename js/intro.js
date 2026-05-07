@@ -8,6 +8,7 @@
 // DOMContentLoaded 이벤트에서 자동 호출됨
 function skipIntro() {
   document.getElementById('intro-overlay').classList.add('hidden');
+  updateMapStats();  // 맵 상단 스탯 바로 이동해서 초기값 표시
 }
 
 // ── 1단계: API 키 제출 ──

@@ -11,17 +11,17 @@ let GROQ_API_KEY = '';
 // ── 전역 게임 스탯 ──
 // 화면 간 공유되는 플레이어 수치 (HP, SP, 데이터 조각)
 // 식당/의무실/체육관/전투 등 여러 화면에서 playerStats.hp 형태로 접근
-const playerStats = {
-  hp: 80, maxHp: 100,  // 현재 HP / 최대 HP
-  sp: 45, maxSp: 60,   // 현재 SP / 최대 SP
-  data: 12             // 보유 데이터 조각 수 (게임 내 화폐)
+const playerStats = {  // 초기값 (게임 시작 시)
+  hp: 60, maxHp: 60,  // 현재 HP / 최대 HP
+  sp: 40, maxSp: 40,   // 현재 SP / 최대 SP
+  data: 0             // 보유 데이터 조각 수 (게임 내 화폐)
 };
 
 // ── 푸앙이 상태 ──
 // localStorage에서 불러오기 (없으면 기본값으로 초기화)
 // 새로고침해도 호감도/아이템 카운트가 유지
 const puangState = JSON.parse(localStorage.getItem('puangState')) || {
-  favorability: 60,                            // 누적 호감도 (0~100)
+  favorability: 50,                            // 누적 호감도 (0~100), 초기 호감도 50
   itemGivenToday: { coffee: 0, snack: 0 },     // 오늘 준 아이템 횟수
   moodToday: Math.floor(Math.random() * 100),  // 오늘의 기분 (0~100, 날짜 기준으로 고정)
   moodDate: ''                                 // 마지막으로 기분이 결정된 날짜
@@ -45,6 +45,7 @@ const dailyLimits = {
   festival:  5,  // 축제 미니게임 5회
   lab2:      3,  // 공대 실험실 아이템 제조 3회
   union:     2,  // 학생회관 구매 2회
+  praise:    2,  // 푸앙이 칭찬 2회
 };
 
 
@@ -53,7 +54,7 @@ const dailyLimits = {
 const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
   date: '',  // 마지막으로 초기화된 날짜 (toDateString() 형식)
   cafeteria: 0, library: 0, gym: 0,
-  clinic: 0, festival: 0, lab2: 0, union: 0,
+  clinic: 0, festival: 0, lab2: 0, union: 0, praise: 0
 };
 
 
@@ -110,4 +111,7 @@ function updateMapStats() {
   document.getElementById('hp-val').textContent = playerStats.hp + ' / ' + playerStats.maxHp;
   document.getElementById('sp-val').textContent = playerStats.sp + ' / ' + playerStats.maxSp;
   document.getElementById('data-val').textContent = playerStats.data + '개';
+
+// HP / SP / 데이터 조각 수치 업데이트
+document.addEventListener('DOMContentLoaded', () => {updateMapStats();});
 }

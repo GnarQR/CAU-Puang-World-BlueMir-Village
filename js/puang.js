@@ -96,20 +96,28 @@ function addChatMsg(who, text, favorChange) {
 // 아이템 한도 체크는 JS에서 판단하고 대사만 Groq LLM에 요청
 // itemId: 'coffee' | 'snack' | 'praise'
 async function giveItem(itemId) {
-  // 아이템별 일일 한도 (고정값 — 기기마다 moodToday가 달라서 고정으로 통일)
-  const limits = { coffee: 3, snack: 2 };
+  const limits = { coffee: 3, snack: 2 };  // 아이템별 일일 한도 (고정값 — 기기마다 moodToday가 달라서 고정으로 통일)
 
-  // 상황 설명 텍스트 — LLM 시스템 프롬프트에 삽입되어 대사 맥락 제공
-  let situation = '';
+  let situation = '';  // 상황 설명 텍스트 — LLM 시스템 프롬프트에 삽입되어 대사 맥락 제공
+  let favorChange = 0; // 호감도 변화량 
 
   if (itemId === 'coffee') {
     const count = puangState.itemGivenToday.coffee;
     puangState.itemGivenToday.coffee++;
     savePuangState();
 
-    if (count < limits.coffee)         situation = '커피를 받아서 기뻐하는 상황. 호감도 +8 반환.';
-    else if (count === limits.coffee)  situation = '커피를 한 잔 더 받았는데 좀 많다 싶은 상황. 호감도 +1 반환.';
-    else                               situation = '커피를 너무 많이 받아서 화난 상황. 호감도 -15 반환.';
+    if (count < limits.coffee) {
+      situation = '커피를 받아서 기뻐하는 상황.';
+      favorChange = 3;
+    }         
+    else if (count === limits.coffee) {
+      situation = '커피를 한 잔 더 받았는데 좀 많다 싶은 상황.';
+      favorChange = 1;
+    } 
+    else {
+      situation = '커피를 너무 많이 받아서 화난 상황. 호감도 -15 반환.';
+      favorChange = -10;
+    }                             
     addChatMsg('player', '☕ 커피를 건넸다');
   }
 
@@ -118,14 +126,24 @@ async function giveItem(itemId) {
     puangState.itemGivenToday.snack++;
     savePuangState();
 
-    if (count < limits.snack)  situation = '간식을 받아서 기뻐하는 상황. 호감도 +10 반환.';
-    else                       situation = '간식을 너무 많이 받아서 배부른 상황. 호감도 -5 반환.';
+    if (count < limits.snack) {
+      situation = '간식을 받아서 기뻐하는 상황.';
+      favorChange = 3;
+    }
+    else {
+      situation = '간식을 너무 많이 받아서 배부른 상황. 호감도 -5 반환.';
+      favorChange = -5;
+    }
     addChatMsg('player', '🍪 간식을 건넸다');
   }
 
-  // TODO : 칭찬하는 것도 일일 횟수 제한 걸어주세요.
   else if (itemId === 'praise') {
-    situation = '칭찬을 받아서 쑥스러워하는 상황. 호감도 +5 반환.';
+    if (!useDaily('praise')) {  // 푸앙이 칭찬 2번 제한
+      addChatMsg('puang', '오늘은 칭찬 많이 들었어 푸앙~ 내일 또 해줘 푸앙!', 0);
+      return;
+    }
+    situation = '칭찬을 받아서 쑥스러워하는 상황.';
+    favorChange = 2;
     addChatMsg('player', '👏 푸앙이를 칭찬했다');
   }
 
