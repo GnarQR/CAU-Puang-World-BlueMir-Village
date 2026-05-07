@@ -1,0 +1,295 @@
+/* =============================================
+   푸앙이의 방 — 쿼터뷰 스타일
+   스프라이트: Interiors_free_16x16.png (LimeZu)
+   ============================================= */
+
+/* ── 방 씬 전체 컨테이너 ── */
+#puang-room-scene {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  height: 420px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 2px solid #8a7060;
+  background: #b8a888; /* fallback */
+}
+
+/* ── 뒷벽 ── */
+#room-back-wall {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 52%;
+  background: #e8dece;
+  /* 벽지 패턴 — 기본 테마 */
+  background-image: repeating-linear-gradient(
+    90deg, transparent, transparent 31px,
+    rgba(0,0,0,0.03) 31px, rgba(0,0,0,0.03) 32px
+  );
+}
+
+/* ── 왼쪽 측면 벽 ── */
+#room-left-wall {
+  position: absolute;
+  top: 0; left: 0;
+  width: 13%;
+  height: 52%;
+  background: #d4c8b4;
+  clip-path: polygon(0 5%, 100% 0%, 100% 100%, 0 95%);
+}
+
+/* ── 천장 몰딩 ── */
+#room-ceiling {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: #c0b49a;
+  z-index: 2;
+}
+
+/* ── 왼벽/뒷벽 경계 ── */
+#room-left-edge {
+  position: absolute;
+  top: 0;
+  left: 13%;
+  height: 52%;
+  width: 3px;
+  background: #b8a890;
+  z-index: 2;
+}
+
+/* ── 바닥 ── */
+#room-floor {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 52%;
+  background: #c8b890;
+  /* 마루 패턴 */
+  background-image:
+    repeating-linear-gradient(
+      -20deg,
+      transparent, transparent 39px,
+      rgba(0,0,0,0.05) 39px, rgba(0,0,0,0.05) 40px
+    ),
+    repeating-linear-gradient(
+      20deg,
+      transparent, transparent 39px,
+      rgba(0,0,0,0.03) 39px, rgba(0,0,0,0.03) 40px
+    );
+}
+
+/* 바닥 원근 그림자 */
+#room-floor::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.12), transparent);
+}
+
+/* ── 벽/바닥 경계선 ── */
+#room-wall-floor-line {
+  position: absolute;
+  top: 51%;
+  left: 0; right: 0;
+  height: 3px;
+  background: #a09070;
+  z-index: 2;
+}
+
+/* ── 창문 ── */
+#room-window {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 108px;
+  height: 88px;
+  background: #b8d8f0;
+  border: 5px solid #c8bfaa;
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+  z-index: 3;
+}
+#room-window::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 50%;
+  width: 4px;
+  background: #c8bfaa;
+  transform: translateX(-50%);
+}
+#room-window::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 4px;
+  background: #c8bfaa;
+  transform: translateY(-50%);
+}
+/* 창문 반원 아치 */
+.room-window-arch {
+  position: absolute;
+  top: -5px; left: -5px; right: -5px;
+  height: 28px;
+  background: #c8bfaa;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.room-window-arch::after {
+  content: '';
+  position: absolute;
+  bottom: 5px; left: 8px; right: 8px;
+  height: 14px;
+  background: #b8d8f0;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+
+/* 창문 빛 */
+#room-window-light {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 240px;
+  background: radial-gradient(ellipse at top, rgba(255,240,180,0.14) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── 좌우 원근 그림자 ── */
+#room-left-shadow {
+  position: absolute;
+  top: 0; left: 13%; bottom: 0;
+  width: 20px;
+  background: linear-gradient(to right, rgba(0,0,0,0.09), transparent);
+  pointer-events: none;
+  z-index: 4;
+}
+#room-right-shadow {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 20px;
+  background: linear-gradient(to left, rgba(0,0,0,0.06), transparent);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* ── 가구/아이템 레이어 ── */
+/* z-index 규칙: 화면 위쪽(멀리)=낮음, 아래쪽(가까이)=높음 */
+.room-item {
+  position: absolute;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background-image: url('images/Interiors_free_16x16.png');
+  background-repeat: no-repeat;
+}
+
+/* rotateX로 탑다운 → 쿼터뷰 느낌 */
+.room-item-floor {
+  transform: perspective(300px) rotateX(18deg) scaleY(0.92);
+  transform-origin: bottom center;
+}
+/* 벽에 붙는 가구는 기울이지 않음 */
+.room-item-wall {
+  transform: none;
+}
+
+/* ── 스프라이트 좌표 정의 ── */
+/* 2배 크기로 표시 (16px → 32px 단위) */
+
+.spr-bed {
+  /* 파란 더블침대: x=80, y=0, w=80, h=64 */
+  background-position: -80px 0px;
+  width: 80px; height: 64px;
+  transform: scale(2) perspective(300px) rotateX(20deg);
+  transform-origin: bottom center;
+  image-rendering: pixelated;
+}
+
+.spr-wardrobe {
+  /* 옷장: x=128, y=80, w=48, h=64 */
+  background-position: -128px -80px;
+  width: 48px; height: 64px;
+  transform: scale(2);
+  transform-origin: bottom center;
+  image-rendering: pixelated;
+}
+
+.spr-sofa {
+  /* 소파: x=112, y=208, w=64, h=32 */
+  background-position: -112px -208px;
+  width: 64px; height: 32px;
+  transform: scale(2) perspective(300px) rotateX(15deg);
+  transform-origin: bottom center;
+  image-rendering: pixelated;
+}
+
+.spr-carpet-blue {
+  /* 파란 카펫: x=208, y=160, w=48, h=80 */
+  background-position: -208px -160px;
+  width: 48px; height: 80px;
+  transform: scale(2) perspective(200px) rotateX(35deg);
+  transform-origin: center center;
+  image-rendering: pixelated;
+}
+
+.spr-plant {
+  /* 화분: x=176, y=544, w=32, h=48 */
+  background-position: -176px -544px;
+  width: 32px; height: 48px;
+  transform: scale(2);
+  transform-origin: bottom center;
+  image-rendering: pixelated;
+}
+
+.spr-lamp {
+  /* 램프: x=160, y=784, w=32, h=48 */
+  background-position: -160px -784px;
+  width: 32px; height: 48px;
+  transform: scale(2);
+  transform-origin: bottom center;
+  image-rendering: pixelated;
+}
+
+/* ── 배경 테마 ── */
+#puang-room-scene.theme-default #room-back-wall { background-color: #e8dece; }
+#puang-room-scene.theme-default #room-floor     { background-color: #c8b890; }
+
+#puang-room-scene.theme-night #room-back-wall   { background-color: #1e2240; }
+#puang-room-scene.theme-night #room-left-wall   { background-color: #16192e; }
+#puang-room-scene.theme-night #room-floor       { background-color: #0e1018; }
+#puang-room-scene.theme-night #room-window      { background-color: #0a1a3a; }
+#puang-room-scene.theme-night #room-ceiling     { background-color: #0d0f1e; }
+
+#puang-room-scene.theme-sakura #room-back-wall  { background-color: #fce8f4; }
+#puang-room-scene.theme-sakura #room-left-wall  { background-color: #f0d8e8; }
+#puang-room-scene.theme-sakura #room-floor      { background-color: #f0dce8; }
+
+#puang-room-scene.theme-dark #room-back-wall    { background-color: #181818; }
+#puang-room-scene.theme-dark #room-left-wall    { background-color: #111; }
+#puang-room-scene.theme-dark #room-floor        { background-color: #0d0d0d; }
+#puang-room-scene.theme-dark #room-ceiling      { background-color: #080808; }
+
+/* ── 아이템 슬롯 (빈 상태 표시) ── */
+.room-slot-hint {
+  position: absolute;
+  border: 2px dashed rgba(140,120,100,0.3);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── 푸앙이 캐릭터 ── */
+#room-puang-char {
+  position: absolute;
+  bottom: 18%;
+  left: 44%;
+  z-index: 20;
+  font-size: 40px;
+  filter: drop-shadow(0 6px 4px rgba(0,0,0,0.3));
+  animation: puang-idle 2.4s ease-in-out infinite;
+}
+@keyframes puang-idle {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}

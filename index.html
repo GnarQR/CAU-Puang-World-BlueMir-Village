@@ -7,7 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CAU RPG — 중앙대 이면 세계 탐험</title>
   <link rel="stylesheet" href="css/style.css">  <!-- CSS -->
-  
+  <link rel="stylesheet" href="css/room.css">
+
 </head>
 
 <body>
@@ -1043,8 +1044,36 @@
       <button class="room-back-btn" onclick="leaveRoom()">← 맵으로</button>
     </div>
 
-    <!-- 메인: 푸앙이 + 채팅 -->
-    <div class="room-main">
+    <!-- 방 씬 (항상 표시) -->
+    <div id="puang-room-scene" class="theme-default">
+      <div id="room-back-wall"></div>
+      <div id="room-left-wall"></div>
+      <div id="room-ceiling"></div>
+      <div id="room-left-edge"></div>
+      <div id="room-floor"></div>
+      <div id="room-wall-floor-line"></div>
+      <div id="room-window"><div class="room-window-arch"></div></div>
+      <div id="room-window-light"></div>
+      <div id="furniture-bed"      class="room-item spr-bed"      style="right:8%;top:8%;z-index:6;"></div>
+      <div id="furniture-wardrobe" class="room-item spr-wardrobe" style="right:2%;top:4%;z-index:5;"></div>
+      <div id="furniture-sofa"     class="room-item spr-sofa"     style="left:14%;bottom:28%;z-index:9;"></div>
+      <div id="room-slot-wall"   class="room-slot-target"></div>
+      <div id="room-slot-floor"  class="room-slot-target"></div>
+      <div id="room-slot-floor2" class="room-slot-target"></div>
+      <div id="room-slot-floor3" class="room-slot-target"></div>
+      <div id="room-left-shadow"></div>
+      <div id="room-right-shadow"></div>
+    </div>
+
+    <!-- 대화 시작 버튼 (채팅 숨김 상태일 때만 표시) -->
+    <div id="room-talk-btn-wrap" style="display:flex; justify-content:center; padding:12px 0;">
+      <button class="room-talk-start-btn" onclick="openRoomChat()">
+        🐉 푸앙이와 대화하기
+      </button>
+    </div>
+
+    <!-- 채팅 UI (처음엔 숨김) 메인: 푸앙이 + 채팅 -->
+    <div class="room-main" id="room-chat-panel" style="display:none;">
 
       <!-- 왼쪽: 푸앙이 캐릭터 + 상태 -->
       <div class="room-left">
@@ -1106,6 +1135,7 @@
 
   <!-- JS 파일들 (순서 중요!) -->
   <script src="js/state.js"></script>
+  <script src="js/puang_room.js"></script>  
   <script src="js/intro.js"></script>
   <script src="js/map.js"></script>
   <script src="js/battle.js"></script>

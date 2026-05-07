@@ -304,6 +304,25 @@ h1 {
 
 .room-back-btn:hover {background: rgba(212, 83, 126, 0.3);}
 
+.room-talk-start-btn {  /* 대화 시작 버튼 */
+  background: linear-gradient(135deg, #7a5fa0, #5a3f80);
+  border: none;
+  border-radius: 24px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 16px rgba(90, 60, 140, 0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.room-talk-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(90, 60, 140, 0.5);
+}
+
 .room-main {  /* 방 메인 영역: 푸앙이 + 채팅 */
     display: flex;
     gap: 12px;

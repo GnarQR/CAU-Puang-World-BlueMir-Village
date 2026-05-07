@@ -3,6 +3,22 @@
 // 방 입장/퇴장, 채팅, 아이템 증정, Groq API 호출, UI 업데이트
 // ================================================================
 
+// 채팅 패널 열기
+function openRoomChat() {
+  document.getElementById('room-chat-panel').style.display = 'flex';
+  document.getElementById('room-talk-btn-wrap').style.display = 'none';
+  // 방 씬 높이 줄이기
+  document.getElementById('puang-room-scene').style.height = '220px';
+  updateRoomUI();
+}
+
+// 채팅 패널 닫기 (방으로 돌아가기)
+function closeRoomChat() {
+  document.getElementById('room-chat-panel').style.display = 'none';
+  document.getElementById('room-talk-btn-wrap').style.display = 'flex';
+  document.getElementById('puang-room-scene').style.height = '420px';
+}
+
 // ── 호감도 → 하트 이모지 변환 ──
 // favorability 0~100 값을 ♥♡ 조합으로 표시
 // 20점마다 하트 1개 (100점 = ♥♥♥♥♥, 0점 = ♡♡♡♡♡)
@@ -279,6 +295,15 @@ async function sendChat() {
 function enterRoom() {
   const today = new Date().toDateString();
 
+  // 방 진입 시 채팅 패널 닫힌 상태로 초기화
+  document.getElementById('room-chat-panel').style.display = 'none';
+  document.getElementById('room-talk-btn-wrap').style.display = 'flex';
+  document.getElementById('puang-room-scene').style.height = '420px';
+
+  applyRoomDecorations();
+  document.getElementById('game-container').style.display = 'none';
+  document.getElementById('puang-room').classList.add('visible');
+
   // 날짜가 바뀌었으면 기분 + 아이템 카운트 초기화
   if (puangState.moodDate !== today) {
     puangState.moodToday      = Math.floor(Math.random() * 100);
@@ -286,7 +311,7 @@ function enterRoom() {
     puangState.itemGivenToday = { coffee: 0, snack: 0 };
     savePuangState();
   }
-
+  
   updateRoomUI();
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('puang-room').classList.add('visible');

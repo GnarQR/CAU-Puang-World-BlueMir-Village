@@ -11,10 +11,19 @@ let GROQ_API_KEY = '';
 // ── 전역 게임 스탯 ──
 // 화면 간 공유되는 플레이어 수치 (HP, SP, 데이터 조각)
 // 식당/의무실/체육관/전투 등 여러 화면에서 playerStats.hp 형태로 접근
-const playerStats = {  // 초기값 (게임 시작 시)
-  hp: 60, maxHp: 60,  // 현재 HP / 최대 HP
-  sp: 40, maxSp: 40,   // 현재 SP / 최대 SP
-  data: 0             // 보유 데이터 조각 수 (게임 내 화폐)
+const playerStats = {       // 초기값 (게임 시작 시)
+  hp: 60, maxHp: 60,        // 현재 HP / 최대 HP
+  sp: 40, maxSp: 40,        // 현재 SP / 최대 SP
+  data: 0,                  // 보유 데이터 조각 수 (게임 내 화폐)
+  diamond: 0,               // 💎 다이아 (상점 화폐)
+  ownedRoomItems: [],       // 구매한 방 아이템 ID 배열
+  roomDecorations: {        // 현재 설치된 아이템
+    background: 'default',  // 배경 테마
+    wall:   null,           // 벽 슬롯
+    floor:  null,           // 바닥 카펫 슬롯
+    floor2: null,           // 바닥 왼쪽 슬롯
+    floor3: null,           // 바닥 오른쪽 슬롯
+  },
 };
 
 // ── 푸앙이 상태 ──
@@ -111,7 +120,7 @@ function updateMapStats() {
   document.getElementById('hp-val').textContent = playerStats.hp + ' / ' + playerStats.maxHp;
   document.getElementById('sp-val').textContent = playerStats.sp + ' / ' + playerStats.maxSp;
   document.getElementById('data-val').textContent = playerStats.data + '개';
-
-// HP / SP / 데이터 조각 수치 업데이트
-document.addEventListener('DOMContentLoaded', () => {updateMapStats();});
+  document.getElementById('diamond-val').textContent = playerStats.diamond + '💎';
+  // HP / SP / 데이터 조각 수치 업데이트
+  document.addEventListener('DOMContentLoaded', () => {updateMapStats();});
 }
