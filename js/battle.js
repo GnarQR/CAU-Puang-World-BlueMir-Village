@@ -18,7 +18,7 @@ let battleBusy        = false;  // 커맨드 처리 중 여부 (중복 입력 �
 // ── 전투 초기화 ──
 // 이면 세계 진입 또는 보스 전투 시작 시 호출
 // 모든 전투 변수를 초기값으로 리셋 (나중에는 플레이어 현재 HP / SP 상태 연동되도록)
-function initBattle() {
+window.initBattle = function() {
   battlePlayerHp = 80; battlePlayerMaxHp = 100;
   enemyHp = 60;        enemyMaxHp = 60;
   battleTurn = 1;      buffActive = false; battleBusy = false;
@@ -37,7 +37,7 @@ function initBattle() {
 // ── 보스 전투 초기화 ──
 // 청룡산에서 보스 선택 시 호출
 // 기존 battle-container를 재활용하되 보스 스펙으로 덮어씀
-function initBossBattle(boss) {
+window.initBossBattle = function(boss) {
   battlePlayerHp = playerStats.hp; battlePlayerMaxHp = playerStats.maxHp;
   enemyHp = boss.hp;               enemyMaxHp = boss.hp;
   battleTurn = 1; buffActive = false; battleBusy = false;
@@ -173,7 +173,7 @@ async function enemyTurn() {
 // ── 커맨드 버튼 핸들러 ──
 // 플레이어가 커맨드 버튼 클릭 시 호출
 // battleBusy로 중복 입력 방지
-async function doCmd(cmd) {
+window.doCmd = async function(cmd) {
   if (battleBusy) return;
   battleBusy = true;
   setBattleButtons(true);

@@ -8,6 +8,59 @@
 // sendChat(), giveItem() 등 LLM 호출 시 사용
 let GROQ_API_KEY = '';
 
+// Firebase 초기화 및 DB 참조
+// 데이터 동기화 핵심 함수 
+// 1. 서버에서 모든 데이터를 한꺼번에 불러오기
+async function loadAllDataFromServer() {
+  if (!GROQ_API_KEY) return; // 키가 없으면 중단
+
+  try {
+    const docSnap = await getDoc(doc(db, "gameData", GROQ_API_KEY));
+    if (docSnap.exists) {
+      const serverData = docSnap.data();
+      
+      // 서버 데이터로 전역 변수들 업데이트
+      if (serverData.puangState) {
+        Object.assign(puangState, serverData.puangState);
+        savePuangState(); // 로컬에도 백업
+      }
+      if (serverData.dailyUsage) {
+        Object.assign(dailyUsage, serverData.dailyUsage);
+        saveDailyUsage();
+      }
+      if (serverData.playerStats) {
+        Object.assign(playerStats, serverData.playerStats);
+      }
+      
+      console.log("모든 데이터 서버 동기화 완료!");
+      if (typeof updateMapStats === 'function') updateMapStats();
+    }
+  } 
+  
+  catch (e) {
+    console.error("데이터 로드 실패:", e);
+  }
+}
+
+// 2. 서버에 통합 데이터 저장하기 (디바운싱 권장: 너무 자주 호출 방지)
+async function saveAllDataToServer() {
+  if (!GROQ_API_KEY) return;
+
+  try {
+    await setDoc(doc(db, "gameData", GROQ_API_KEY), {
+      puangState: puangState,
+      dailyUsage: dailyUsage,
+      playerStats: playerStats,
+      inventory: inventory,
+      lastUpdated: new Date()
+    }, { merge: true });
+  } 
+  
+  catch (e) {
+    console.error("서버 저장 실패:", e);
+  }
+}
+
 // ── 전역 게임 스탯 ──
 // 화면 간 공유되는 플레이어 수치 (HP, SP, 데이터 조각)
 // 식당/의무실/체육관/전투 등 여러 화면에서 playerStats.hp 형태로 접근
@@ -37,10 +90,11 @@ const puangState = JSON.parse(localStorage.getItem('puangState')) || {
 };
 
 
-// puangState가 바뀔 때마다 localStorage에 저장
+// puangState가 바뀔 때마다 Firebase에 저장
 // changeFavor(), giveItem(), enterRoom() 등에서 호출
-function savePuangState() {
+window.savePuangState = function() {
   localStorage.setItem('puangState', JSON.stringify(puangState));
+  saveAllDataToServer(); // 서버 저장 추가
 }
 
 // ── 일일 한도 시스템 ──
@@ -78,9 +132,10 @@ function checkAndResetDaily() {
   }
 }
 
-// dailyUsage가 바뀔 때마다 localStorage에 저장
-function saveDailyUsage() {
+// dailyUsage가 바뀔 때마다 Firebase에 저장
+window.saveDailyUsage = function() {
   localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage));
+  saveAllDataToServer(); // 서버 저장 추가
 }
 
 // 특정 장소의 일일 한도를 체크하고 사용 횟수를 1 증가
@@ -107,16 +162,17 @@ function remainDaily(key) {
 const inventory = JSON.parse(localStorage.getItem('cau_inventory')) || [];
 
 
-// inventory가 바뀔 때마다 localStorage에 저장
+// inventory가 바뀔 때마다 Firebase에 저장
 // craftItem() 호출 후 실행됨
-function saveInventory() {
+window.saveInventory = function() {
   localStorage.setItem('cau_inventory', JSON.stringify(inventory));
+  saveAllDataToServer(); // 서버 저장 추가
 }
 
 // ── 맵 상단 스탯 바 업데이트 ──
 // playerStats가 바뀔 때마다 호출해서 화면에 반영
 // 식당/의무실/체육관 등에서 수치 변경 후 반드시 호출
-function updateMapStats() {
+window.updateMapStats = function() {
   document.getElementById('hp-val').textContent = playerStats.hp + ' / ' + playerStats.maxHp;
   document.getElementById('sp-val').textContent = playerStats.sp + ' / ' + playerStats.maxSp;
   document.getElementById('data-val').textContent = playerStats.data + '개';

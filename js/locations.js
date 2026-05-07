@@ -17,7 +17,7 @@ const cafMenu = {
 };
 
 // 식당 입장 — 맵 숨기고 식당 화면 표시, 남은 주문 횟수 안내
-function enterCafeteria() {
+window.enterCafeteria = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('cafeteria-container').classList.add('visible');
   syncCafStats();
@@ -25,7 +25,7 @@ function enterCafeteria() {
 }
 
 // 식당 퇴장
-function leaveCafeteria() {
+window.leaveCafeteria = function() {
   document.getElementById('cafeteria-container').classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -47,7 +47,7 @@ function addCafLog(msg, cls) {
 }
 
 // 음식 주문 — 일일 한도 체크 후 HP/SP 회복, 데이터 조각 차감
-function orderFood(id) {
+window.orderFood = function(id) {
   if (!useDaily('cafeteria')) {
     addCafLog('[식당] 오늘은 더 이상 주문할 수 없어요!', 'caf-log-err');
     return;
@@ -88,14 +88,14 @@ let libFocus      = 100;  // 현재 집중력 (공부할수록 감소, 휴식으
 let libBusy       = false; // 공부 중인지 확인용 (중복 클릭 방지)
 
 // 도서관 입장
-function enterLibrary() {
+window.enterLibrary = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('library-container').classList.add('visible');
   syncLibStats();
 }
 
 // 도서관 퇴장
-function leaveLibrary() {
+window.leaveLibrary = function() {
   document.getElementById('library-container').classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -122,7 +122,7 @@ function setLibButtons(disabled) {
 }
 
 // 공부 시작 — 진행 바 애니메이션 후 데이터 조각 보상 지급
-function startStudy(subjectId) {
+window.startStudy = function(subjectId) {
   if (subjectId !== 'rest' && !useDaily('library')) {  // 휴식 제외하고 일일 한도 체크 
     addLibLog('[도서관] 오늘 공부는 충분히 했어요!', '');
     return;
@@ -193,14 +193,14 @@ function startStudy(subjectId) {
 // ================================================================
 
 // 연구실 입장
-function enterLab() {
+window.enterLab = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('lab-container').classList.add('visible');
   syncLabStats();
 }
 
 // 연구실 퇴장
-function leaveLab() {
+window.leaveLab = function() {
   document.getElementById('lab-container').classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -227,7 +227,7 @@ function addLabLog(msg, cls) {
 }
 
 // 연구실 기능 실행 — 저장/불러오기/HP 강화/SP 강화
-function doLabAction(action) {
+window.doLabAction = function(action) {
   if (action === 'save') {  // 현재 playerStats와 호감도를 localStorage에 저장
     const saveData = { playerStats, puangFav: puangState.favorability, ts: new Date().toLocaleTimeString() };
     localStorage.setItem('cau_save', JSON.stringify(saveData));
@@ -274,14 +274,14 @@ function doLabAction(action) {
 let gymStamina = 100;
 
 // 체육관 입장
-function enterGym() {
+window.enterGym = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('gym-container').style.display = 'flex';
   syncGymStats();
 }
 
 // 체육관 퇴장
-function leaveGym() {
+window.leaveGym = function() {
   document.getElementById('gym-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -301,7 +301,7 @@ function addGymLog(msg, color) {
 }
 
 // 운동 실행 — 데이터 조각/체력 소모 후 최대 HP/SP 영구 증가
-function doGym(type) {
+window.doGym = function(type) {
   if (type !== 'rest' && !useDaily('gym')) {  // 휴식 제외하고 일일 한도 체크
     addGymLog('[체육관] 오늘은 충분히 훈련했어요! (일일 3회 한도)', '#f09595');
     return;
@@ -348,14 +348,14 @@ function doGym(type) {
 // ================================================================
 
 // 의무실 입장
-function enterClinic() {
+window.enterClinic = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('clinic-container').style.display = 'flex';
   syncClinicStats();
 }
 
 // 의무실 퇴장
-function leaveClinic() {
+window.leaveClinic = function() {
   document.getElementById('clinic-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -378,7 +378,7 @@ function addClinicLog(msg, color) {
 
 // 치료 실행
 // hp/sp/full: 데이터 조각 소모 후 완전 회복
-function clinicTreat(type) {
+window.clinicTreat = function(type) {
   if (type === 'free') {  // free: 하루 1회 무료 응급처치 (HP +15)
     if (!useDaily('clinic')) {
       addClinicLog('[거절] 오늘 무료 응급처치는 이미 사용했습니다.', '#6c8ebf');
@@ -426,14 +426,14 @@ const craftRecipes = {
 };
 
 // 공대 실험실 입장
-function enterLab2() {
+window.enterLab2 = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('lab2-container').style.display = 'flex';
   renderInventory();
 }
 
 // 공대 실험실 퇴장
-function leaveLab2() {
+window.leaveLab2 = function() {
   document.getElementById('lab2-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -455,7 +455,7 @@ function renderInventory() {
 }
 
 // 아이템 제조 — 일일 한도 + 데이터 조각 체크 후 인벤토리에 추가
-function craftItem(id) {
+window.craftItem = function(id) {
   if (!useDaily('lab2')) {
     addLab2Log('[실험실] 오늘 제조는 다 했어요! (일일 3회 한도)');
     return;
@@ -487,7 +487,7 @@ const quizData = [
 let currentQuiz = null;
 
 // 축제 입장
-function enterFestival() {
+window.enterFestival = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('festival-container').style.display = 'flex';
   ['quiz-panel', 'janken-panel', 'slot-panel'].forEach(id => {
@@ -496,7 +496,7 @@ function enterFestival() {
 }
 
 // 축제 퇴장
-function leaveFestival() {
+window.leaveFestival = function() {
   document.getElementById('festival-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -509,7 +509,7 @@ function addFestivalLog(msg, color) {
 }
 
 // 미니게임 시작 — 일일 한도 체크 후 선택한 게임 패널 표시
-function playFestival(game) {
+window.playFestival = function(game) {
   ['quiz-panel', 'janken-panel', 'slot-panel'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
@@ -554,7 +554,7 @@ function playFestival(game) {
 }
 
 // 퀴즈 정답 체크 — 맞으면 💎 +5, 틀리면 정답 공개
-function answerQuiz(idx) {
+window.answerQuiz = function(idx) {
   if (idx === currentQuiz.ans) {
     playerStats.data += 5; updateMapStats();
     addFestivalLog('[퀴즈] 정답! 💎 +5', '#5dcaa5');
@@ -567,7 +567,7 @@ function answerQuiz(idx) {
 }
 
 // 가위바위보 — 이기면 💎 +8, 비기면 0, 지면 0
-function jankenPlay(choice) {
+window.jankenPlay = function(choice) {
   const choices = ['✊', '✌️', '🖐️'];
   const cpu     = choices[Math.floor(Math.random() * 3)];
   const wins    = { '✊': '✌️', '✌️': '🖐️', '🖐️': '✊' };
@@ -645,14 +645,14 @@ let unionBonusDmg   = 0;  // 전투 매뉴얼 구매 시 전투 데미지 +3씩 
 let unionBonusStudy = 0;  // 집중력 교재 구매 시 도서관 보상 +1씩 누적
 
 // 학생회관 입장
-function enterUnion() {
+window.enterUnion = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('union-container').style.display = 'flex';
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
 }
 
 // 학생회관 퇴장
-function leaveUnion() {
+window.leaveUnion = function() {
   document.getElementById('union-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -665,7 +665,7 @@ function addUnionLog(msg, color) {
 }
 
 // 프리미엄 아이템 구매 — 일일 한도 + 데이터 조각 체크 후 효과 적용
-function buyUnion(id) {
+window.buyUnion = function(id) {
   if (!useDaily('union')) {
     addUnionLog('[학생회관] 오늘 구매 한도를 초과했어요! (일일 2회 한도)', '#f09595');
     return;
@@ -698,14 +698,14 @@ function buyUnion(id) {
 // ================================================================
 
 // 청룡산 입장
-function enterMountain() {
+window.enterMountain = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('mountain-container').style.display = 'flex';
   document.getElementById('mtn-hp-val').textContent = playerStats.hp;
 }
 
 // 청룡산 퇴장
-function leaveMountain() {
+window.leaveMountain = function() {
   document.getElementById('mountain-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -718,7 +718,7 @@ function addMountainLog(msg, color) {
 }
 
 // 보스 전투 진입 — HP 체크 후 battle-container로 전환
-function enterBoss(bossId) {
+window.enterBoss = function(bossId) {
   if (playerStats.hp < 30) {
     addMountainLog('[경고] HP가 너무 낮습니다! 의무실에서 회복 후 도전하세요.', '#f09595');
     return;

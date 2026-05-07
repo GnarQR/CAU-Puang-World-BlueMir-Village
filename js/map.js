@@ -24,7 +24,7 @@ const placeInfo = {
 
 // ── 장소 진입 함수 ──
 // 맵 버튼 클릭 시 호출, 잠금 여부 확인 후 해당 화면으로 전환
-function enterPlace(place) {
+window.enterPlace = function(place) {
   const info = placeInfo[place];
   if (info.locked) {
     alert('🔒 ' + info.desc);
@@ -72,7 +72,7 @@ function showSystemMsgOnMap(msg) {
 
 // ── 맵으로 복귀 ──
 // 전투/장소 화면에서 맵으로 돌아올 때 공통으로 사용
-function returnToGame() {
+window.returnToGame = function() {
   document.getElementById('battle-container').classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }

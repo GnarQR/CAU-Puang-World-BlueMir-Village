@@ -4,7 +4,7 @@
 // ================================================================
 
 // 채팅 패널 열기
-function openRoomChat() {
+window.openRoomChat = function() {
   document.getElementById('room-chat-panel').style.display = 'flex';
   document.getElementById('room-talk-btn-wrap').style.display = 'none';
   // 방 씬 높이 줄이기
@@ -13,7 +13,7 @@ function openRoomChat() {
 }
 
 // 채팅 패널 닫기 (방으로 돌아가기)
-function closeRoomChat() {
+window.closeRoomChat = function() {
   document.getElementById('room-chat-panel').style.display = 'none';
   document.getElementById('room-talk-btn-wrap').style.display = 'flex';
   document.getElementById('puang-room-scene').style.height = '420px';
@@ -111,7 +111,7 @@ function addChatMsg(who, text, favorChange) {
 // ── 아이템 증정 ──
 // 아이템 한도 체크는 JS에서 판단하고 대사만 Groq LLM에 요청
 // itemId: 'coffee' | 'snack' | 'praise'
-async function giveItem(itemId) {
+window.giveItem = async function(itemId) {
   const limits = { coffee: 3, snack: 2 };  // 아이템별 일일 한도 (고정값 — 기기마다 moodToday가 달라서 고정으로 통일)
 
   let situation = '';  // 상황 설명 텍스트 — LLM 시스템 프롬프트에 삽입되어 대사 맥락 제공
@@ -223,7 +223,7 @@ async function giveItem(itemId) {
 // ── 채팅 전송 ──
 // 플레이어 입력을 Groq LLM에 전달하고 푸앙이 응답을 받아 표시
 // 나중에 키 숨길 때: fetch URL을 Cloudflare Workers URL로 교체
-async function sendChat() {
+window.sendChat = async function() {
   const input = document.getElementById('chat-input');
   const text  = input.value.trim();
   if (!text) return;
@@ -292,7 +292,7 @@ async function sendChat() {
 
 // ── 방 입장 ──
 // 날짜 기준으로 기분/아이템 한도 초기화 체크 후 방 화면 표시
-function enterRoom() {
+window.enterRoom = function() {
   const today = new Date().toDateString();
 
   // 방 진입 시 채팅 패널 닫힌 상태로 초기화
@@ -319,7 +319,7 @@ function enterRoom() {
 
 // ── 방 퇴장 ──
 // 푸앙이 방을 닫고 맵으로 복귀
-function leaveRoom() {
+window.leaveRoom = function() {
   document.getElementById('puang-room').classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }

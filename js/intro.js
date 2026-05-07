@@ -4,25 +4,34 @@
 // ================================================================
 
 // ── 인트로 스킵 ──
-// localStorage에 키+닉네임이 이미 있으면 인트로 전체를 건너뜀 (재방문 유저)
+// Firebase에 키+닉네임이 이미 있으면 인트로 전체를 건너뜀 (재방문 유저)
 // DOMContentLoaded 이벤트에서 자동 호출됨
-function skipIntro() {
+window.skipIntro = function() {
   document.getElementById('intro-overlay').classList.add('hidden');
-  updateMapStats();  // 맵 상단 스탯 바로 이동해서 초기값 표시
+  // 맵 상단 스탯 바로 이동해서 초기값 표시
+  if (typeof updateMapStats === 'function') updateMapStats();  
 }
 
 // ── 1단계: API 키 제출 ──
 // gsk_ 로 시작하는지 검증 후 localStorage에 저장
 // 유효하면 스토리 단계로 전환
-function submitApiKey() {
+window.submitApiKey = function() {
   const key = document.getElementById('api-key-input').value.trim();
+
   if (!key.startsWith('gsk_')) {
     shakeInput('api-key-input');
     return;
   }
+
   localStorage.setItem('groqApiKey', key);
-  GROQ_API_KEY = key;
-  switchStep('step-api', 'step-story');
+  GROQ_API_KEY = key;  // 키 저장
+
+  // Firebase에서 기존 데이터 불러오기 시도
+  if (typeof loadAllDataFromServer === 'function') {
+    loadAllDataFromServer(); 
+  }
+
+  switchStep('step-api', 'step-story');  // 화면 전환
   startStoryTyping();
 }
 
@@ -50,7 +59,9 @@ function startStoryTyping() {
       el.textContent += STORY_TEXT[i];
       i++;
       setTimeout(step, i < 60 ? 40 : 28);
-    } else {
+    } 
+    
+    else {
       nextBtn.style.display = 'block';
     }
   }
@@ -58,13 +69,12 @@ function startStoryTyping() {
 }
 
 // ── 3단계: 닉네임 입력으로 이동 ──
-function goToNameStep() {
+window.goToNameStep = function() {
   switchStep('step-story', 'step-name');
 }
 
 // ── 닉네임 제출 ──
-// localStorage에 저장 후 오버레이 페이드아웃
-function submitName() {
+window.submitName = function() {  // Firebase에 저장 후 오버레이 페이드아웃
   const name = document.getElementById('name-input').value.trim();
   if (!name) {
     shakeInput('name-input');
@@ -78,8 +88,7 @@ function submitName() {
 }
 
 // ── 단계 전환 헬퍼 ──
-// fromId 단계를 숨기고 toId 단계를 표시
-function switchStep(fromId, toId) {
+function switchStep(fromId, toId) {  // fromId 단계를 숨기고 toId 단계를 표시
   document.getElementById(fromId).classList.add('hidden');
   document.getElementById(toId).classList.remove('hidden');
 }
@@ -105,10 +114,14 @@ function shakeInput(id) {
 document.addEventListener('DOMContentLoaded', () => {
   const savedKey  = localStorage.getItem('groqApiKey');
   const savedName = localStorage.getItem('playerName');
+
   if (savedKey && savedName) {
     GROQ_API_KEY = savedKey;
-    skipIntro();
+    window.skipIntro();
   }
+
+  document.getElementById('api-key-btn').onclick = () => window.submitApiKey();
+  document.getElementById('name-confirm-btn').onclick = () => window.submitName();
 
   document.getElementById('api-key-input')
     ?.addEventListener('keydown', e => { if (e.key === 'Enter') submitApiKey(); });

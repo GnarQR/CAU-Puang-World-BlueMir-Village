@@ -86,7 +86,7 @@ function buildRoomHTML() {
 }
 
 // ── 아이템 렌더링 ──
-function applyRoomDecorations() {
+window.applyRoomDecorations = function() {
   const scene = document.getElementById('puang-room-scene');
   if (!scene) return;
 
@@ -141,7 +141,7 @@ function renderSlot(slotId, itemId, pos) {
 }
 
 // ── 아이템 구매 ──
-function buyRoomItem(itemId) {
+window.buyRoomItem = function(itemId) {
   const item = ROOM_ITEMS[itemId];
   if (!item) return false;
 
@@ -166,7 +166,7 @@ function buyRoomItem(itemId) {
 }
 
 // ── 아이템 설치 ──
-function installRoomItem(itemId) {
+window.installRoomItem = function(itemId) {
   const item = ROOM_ITEMS[itemId];
   if (!item) return;
 
@@ -186,7 +186,7 @@ function installRoomItem(itemId) {
 }
 
 // ── 상점 UI 렌더링 ──
-function renderRoomShop() {
+window.renderRoomShop = function() {
   const owned = playerStats.ownedRoomItems;
   const installed = playerStats.roomDecorations;
 

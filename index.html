@@ -28,7 +28,7 @@
         </p>
         <div class="intro-input-wrap">
           <input type="password" id="api-key-input" placeholder="gsk_..." autocomplete="off" spellcheck="false" />
-          <button id="api-key-btn" onclick="submitApiKey()">접속 ▶</button>
+          <button id="api-key-btn">접속 ▶</button>
         </div>
         <p class="intro-link-hint">
           키가 없으신가요? →
@@ -63,7 +63,7 @@
         </p>
         <div class="intro-input-wrap">
           <input type="text" id="name-input" placeholder="이름을 입력하세요..." maxlength="12" autocomplete="off" />
-          <button onclick="submitName()">확인 ▶</button>
+          <button id="name-confirm-btn">확인 ▶</button>
         </div>
       </div>
     </div>
@@ -86,6 +86,7 @@
       <div class="map-stat-pill"> SP <span id="sp-val">45 / 60</span></div>
       <div class="map-stat-pill"> 데이터 조각 <span id="data-val">12개</span></div>
       <div class="map-stat-pill"> 푸앙이 호감도 <span id="favor-display" style="color:#d4537e;"> ♥♥♥♡♡ </span></div>
+      <div class="map-stat-pill"> 💎 <span id="diamond-val">0</span></div>
     </div>
 
     <!-- 맵 배경 + 장소 버튼 -->
@@ -1133,9 +1134,16 @@
     </div>
   </div>
 
-  <!-- JS 파일들 (순서 중요!) -->
+  <!-- Firebase compat CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase 초기화 -->
+  <script src="js/firebase.js"></script>  
+
+  <!-- 게임 JS -->
   <script src="js/state.js"></script>
-  <script src="js/puang_room.js"></script>  
+  <script src="js/puang_room.js"></script>
   <script src="js/intro.js"></script>
   <script src="js/map.js"></script>
   <script src="js/battle.js"></script>
