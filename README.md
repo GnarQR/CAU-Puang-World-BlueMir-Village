@@ -17,7 +17,7 @@ CAU-RPG/
 │   └── state.js        ← playerStat, puangState, dailyUsage 전역 변수
 │
 └── images/
-
+```
 
 이면 세계로 로그인하기 [초기 로그인 화면]
 
