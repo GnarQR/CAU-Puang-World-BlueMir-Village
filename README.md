@@ -14,8 +14,8 @@ CAU-RPG/
 │   ├── battle.js       ← 전투 로직
 │   ├── puang.js        ← 푸앙이 방 + Groq API
 │   ├── locations.js    ← 식당/도서관/체육관 등
-│   └── state.js        ← playerStat, puangState, dailyUsage 전역 변수
-│
+│   ├── state.js        ← playerStat, puangState, dailyUsage 전역 변수
+│   └── firebase.js     ← Firebase 백엔드 서버 구현
 └── images/
 ```
 
