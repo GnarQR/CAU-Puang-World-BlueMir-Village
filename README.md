@@ -1,7 +1,7 @@
-# CAU-RPG
+# CAU Puang World : BlueMir Village
 
 ```text
-CAU-RPG/
+CAU-Puang-World-BlueMir-Village/
 │
 ├── index.html          ← HTML (레이아웃)
 │
@@ -20,6 +20,7 @@ CAU-RPG/
 └── images/
 ```
 
+(TODO : 밝은 컨셉으로 바꿨으니까 아래 부분 수정하기)
 이면 세계로 로그인하기 [초기 로그인 화면]
 
 
