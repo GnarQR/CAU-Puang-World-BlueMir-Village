@@ -230,21 +230,9 @@
 
     <!-- 전투 필드: 적 vs 플레이어 -->
     <div class="battle-field">
-      <div class="fighter">
-        <!-- 수정: style 인라인으로 직접 크기 지정 -->
-        <svg id="enemy-svg" class="enemy-svg" viewBox="0 0 90 110" style="width:auto; height:120px"
-          xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="45" cy="38" rx="26" ry="26" fill="#c0c0d0" />
-          <path d="M19 38 Q19 80 26 92 Q33 105 45 97 Q57 105 64 92 Q71 80 71 38 Z" fill="#c0c0d0" />
-          <path d="M19 88 Q24 79 29 88 Q34 79 39 88 Q44 79 49 88 Q54 79 59 88 Q64 79 69 88 Q71 79 71 88"
-            fill="#c0c0d0" />
-          <circle cx="35" cy="38" r="5" fill="#1a1a2e" />
-          <circle cx="55" cy="38" r="5" fill="#1a1a2e" />
-          <circle cx="35" cy="36" r="2" fill="white" />
-          <circle cx="55" cy="36" r="2" fill="white" />
-          <path d="M38 52 Q45 46 52 52" stroke="#1a1a2e" stroke-width="1.5" fill="none" />
-          <text x="45" y="29" text-anchor="middle" font-size="16" fill="#e24b4a" opacity="0.8">F</text>
-        </svg>
+      <div class="fighter">  <!-- 학점 귀신 PNG 파일 -->
+        <img id="enemy-svg" src="images/monster/F-ghost.png"
+          style="width:auto; height:160px; object-fit:contain;"> <!-- 크기 조절 -->
         <div class="fighter-name">학점귀신 Lv.7</div>
         <div class="hp-bar-wrap">
           <div class="hp-bar-label"><span>HP</span><span id="enemy-hp-text">60 / 60</span></div>
