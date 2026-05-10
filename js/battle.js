@@ -9,27 +9,45 @@
 // initBattle() 호출 시 초기화됨 (나중에는 플레이어 현재 HP / SP 상태 연동되도록)
 let battlePlayerHp    = 80;     // 현재 플레이어 HP
 let battlePlayerMaxHp = 100;    // 플레이어 최대 HP
+let battleOrigin      = 'map';  // 전투 시작 시 위치 (205관, 청룡산 등), 'map' | 'mountain'
+let currentMonster    = null;   // 현재 전투 중인 몬스터 데이터 (MONSTERS 또는 BOSSES에서 가져옴)
 let enemyHp           = 60;     // 현재 적 HP  (나중에는 몬스터에 따라 값 변경)
 let enemyMaxHp        = 60;     // 적 최대 HP
 let battleTurn        = 1;      // 현재 턴 수
 let buffActive        = false;  // 하이퍼 프롬프트 버프 활성 여부 (다음 공격 데미지 2배)
 let battleBusy        = false;  // 커맨드 처리 중 여부 (중복 입력 방지)
 
+// 전투 화면 UI를 몬스터 데이터에 맞게 업데이트하는 함수
+function applyMonsterUI(monster) {
+  currentMonster = monster;
+  const img = document.getElementById('enemy-svg');
+  if (img) img.src = monster.image;  // 몬스터 이미지 업데이트
+  const nameEl = document.querySelector('.fighter-name');
+  if (nameEl) nameEl.textContent = monster.name + ' Lv.' + monster.level;  // 몬스터 이름과 레벨 업데이트
+  const titleEl = document.querySelector('.battle-title');
+  if (titleEl) titleEl.textContent = monster.isBoss ? '청룡산 — 보스전' : '205관 이면 세계';  // 전투 제목 업데이트
+}
+
 // ── 전투 초기화 ──
-// 이면 세계 진입 또는 보스 전투 시작 시 호출
+// 205관 이면 세계 진입 시 호출
 // 모든 전투 변수를 초기값으로 리셋 (나중에는 플레이어 현재 HP / SP 상태 연동되도록)
 window.initBattle = function() {
-  battlePlayerHp = 80; battlePlayerMaxHp = 100;
-  enemyHp = 60;        enemyMaxHp = 60;
-  battleTurn = 1;      buffActive = false; battleBusy = false;
+  battleOrigin = 'map';  // 전투 시작 위치 (나중에 전투 시작 전 탐험 맵을 만들 시 이 부분 수정)
+  const monster = getRandomMonster();  // 몬스터 데이터베이스에서 랜덤 몬스터 선택
+  battlePlayerHp = playerStats.hp; 
+  battlePlayerMaxHp = playerStats.maxHp;
+  enemyHp = monster.hp;        
+  enemyMaxHp = monster.hp;  
+  battleTurn = 1; buffActive = false; battleBusy = false;
 
+  applyMonsterUI(monster);  // 몬스터 데이터에 맞게 UI 업데이트
   updateBattleBars();
   document.getElementById('turn-display').textContent  = '턴 1';
   document.getElementById('dice-display').textContent  = '🎲';
   document.getElementById('dice-result').textContent   = '커맨드를 선택하세요';
   document.getElementById('battle-log').innerHTML =
-    '<span class="log-system2">[SYSTEM] 전투 시작! 학점귀신이 나타났다.</span><br>' +
-    '<span class="log-system2">[RAG] 학점귀신 약점 DB 로드 완료 → 집중력 속성에 취약</span><br>' +
+    '<span class="log-system2">[SYSTEM] ' + monster.intro + '</span><br>' +
+    '<span class="log-system2">[RAG] ' + monster.name + ' 약점 DB → ' + monster.weakness + '에 취약</span><br>' +
     '<span class="log-system2">[AGENT] 룰 판정 에이전트 대기 중...</span>';
   setBattleButtons(false);
 }
@@ -38,19 +56,27 @@ window.initBattle = function() {
 // 청룡산에서 보스 선택 시 호출
 // 기존 battle-container를 재활용하되 보스 스펙으로 덮어씀
 window.initBossBattle = function(boss) {
-  battlePlayerHp = playerStats.hp; battlePlayerMaxHp = playerStats.maxHp;
-  enemyHp = boss.hp;               enemyMaxHp = boss.hp;
+  battleOrigin = 'mountain';  // 전투 시작 위치
+  const monsterId = Object.keys(BOSSES).find(k => BOSSES[k].name === boss.name);
+  const monster   = monsterId ? BOSSES[monsterId] : {
+    ...boss, level: '?', image: 'images/monster/F-ghost.png',
+    weakness: '알 수 없음', intro: boss.name + ' 등장!',
+    attackMin: 3, attackMax: 18, isBoss: true,
+  };
+  battlePlayerHp = playerStats.hp; 
+  battlePlayerMaxHp = playerStats.maxHp;
+  enemyHp = monster.hp;               
+  enemyMaxHp = monster.hp;
   battleTurn = 1; buffActive = false; battleBusy = false;
 
-  document.querySelector('.battle-title').textContent    = boss.name;
-  document.querySelector('.fighter-name').textContent    = boss.name + ' (BOSS)';
+  applyMonsterUI(monster);
   updateBattleBars();
   document.getElementById('turn-display').textContent    = '턴 1';
   document.getElementById('dice-display').textContent    = '🎲';
   document.getElementById('dice-result').textContent     = '커맨드를 선택하세요';
   document.getElementById('battle-log').innerHTML =
-    '<span class="log-damage">[BOSS] ' + boss.name + ' 등장! 강력한 적입니다!</span><br>' +
-    '<span class="log-system2">[AGENT] 보스 약점 분석 중...</span>';
+    '<span class="log-damage">[BOSS] ' + monster.intro + ' 강력한 적!</span><br>' +
+    '<span class="log-system2">[AGENT] 보스 약점 → ' + monster.weakness + '</span>';
   setBattleButtons(false);
 }
 
@@ -65,7 +91,6 @@ function updateBattleBars() {
   document.getElementById('battle-player-hp-text').textContent = Math.max(0, battlePlayerHp) + ' / ' + battlePlayerMaxHp;
 }
 
-// ── 커맨드 버튼 일괄 비활성화/활성화 ──
 // 커맨드 처리 중에는 버튼을 막아서 중복 입력 방지
 function setBattleButtons(disabled) {
   document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = disabled);
@@ -100,13 +125,13 @@ function sleepMs(ms) {
 //   - 최솟값 변경: Math.max(4, ...) 에서 4를 다른 숫자로 교체
 //   - 완전히 다른 효과로 교체 시 isPuangMode 블록 전체 교체
 //   - 예: 하트가 쏟아지는 연출 → faces 배열을 ['♥','♥','♥','♥','♥','♥']로 교체
-async function animateDice(sides) {
+async function animateDice(sides, ignoreGold = false) {
   const el    = document.getElementById('dice-display');
   const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];  // 인덱스 0 ~ 5
 
   // 호감도 80 이상이면 황금 주사위 (최소 4 보장)
   // 다른 효과로 교체 시 이 블록을 교체할 것.
-  const isPuangMode = puangState.favorability >= 80;
+  const isPuangMode = !ignoreGold && puangState.favorability >= 80;
   if (isPuangMode) {
     el.style.filter    = 'sepia(1) saturate(5) hue-rotate(10deg)';
     el.style.transform = 'scale(1.3)';
@@ -142,7 +167,7 @@ async function enemyTurn() {
   await sleepMs(600);
   const roll = Math.floor(Math.random() * 12) + 1;
   const dmg  = Math.max(1, roll - 5);  // 몹 딜량 조정 시 이 줄 수정
-  addBattleLog('[룰 판정] 학점귀신 공격! 주사위: ' + roll, 'log-dice');
+  addBattleLog('[룰 판정] ' + (currentMonster ? currentMonster.name : '적') + ' 공격! 주사위: ' + roll, 'log-dice');
   await sleepMs(400);
 
   // 플레이어 피격 애니메이션
@@ -200,7 +225,7 @@ window.doCmd = async function(cmd) {
 
       enemyHp -= dmg;
       updateBattleBars();
-      addBattleLog('[결과] 학점귀신에게 ' + dmg + ' 데미지!', 'log-success');
+      addBattleLog('[결과] ' + (currentMonster ? currentMonster.name : '적') + '에게 ' + dmg + ' 데미지!', 'log-success');
       document.getElementById('dice-result').textContent = '명중! ' + dmg + ' 데미지';
     } 
     
@@ -210,10 +235,11 @@ window.doCmd = async function(cmd) {
     }
 
     if (enemyHp <= 0) {  // 적 사망 → 승리 처리
-      addBattleLog('[SYSTEM] 학점귀신을 물리쳤다! 데이터 조각 x5 획득', 'log-success');
+      const reward = currentMonster ? currentMonster.reward : 5;
+      addBattleLog('[SYSTEM] ' + (currentMonster ? currentMonster.name : '적') + '을(를) 물리쳤다! 데이터 조각 x' + reward + ' 획득', 'log-success');
       document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀합니다.';
       document.getElementById('dice-display').textContent = '🎉';
-      playerStats.data += 5;  // 승리 보상
+      playerStats.data += currentMonster ? currentMonster.reward : 5;  // 승리 보상
       updateMapStats();
       await sleepMs(3000);
       returnToGame();
@@ -243,21 +269,30 @@ window.doCmd = async function(cmd) {
     document.getElementById('dice-display').textContent = '⚡';
   }
 
-  // ── 이면 세계 탈출 (도망) ──
-  // d2 굴려서 2 나오면 탈출 성공 (50% 확률)
+  // ── 도망 ──
   else if (cmd === 'run') {
     document.getElementById('dice-result').textContent = 'd2 굴리는 중...';
-    const roll = await animateDice(2);
+    const roll = await animateDice(2, true); // 도망은 황금 주사위 효과 없음
 
-    if (roll === 2) {
+    if (roll == 2) { // 2이면 탈출 성공 (50% 확률로 도망 성공)
       addBattleLog('[결과] 이면 세계에서 탈출했다!', 'log-success');
       document.getElementById('dice-result').textContent = '탈출 성공!';
       document.getElementById('battle-container').classList.remove('visible');
+
+      if (battleOrigin === 'mountain') {  // 청룡산에서 탈출 시
+      document.getElementById('mountain-container').style.display = 'flex';
+      } 
+
+      else { // 205관 이면 세계에서 탈출 시
       document.getElementById('game-container').style.display = 'flex';
+      }
+
       battleBusy = false;
       return;
-    } else {
-      addBattleLog('[결과] 탈출 실패! 학점귀신이 가로막았다.', 'log-damage');
+    } 
+    
+    else {
+      addBattleLog('[결과] 탈출 실패! ' + (currentMonster ? currentMonster.name : '적') + '이(가) 가로막았다.', 'log-damage');
       document.getElementById('dice-result').textContent = '탈출 실패...';
     }
   }

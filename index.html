@@ -214,13 +214,12 @@
 
   </div>
 
-  <!--          -->
-  <!-- 전투 화면 -->
-  <!--          -->
+  <!--                        -->
+  <!-- 205관 이면 세계 전투 화면 -->
+  <!--                        -->
   <div id="battle-container">
 
-    <!-- 전투 헤더 -->
-    <div class="battle-header">
+    <div class="battle-header">  <!-- 전투 헤더 -->
       <div>
         <div class="battle-label"> 전투 발생 </div>
         <div class="battle-title"> 205관 이면 세계 </div>
@@ -230,12 +229,11 @@
 
     <!-- 전투 필드: 적 vs 플레이어 -->
     <div class="battle-field">
-      <div class="fighter">  <!-- 학점 귀신 PNG 파일 -->
-        <img id="enemy-svg" src="images/monster/F-ghost.png"
-          style="width:auto; height:160px; object-fit:contain;"> <!-- 크기 조절 -->
-        <div class="fighter-name">학점귀신 Lv.7</div>
+      <div class="fighter">  <!-- 몬스터 PNG 파일 DB에서 불러오기 -->
+        <img id="enemy-svg" src="" style="width:auto; height:160px; object-fit:contain;"> <!-- 크기 조절 -->
+        <div class="fighter-name" id="enemy-name">???</div>
         <div class="hp-bar-wrap">
-          <div class="hp-bar-label"><span>HP</span><span id="enemy-hp-text">60 / 60</span></div>
+          <div class="hp-bar-label"><span>HP</span><span id="enemy-hp-text">-- / --</span></div>
           <div class="hp-bar-bg2">
             <div class="hp-bar-fill2" id="enemy-hp-bar" style="width:100%; background:#e24b4a;"></div>
           </div>
@@ -258,12 +256,7 @@
       </div>
     </div>
 
-    <!-- 전투 로그 (초기 데모)-->
-    <div class="battle-log" id="battle-log">
-      <span class="log-system2">[SYSTEM] 전투 시작! 학점귀신이 나타났다.</span><br>
-      <span class="log-system2">[RAG] 학점귀신 약점 DB 로드 완료 → 집중력 속성에 취약</span><br>
-      <span class="log-system2">[AGENT] 룰 판정 에이전트 대기 중...</span>
-    </div>
+    <div class="battle-log" id="battle-log"></div>  <!-- 전투 로그 -->
 
     <!-- 주사위 + 커맨드 -->
     <!-- 기술 변경 시 같이 변경할 것 -->
@@ -291,6 +284,76 @@
       <div class="dice-result" id="dice-result">커맨드를 선택하세요</div>
     </div>
 
+  </div>
+
+  <!--       -->
+  <!-- 청룡산 -->
+  <!--       -->
+  <div id="mountain-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
+    <div
+      style="background:#16213e;border:1px solid #e24b4a;border-radius:12px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:11px;color:#e24b4a;letter-spacing:1px;">⚠ DANGER ZONE</div>
+        <div style="font-size:15px;font-weight:500;color:#e24b4a;">⛰️ 청룡산 — 보스 던전</div>
+      </div>
+      <button onclick="leaveMountain()"
+        style="background:rgba(226,75,74,0.15);border:1px solid #e24b4a;border-radius:8px;padding:4px 12px;font-size:12px;color:#e24b4a;cursor:pointer;font-family:inherit;">←
+        맵으로</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;text-align:center;">
+        <div style="font-size:10px;color:#f09595;">내 HP</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="mtn-hp-val">80</div>
+      </div>
+      <div style="background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;text-align:center;">
+        <div style="font-size:10px;color:#f09595;">클리어 보상</div>
+        <div style="font-size:16px;font-weight:600;color:#ef9f27;">💎 ×20</div>
+      </div>
+      <div style="background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;text-align:center;">
+        <div style="font-size:10px;color:#f09595;">권장 HP</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;">60+</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:11px;color:#e24b4a;letter-spacing:1px;">👹 보스 선택</div>
+      <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+        
+        <button onclick="enterBoss('deadline')"
+          style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:14px 16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;display:flex;align-items:center;gap:12px;transition:border-color 0.2s,background 0.2s;"
+          onmouseover="this.style.borderColor='#e24b4a';this.style.background='#2e1010'"
+          onmouseout="this.style.borderColor='#3b0d0d';this.style.background='#16213e'">
+          <img src="images/monster/boss/deadline_ghost.png" 
+                style="width:64px;height:64px;object-fit:contain;"
+                onerror="this.outerHTML='<div style=font-size:36px>📅</div>'"/>
+          <div>
+            <div style="font-size:14px;font-weight:500;">데드라인 악령 Lv.15</div>
+            <div style="font-size:11px;color:#f09595;margin-top:2px;">HP 120 · 강력한 시간 공격</div>
+            <div style="font-size:11px;color:#ef9f27;margin-top:2px;">클리어 보상: 💎 20개 + 특수 아이템</div>
+          </div>
+        </button>
+
+        <button onclick="enterBoss('professor')"
+          style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:14px 16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;display:flex;align-items:center;gap:12px;transition:border-color 0.2s,background 0.2s;"
+          onmouseover="this.style.borderColor='#e24b4a';this.style.background='#2e1010'"
+          onmouseout="this.style.borderColor='#3b0d0d';this.style.background='#16213e'">
+          <img src="images/monster/boss/random_professor.png"
+                style="width:64px;height:64px;object-fit:contain;"
+                onerror="this.outerHTML='<div style=font-size:36px>👨‍🏫</div>'"/>
+          <div>
+            <div style="font-size:14px;font-weight:500;">족보없는 교수 Lv.20</div>
+            <div style="font-size:11px;color:#f09595;margin-top:2px;">HP 200 · 랜덤 문제 공격</div>
+            <div style="font-size:11px;color:#ef9f27;margin-top:2px;">클리어 보상: 💎 35개 + 전설 아이템</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div id="mountain-log"
+      style="background:#0d1117;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;font-size:12px;color:#f09595;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
+      <span style="color:#4a7a4a;">[청룡산] 강한 보스가 기다리고 있습니다. HP를 충분히 채우고 오세요!</span>
+    </div>
   </div>
 
   <!--         -->
@@ -957,71 +1020,6 @@
     </div>
   </div>
 
-  <!--       -->
-  <!-- 청룡산 -->
-  <!--       -->
-  <div id="mountain-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
-    <div
-      style="background:#16213e;border:1px solid #e24b4a;border-radius:12px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-size:11px;color:#e24b4a;letter-spacing:1px;">⚠ DANGER ZONE</div>
-        <div style="font-size:15px;font-weight:500;color:#e24b4a;">⛰️ 청룡산 — 보스 던전</div>
-      </div>
-      <button onclick="leaveMountain()"
-        style="background:rgba(226,75,74,0.15);border:1px solid #e24b4a;border-radius:8px;padding:4px 12px;font-size:12px;color:#e24b4a;cursor:pointer;font-family:inherit;">←
-        맵으로</button>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-      <div style="background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;text-align:center;">
-        <div style="font-size:10px;color:#f09595;">내 HP</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="mtn-hp-val">80</div>
-      </div>
-      <div style="background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;text-align:center;">
-        <div style="font-size:10px;color:#f09595;">클리어 보상</div>
-        <div style="font-size:16px;font-weight:600;color:#ef9f27;">💎 ×20</div>
-      </div>
-      <div style="background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;text-align:center;">
-        <div style="font-size:10px;color:#f09595;">권장 HP</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;">60+</div>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:11px;color:#e24b4a;letter-spacing:1px;">👹 보스 선택</div>
-      <div style="display:grid;grid-template-columns:1fr;gap:8px;">
-        <button onclick="enterBoss('deadline')"
-          style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:14px 16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;display:flex;align-items:center;gap:12px;transition:border-color 0.2s,background 0.2s;"
-          onmouseover="this.style.borderColor='#e24b4a';this.style.background='#2e1010'"
-          onmouseout="this.style.borderColor='#3b0d0d';this.style.background='#16213e'">
-          <div style="font-size:36px;">📅</div>
-          <div>
-            <div style="font-size:14px;font-weight:500;">데드라인 악령 Lv.15</div>
-            <div style="font-size:11px;color:#f09595;margin-top:2px;">HP 120 · 강력한 시간 공격</div>
-            <div style="font-size:11px;color:#ef9f27;margin-top:2px;">클리어 보상: 💎 20개 + 특수 아이템</div>
-          </div>
-        </button>
-
-        <button onclick="enterBoss('professor')"
-          style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:14px 16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;display:flex;align-items:center;gap:12px;transition:border-color 0.2s,background 0.2s;"
-          onmouseover="this.style.borderColor='#e24b4a';this.style.background='#2e1010'"
-          onmouseout="this.style.borderColor='#3b0d0d';this.style.background='#16213e'">
-          <div style="font-size:36px;">👨‍🏫</div>
-          <div>
-            <div style="font-size:14px;font-weight:500;">족보없는 교수 Lv.20</div>
-            <div style="font-size:11px;color:#f09595;margin-top:2px;">HP 200 · 랜덤 문제 공격</div>
-            <div style="font-size:11px;color:#ef9f27;margin-top:2px;">클리어 보상: 💎 35개 + 전설 아이템</div>
-          </div>
-        </button>
-      </div>
-    </div>
-
-    <div id="mountain-log"
-      style="background:#0d1117;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;font-size:12px;color:#f09595;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
-      <span style="color:#4a7a4a;">[청룡산] 강한 보스가 기다리고 있습니다. HP를 충분히 채우고 오세요!</span>
-    </div>
-  </div>
-
   <!--                      -->
   <!-- 블루미르홀(푸앙이의 방) -->
   <!--                      -->
@@ -1130,6 +1128,7 @@
   <script src="js/firebase.js"></script>  
 
   <!-- 게임 JS -->
+  <script src="js/monsters.js"></script>
   <script src="js/state.js"></script>
   <script src="js/puang_room.js"></script>
   <script src="js/intro.js"></script>

@@ -5,6 +5,49 @@
 // ================================================================
 
 // ================================================================
+// 청룡산 (보스전)
+// ================================================================
+
+// 청룡산 입장
+window.enterMountain = function() {
+  document.getElementById('game-container').style.display = 'none';
+  document.getElementById('mountain-container').style.display = 'flex';
+  document.getElementById('mtn-hp-val').textContent = playerStats.hp;
+}
+
+// 청룡산 퇴장
+window.leaveMountain = function() {
+  document.getElementById('mountain-container').style.display = 'none';
+  document.getElementById('game-container').style.display = 'flex';
+}
+
+// 청룡산 로그 추가
+function addMountainLog(msg, color) {
+  const box = document.getElementById('mountain-log');
+  box.innerHTML += '<br><span style="color:' + (color || '#f09595') + '">' + msg + '</span>';
+  box.scrollTop = box.scrollHeight;
+}
+
+// 보스 전투 진입 — HP 체크 후 battle-container로 전환
+window.enterBoss = function(bossId) {
+  if (playerStats.hp < 30) {
+    addMountainLog('[경고] HP가 너무 낮습니다! 의무실에서 회복 후 도전하세요.', '#f09595');
+    return;
+  }
+
+  const boss = BOSSES[bossId];
+  if (!boss) return;
+
+  addMountainLog('[진입] ' + boss.name + ' 과의 전투를 시작합니다!', '#ef9f27');
+
+  setTimeout(() => {  // BOSS DB에서 이미지와 이름 불러온 후 전투 화면으로 전환
+    document.getElementById('mountain-container').style.display = 'none';
+    document.getElementById('battle-container').classList.add('visible');
+    initBossBattle(boss);
+  }, 1500);  // 1.5초 후 전투 화면으로 전환
+}
+
+// ================================================================
 // 학생식당
 // ================================================================
 
@@ -691,48 +734,4 @@ window.buyUnion = function(id) {
   else if (id === 'battle_str') { unionBonusDmg += 3; addUnionLog('[구매] 전투 매뉴얼! 전투 데미지 +3 영구 적용', '#ef9f27'); }
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
   updateMapStats();
-}
-
-// ================================================================
-// 청룡산 (보스전)
-// ================================================================
-
-// 청룡산 입장
-window.enterMountain = function() {
-  document.getElementById('game-container').style.display = 'none';
-  document.getElementById('mountain-container').style.display = 'flex';
-  document.getElementById('mtn-hp-val').textContent = playerStats.hp;
-}
-
-// 청룡산 퇴장
-window.leaveMountain = function() {
-  document.getElementById('mountain-container').style.display = 'none';
-  document.getElementById('game-container').style.display = 'flex';
-}
-
-// 청룡산 로그 추가
-function addMountainLog(msg, color) {
-  const box = document.getElementById('mountain-log');
-  box.innerHTML += '<br><span style="color:' + (color || '#f09595') + '">' + msg + '</span>';
-  box.scrollTop = box.scrollHeight;
-}
-
-// 보스 전투 진입 — HP 체크 후 battle-container로 전환
-window.enterBoss = function(bossId) {
-  if (playerStats.hp < 30) {
-    addMountainLog('[경고] HP가 너무 낮습니다! 의무실에서 회복 후 도전하세요.', '#f09595');
-    return;
-  }
-  const bosses = {
-    deadline:  { name: '데드라인 악령',  hp: 120, reward: 20 },
-    professor: { name: '족보없는 교수',  hp: 200, reward: 35 },
-  };
-  const boss = bosses[bossId];
-  addMountainLog('[진입] ' + boss.name + ' 과의 전투를 시작합니다!', '#ef9f27');
-
-  setTimeout(() => {  // 1.5초 후 전투 화면으로 전환
-    document.getElementById('mountain-container').style.display = 'none';
-    document.getElementById('battle-container').classList.add('visible');
-    initBossBattle(boss);
-  }, 1500);
 }
