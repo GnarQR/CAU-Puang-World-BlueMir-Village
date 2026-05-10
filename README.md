@@ -9,15 +9,24 @@ CAU-Puang-World-BlueMir-Village/
 │   └── style.css       ← 모든 CSS
 │
 ├── js/
-│   ├── intro.js        ← 인트로 로직
-│   ├── map.js          ← 맵/장소 로직
 │   ├── battle.js       ← 전투 로직
-│   ├── puang.js        ← 푸앙이 방 + Groq API
-│   ├── locations.js    ← 식당/도서관/체육관 등
-│   ├── state.js        ← playerStat, puangState, dailyUsage 전역 변수
-│   └── firebase.js     ← Firebase 백엔드 서버 구현
+│   ├── firebase.js     ← Firebase 백엔드 서버 구현
+│   ├── intro.js        ← 인트로 로직
+│   ├── locations.js    ← 식당/도서관/체육관 등의 맵과 관련
+│   ├── map.js          ← 맵/장소 로직
+│   ├── monsters.js     ← 몬스터 DB
+│   ├── puang.js        ← 푸앙이 agent와 상호작용하기
+│   ├── puang_room.js   ← 푸앙이 방 꾸미기
+│   └── state.js        ← playerStat, puangState, dailyUsage 전역 변수
 │
 └── images/
+    ├── idea            ← 추후 구현될 수 있는 아이디어 모음
+    ├── item            ← 아이템 파일
+    ├── map             ← 메인 UI 맵
+    ├── monster         ← 몬스터 이미지 파일
+    ├── pet             ← 추후 기능 추가를 할 수 있는 애완동물 모습
+    ├── player          ← 주인공 배틀 모습 이미지
+    └── puang           ← 푸앙이 스킨 모음
 ```
 
 (TODO : 밝은 컨셉으로 바꿨으니까 아래 부분 수정하기)
