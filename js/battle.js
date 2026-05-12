@@ -15,6 +15,223 @@ let battleTurn        = 1;      // 현재 턴 수
 let buffActive        = false;  // 하이퍼 프롬프트 버프 활성 여부 (다음 공격 데미지 2배)
 let battleBusy        = false;  // 커맨드 처리 중 여부 (중복 입력 방지)
 
+let player = {
+  gridX: 2, 
+  gridY: 10,           // 왼쪽 입구 근처로 시작접 지정
+  x: 2 * 32, 
+  y: 10 * 32,          // 초기 위치 조정
+  isMoving: false,
+  speed: 4             // 부드러운 이동 속도
+};
+
+// ── 탐험 맵 이미지 설정 ──
+const bgImage = new Image();
+bgImage.src = 'images/map/205_building.png'; 
+
+const playerImage = new Image();
+playerImage.src = 'images/player/player_male_battle.png'; 
+
+
+// TODO : 이 값이 뭔가 이상하니까 나중에 값 다시 짜오기
+const collisionData =  // 29x16 격자에 대한 충돌 데이터 (56은 벽, 0은 이동 가능)
+            [56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 56, 56, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 0, 0, 0, 0, 0, 0, 44, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56,
+            56, 56, 56, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 56, 56, 56, 0, 0, 56, 56,
+            56, 56, 56, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 56, 56, 0, 0, 56, 56,
+            56, 56, 56, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 56, 0, 0, 56, 56,
+            56, 56, 0, 0, 0, 44, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56,
+            56, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 56, 56,
+            0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 56, 56,];
+
+// 이미지가 로드되었는지 확인하는 플래그
+let assetsLoaded = 0;
+[bgImage, playerImage].forEach(img => {
+    img.onload = () => {
+        assetsLoaded++;
+        if (assetsLoaded === 2) {
+            console.log("모든 이미지 로드 완료!");
+            requestAnimationFrame(update); // 모든 이미지가 불러와지면 게임 루프 시작
+        }
+    };
+});
+
+// ── 그리기 함수 (draw) ──
+function draw() {
+    const canvas = document.getElementById('map-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // 1. 배경 지우기
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 2. 도서관 배경 그리기 (JSON 상 가로 928, 세로 512 크기)
+    ctx.drawImage(bgImage, 0, 0, 928, 512);
+
+    // 3. 캐릭터 그 위에 얹기
+    // player.x와 player.y는 '스르륵' 로직으로 변하는 실시간 좌표입니다.
+    if (playerImage.complete && playerImage.naturalWidth !== 0){
+      ctx.drawImage(playerImage, player.x, player.y, 64, 64);  // 이미지가 완전히 로드된 경우에만 그리기
+    } 
+}
+
+// ── 탐험 모드 시작 함수 ──
+window.startExploration = function() {
+    console.log("이면 세계 탐험 시작");
+    
+    // 플레이어 초기 위치 설정
+    player.gridX = 2;
+    player.gridY = 10;
+    player.x = player.gridX * 32;
+    player.y = player.gridY * 32;
+    player.isMoving = false;
+
+    // 애니메이션 루프 시작
+    requestAnimationFrame(update);
+};
+
+// 캐릭터 움직이는 함수
+function movePlayer(dx, dy) {
+    const nextGridX = player.gridX + dx;
+    const nextGridY = player.gridY + dy;
+
+    // 1. 맵 경계 체크
+    if (nextGridX < 0 || nextGridX >= 29 || nextGridY < 0 || nextGridY >= 16) return;
+
+    // 2. 벽 체크 (56이면 리턴)
+    const nextIdx = nextGridY * 29 + nextGridX;
+    // 56(빨간 칸)이면 이동하지 않고 리턴
+    if (collisionData[nextIdx] === 56) {
+        console.log("벽에 부딪혔습니다!", nextGridX, nextGridY);
+        return;
+    }
+
+    // 3. 이동 가능한 곳(0)이면 좌표 갱신
+    player.gridX = nextGridX;
+    player.gridY = nextGridY;
+    player.isMoving = true;
+}
+
+function update() {
+    // 탐험 화면이 보일 때만 루프 생성
+    const exploreCont = document.getElementById('explore-container');
+    if (!exploreCont || exploreCont.style.display === 'none') return; // 탐험 화면이 보이지 않으면 업데이트 중지
+
+    if (player.isMoving) {
+      let targetX = player.gridX * 32;
+      let targetY = player.gridY * 32;
+
+      // 목표 지점까지 스르륵 이동하는 효과
+      if (player.x < targetX) player.x += player.speed;
+      else if (player.x > targetX) player.x -= player.speed;
+
+      if (player.y < targetY) player.y += player.speed;
+      else if (player.y > targetY) player.y -= player.speed;
+
+      // 도착 확인
+      if (player.x === targetX && player.y === targetY) {
+        player.isMoving = false;
+        
+        // 1. 방 이동(포탈) 체크
+        checkRoomPortal();
+
+        // 2. 전투 발생 체크
+        if (Math.random() < 0.1) {  // 이동할 때마다 10% 확률로 전투 발생 (조정 가능)
+          triggerBattle();
+          return; // 전투로 넘어가므로 더 이상 업데이트하지 않음
+        }
+      }
+    }
+    draw();  // 매 프레임마다 그리기 함수 호출
+    requestAnimationFrame(update);  // 루프 지속
+}
+
+// 방향키 입력 활성화
+document.addEventListener('keydown', (e) => {  
+  // 탐험 컨테이너가 보일 때만 작동
+  const exploreCont = document.getElementById('explore-container');
+  if (!exploreCont || exploreCont.style.display === 'none') return;
+
+  if (player.isMoving) return; // 이동 중에는 중복 입력 방지
+
+  let dx = 0, dy = 0;
+  if (e.key === 'ArrowUp') dy = -1;
+  else if (e.key === 'ArrowDown') dy = 1;
+  else if (e.key === 'ArrowLeft') dx = -1;
+  else if (e.key === 'ArrowRight') dx = 1;
+
+  // 방향키를 눌렀다면 movePlayer 함수를 실행해 벽 체크 후 이동
+  if (dx !== 0 || dy !== 0) {
+    movePlayer(dx, dy);
+  }
+});
+
+// 방 이동 로직 함수 (연출 변경 가능)
+function checkRoomPortal() {
+    let hasMoved = false;
+
+    // 위쪽 문 (예: 중앙 계단 위쪽 좌표)
+    if (player.gridY <= 4) { 
+        player.gridY = 14; // 아래쪽으로 이동
+        hasMoved = true;
+    }
+    // 왼쪽 끝
+    else if (player.gridX <= 0) {
+        player.gridX = 27; // 오른쪽으로 이동
+        hasMoved = true;
+    }
+    // 오른쪽 끝
+    else if (player.gridX >= 28) {
+        player.gridX = 1; // 왼쪽으로 이동
+        hasMoved = true;
+    }
+
+    if (hasMoved) {
+        // 즉시 픽셀 위치 업데이트 및 화면 깜빡임 연출
+        player.x = player.gridX * 32;
+        player.y = player.gridY * 32;
+        
+        // 화면이 번쩍하는 연출 (밝아졌다가 돌아옴)
+        const canvas = document.getElementById('map-canvas');
+        canvas.style.filter = 'brightness(2)';
+        setTimeout(() => { canvas.style.filter = 'brightness(1)'; }, 150);
+
+        // 방을 옮겼을 때는 30%의 높은 확률로 전투 발생
+        if (Math.random() < 0.3) {
+            triggerBattle();
+        }
+    }
+}
+
+// 탐험 중 전투 발생 시 호출
+function triggerBattle() {
+  console.log("전투 발생!");
+
+  // 1. 모든 레이어 정리 & 탐험 화면 숨기기
+  const exploreCont = document.getElementById('explore-container');
+  if (exploreCont) exploreCont.style.display = 'none';
+
+  // 2. 기존 전투 화면 띄우기 (원래 map.js에 있던 코드들)
+  const battleCont = document.getElementById('battle-container');
+  if (battleCont) {
+    battleCont.style.display = 'flex';  // 그릇을 먼저 보여주고
+    battleCont.classList.add('visible');  // CSS 애니메이션 클래스 추가
+    battleCont.style.zIndex = '2000'; // 탐험 화면보다 위에 오도록 z-index 조정
+  }
+
+  // 3. 전투 시스템 초기화
+  if (typeof window.initBattle === 'function') {
+    window.initBattle();
+  }
+}
+
 // ── 전투 초기화 ──
 // 이면 세계 진입 또는 보스 전투 시작 시 호출
 // 모든 전투 변수를 초기값으로 리셋 (나중에는 플레이어 현재 HP / SP 상태 연동되도록)
@@ -250,13 +467,27 @@ window.doCmd = async function(cmd) {
     const roll = await animateDice(2);
 
     if (roll === 2) {
-      addBattleLog('[결과] 이면 세계에서 탈출했다!', 'log-success');
+      addBattleLog('[결과] 전투에서 벗어났다!', 'log-success');
       document.getElementById('dice-result').textContent = '탈출 성공!';
+
+      // 탈출 성공 → 즉시 탐험 화면으로 복귀
       document.getElementById('battle-container').classList.remove('visible');
-      document.getElementById('game-container').style.display = 'flex';
+      document.getElementById('battle-container').style.display = 'none';  // 확실히 숨김
+      document.getElementById('explore-container').style.display = 'flex';
+
+      // 🌟 이동 잠금 해제 및 좌표 동기화 🌟
+      player.isMoving = false;  // 다시 움직일 수 있게 잠금을 풉니다.
+      player.x = player.gridX * 32; // 현재 위치 픽셀 동기화
+      player.y = player.gridY * 32;
+        
+      // 3. 루프가 멈췄을 경우를 대비해 다시 깨우기
+      requestAnimationFrame(update); //
+
       battleBusy = false;
       return;
-    } else {
+    } 
+    
+    else {
       addBattleLog('[결과] 탈출 실패! 학점귀신이 가로막았다.', 'log-damage');
       document.getElementById('dice-result').textContent = '탈출 실패...';
     }

@@ -31,16 +31,33 @@ window.enterPlace = function(place) {
     return;
   }
 
-  // 이면 세계 → 전투 화면
+  // 1. 모든 컨테이너 숨기기 
+  // (index.html에 추가한 explore-container를 포함하여 숨깁니다)
+  const containers = [
+    'game-container', 'battle-container', 'cafeteria-container', 
+    'library-container', 'lab-container', 'explore-container', 
+    'puang-room', 'gym-container', 'clinic-container', 'lab2-container',
+    'festival-container', 'union-container', 'mountain-container'
+  ];
+
+  containers.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // 2. 이면 세계 (탐험) 진입
   if (place === 'battle') {
-    showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 문이 열린다.');
+    showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 균열 속으로 뛰어듭니다...');
     setTimeout(() => {
-      document.getElementById('game-container').style.display = 'none';
-      document.getElementById('battle-container').classList.add('visible');
-      initBattle();
-    }, 2000);
-    return;
-  }
+      // 탐험 컨테이너 표시
+      const exploreCont = document.getElementById('explore-container');
+      if (exploreCont) exploreCont.style.display = 'block';
+
+      // 탐험 로직 및 루프 시작
+      if (typeof startExploration === 'function') startExploration();
+      return;
+    });
+  };
 
   // 각 장소 진입 함수 연결
   if (place === 'dormitory') { enterRoom();       return; }

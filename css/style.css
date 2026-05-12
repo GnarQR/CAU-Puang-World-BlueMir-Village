@@ -989,13 +989,37 @@ h1 {
 전투 화면 스타일
 ================================================================ */
 
+/* 탐험 화면을 메인 컨테이너 안에 꽉 차게 설정 */
+#explore-container {
+    display: none; /* 평소엔 숨김 */
+    position: fixed; /* 혹은 absolute (부모 기준) */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 928px;
+    height: 512px;
+    z-index: 1000; /* 메인 맵보다 위에 오도록 설정 */
+    background: #000;
+    border: 2px solid #5dcaa5; /* 테두리를 주면 더 깔끔합니다 */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
 /* 전투 컨테이너 (기본 숨김) */
 #battle-container {
-    display: none;
+    display: none; /* 평소에는 숨김 */
+    position: fixed; /* 화면 중앙에 고정 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 중앙 정렬 */
     width: 100%;
-    max-width: 520px;
+    max-width: 600px;
+    background: rgba(13, 17, 23, 0.95);
     flex-direction: column;
     gap: 12px;
+    z-index: 2000; /* 맵과 캐릭터 씬보다 위에 오도록 설정 */
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid #e24b4a; /* 전투 느낌의 빨간 테두리 */
 }
 
 #battle-container.visible {
