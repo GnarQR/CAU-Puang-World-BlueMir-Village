@@ -5,93 +5,6 @@
 // ================================================================
 
 // ================================================================
-// 아이템 가게 — 편의점
-// ================================================================
-
-// 아이템 데이터 (나중에 아이템 추가 시 여기에만 추가하면 됨)
-const STORE_ITEMS = {
-  hp_potion:  { name: 'HP 포션',       cost: 5,  desc: 'HP +30 즉시 회복',         clerk: '체력 회복에 딱이죠~ 많이 사 가세요!' },
-  sp_potion:  { name: 'SP 포션',       cost: 4,  desc: 'SP +20 즉시 회복',         clerk: '집중력 포션이에요! 공부할 때 좋아요 😊' },
-  full_potion:{ name: '풀 회복 포션',  cost: 15, desc: 'HP+SP 완전 회복',          clerk: '저희 가게 최고 인기 상품이에요! ✨' },
-  dmg_boost:  { name: '데미지 부스터', cost: 8,  desc: '다음 전투 데미지 +50%',    clerk: '전투 전에 꼭 챙겨가세요 💪' },
-  shield:     { name: '방어막',        cost: 8,  desc: '다음 전투 피해 -50%',      clerk: '안전이 최우선이죠! 방어막 추천해요 🛡️' },
-};
-
-// 점원 기본 멘트
-const STORE_CLERK_DEFAULT = [
-  '어서오세요~ 필요한 거 있으면 말씀해 주세요!',
-  '오늘 날씨 좋죠? 포션 한 병 어떠세요? 😊',
-  '이면 세계 탐험 가세요? 미리 준비해두세요!',
-  '데이터 조각 많이 모으셨네요! 좋은 거 사 가세요 🎉',
-];
-
-// 아이템 가게 입장
-window.enterStore = function() {
-  document.getElementById('game-container').style.display = 'none';
-  document.getElementById('store-container').style.display = '';
-  document.getElementById('store-container').classList.add('visible');
-  document.getElementById('store-data-val').textContent = playerStats.data;
-
-  // 점원 랜덤 멘트
-  const el = document.getElementById('store-clerk-text');
-  if (el) el.textContent = STORE_CLERK_DEFAULT[Math.floor(Math.random() * STORE_CLERK_DEFAULT.length)];
-
-  // 영수증 시간 표시
-  const timeEl = document.getElementById('store-receipt-time');
-  if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
-}
-
-// 아이템 가게 퇴장
-window.leaveStore = function() {
-  document.getElementById('store-container').classList.remove('visible');
-  document.getElementById('store-container').style.display = 'none';
-  document.getElementById('game-container').style.display = 'flex';
-}
-
-// 영수증 로그 추가
-function addStoreLog(msg, cls) {
-  const box = document.getElementById('store-receipt-body');
-  box.innerHTML += '<br><span class="' + (cls || 'store-log-info') + '">' + msg + '</span>';
-  const receipt = document.getElementById('store-log');
-  if (receipt) receipt.scrollTop = receipt.scrollHeight;
-}
-
-// 아이템 구매
-window.buyStore = function(id) {
-  const item = STORE_ITEMS[id];
-  if (!item) return;
-
-  if (playerStats.data < item.cost) {
-    addStoreLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + playerStats.data + '개)', 'store-log-err');
-    // 점원 멘트 변경
-    const el = document.getElementById('store-clerk-text');
-    if (el) el.textContent = '앗, 데이터 조각이 부족하네요... 더 모아오세요! 😅';
-    return;
-  }
-
-  // 비용 차감
-  playerStats.data -= item.cost;
-
-  // 효과 적용
-  if      (id === 'hp_potion')   { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); }
-  else if (id === 'sp_potion')   { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); }
-  else if (id === 'full_potion') { playerStats.hp = playerStats.maxHp; playerStats.sp = playerStats.maxSp; }
-  else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost', name: item.name, icon: '🔥', desc: item.desc }); saveInventory(); }
-  else if (id === 'shield')      { inventory.push({ id: 'shield',    name: item.name, icon: '🛡️', desc: item.desc }); saveInventory(); }
-
-  // 점원 멘트 변경
-  const el = document.getElementById('store-clerk-text');
-  if (el) el.textContent = item.clerk;
-
-  // 영수증 로그
-  addStoreLog('[✅] ' + item.name + ' 구매 완료! · 💎 -' + item.cost + '개', 'store-log-ok');
-
-  // 스탯 갱신
-  document.getElementById('store-data-val').textContent = playerStats.data;
-  updateMapStats();
-}
-
-// ================================================================
 // 청룡산 (보스전)
 // ================================================================
 
@@ -138,7 +51,6 @@ window.enterBoss = function(bossId) {
 // 학생식당
 // ================================================================
 
-// 메뉴별 HP/SP 회복량과 데이터 조각 비용 정의 (메뉴 및 가격 수정 가능)
 const cafMenu = {
   rice:    { hp: 20, sp: 10, cost: 3, name: '학식 정식' },
   ramen:   { hp: 10, sp: 20, cost: 2, name: '얼큰 라면' },
@@ -146,45 +58,60 @@ const cafMenu = {
   special: { hp: 40, sp: 20, cost: 6, name: '특선 도시락' },
 };
 
-// 식당 입장 — 맵 숨기고 식당 화면 표시, 남은 주문 횟수 안내
+const cafNpcTexts = [
+  '어서오세요~ 오늘 뭐 드실래요? 😊',
+  '오늘 특선 도시락 강추예요! 맛있거든요 🍱',
+  '배고프죠? 얼른 드세요~ 힘내야죠!',
+  '커피 한 잔 어때요? SP가 확 올라요 ☕',
+];
+
 window.enterCafeteria = function() {
   document.getElementById('game-container').style.display = 'none';
+  document.getElementById('cafeteria-container').style.display = '';
   document.getElementById('cafeteria-container').classList.add('visible');
   syncCafStats();
-  addCafLog('[식당] 오늘 남은 주문 횟수: ' + remainDaily('cafeteria') + '회', 'caf-log-hp');
+
+  // NPC 랜덤 멘트
+  const el = document.getElementById('caf-npc-text');
+  if (el) el.textContent = cafNpcTexts[Math.floor(Math.random() * cafNpcTexts.length)];
+
+  // 남은 주문 횟수
+  const remain = document.getElementById('caf-remain');
+  if (remain) remain.textContent = remainDaily('cafeteria');
 }
 
-// 식당 퇴장
 window.leaveCafeteria = function() {
   document.getElementById('cafeteria-container').classList.remove('visible');
+  document.getElementById('cafeteria-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
-// 식당 스탯 바 동기화 — playerStats 값을 화면에 반영
 function syncCafStats() {
-  document.getElementById('caf-hp-val').textContent    = playerStats.hp + ' / ' + playerStats.maxHp;
-  document.getElementById('caf-sp-val').textContent    = playerStats.sp + ' / ' + playerStats.maxSp;
-  document.getElementById('caf-data-val').textContent  = playerStats.data;
-  document.getElementById('caf-hp-bar').style.width    = (playerStats.hp / playerStats.maxHp * 100) + '%';
-  document.getElementById('caf-sp-bar').style.width    = (playerStats.sp / playerStats.maxSp * 100) + '%';
+  document.getElementById('caf-hp-val').textContent   = playerStats.hp;
+  document.getElementById('caf-hp-max').textContent   = playerStats.maxHp;
+  document.getElementById('caf-sp-val').textContent   = playerStats.sp;
+  document.getElementById('caf-sp-max').textContent   = playerStats.maxSp;
+  document.getElementById('caf-data-val').textContent = playerStats.data;
+  document.getElementById('caf-hp-bar').style.width   = (playerStats.hp / playerStats.maxHp * 100) + '%';
+  document.getElementById('caf-sp-bar').style.width   = (playerStats.sp / playerStats.maxSp * 100) + '%';
 }
 
-// 식당 로그 추가
 function addCafLog(msg, cls) {
   const box = document.getElementById('caf-log');
-  box.innerHTML += '<br><span class="' + (cls || '') + '">' + msg + '</span>';
+  box.innerHTML += '<br><span class="' + (cls || 'caf-log-ok') + '">' + msg + '</span>';
   box.scrollTop = box.scrollHeight;
 }
 
-// 음식 주문 — 일일 한도 체크 후 HP/SP 회복, 데이터 조각 차감
 window.orderFood = function(id) {
   if (!useDaily('cafeteria')) {
-    addCafLog('[식당] 오늘은 더 이상 주문할 수 없어요!', 'caf-log-err');
+    addCafLog('[❌] 오늘은 더 이상 주문할 수 없어요! (일일 3회 한도)', 'caf-log-err');
+    const el = document.getElementById('caf-npc-text');
+    if (el) el.textContent = '오늘 한도를 다 채우셨어요~ 내일 또 오세요! 😅';
     return;
   }
   const item = cafMenu[id];
   if (playerStats.data < item.cost) {
-    addCafLog('[실패] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + playerStats.data + '개)', 'caf-log-err');
+    addCafLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개)', 'caf-log-err');
     return;
   }
   playerStats.data -= item.cost;
@@ -193,18 +120,26 @@ window.orderFood = function(id) {
   playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + item.hp);
   playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + item.sp);
   syncCafStats(); updateMapStats();
-  let msg = '[' + item.name + '] ';
+
+  // 남은 횟수 갱신
+  const remain = document.getElementById('caf-remain');
+  if (remain) remain.textContent = remainDaily('cafeteria');
+
+  // NPC 멘트
+  const el = document.getElementById('caf-npc-text');
+  if (el) el.textContent = '맛있게 드세요~ 🍽️ 힘내세요!';
+
+  let msg = '[✅ ' + item.name + '] ';
   if (hpGain > 0) msg += 'HP +' + hpGain + ' ';
   if (spGain > 0) msg += 'SP +' + spGain + ' ';
-  msg += '· 데이터 조각 -' + item.cost;
-  addCafLog(msg, hpGain > 0 ? 'caf-log-hp' : 'caf-log-sp');
+  msg += '· 💎 -' + item.cost;
+  addCafLog(msg, hpGain > 0 ? 'caf-log-ok' : 'caf-log-sp');
 }
 
 // ================================================================
 // 중앙도서관
 // ================================================================
 
-// 과목별 보상과 공부 소요 시간 정의 (수정 가능)
 const libSubjects = {
   cs:   { name: '컴퓨터공학', minR: 3, maxR: 6, time: 5000 },
   math: { name: '수학/통계',  minR: 2, maxR: 4, time: 4000 },
@@ -212,106 +147,112 @@ const libSubjects = {
   rest: { name: '휴식',       minR: 0, maxR: 0, time: 3000, isRest: true },
 };
 
-// 공부 중 상태 추적 변수
-let libStudyCount = 0;    // 오늘 공부한 횟수
-let libFocus      = 100;  // 현재 집중력 (공부할수록 감소, 휴식으로 회복)
-let libBusy       = false; // 공부 중인지 확인용 (중복 클릭 방지)
+const libNpcTexts = [
+  '🤫 조용히 해주세요. 공부할 과목을 선택하세요.',
+  '🤫 집중력이 높을수록 더 많은 데이터 조각을 얻어요.',
+  '🤫 피곤하면 잠깐 쉬어도 돼요. 무리하지 마세요.',
+  '🤫 컴퓨터공학이 보상이 제일 높답니다...',
+];
 
-// 도서관 입장
+let libStudyCount = 0;
+let libFocus      = 100;
+let libBusy       = false;
+
 window.enterLibrary = function() {
   document.getElementById('game-container').style.display = 'none';
+  document.getElementById('library-container').style.display = '';
   document.getElementById('library-container').classList.add('visible');
   syncLibStats();
+
+  // 사서 랜덤 멘트
+  const el = document.getElementById('lib-npc-text');
+  if (el) el.textContent = libNpcTexts[Math.floor(Math.random() * libNpcTexts.length)];
 }
 
-// 도서관 퇴장
 window.leaveLibrary = function() {
   document.getElementById('library-container').classList.remove('visible');
+  document.getElementById('library-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
-// 도서관 스탯 동기화
 function syncLibStats() {
-  document.getElementById('lib-data-val').textContent  = playerStats.data;
+  document.getElementById('lib-data-val').textContent    = playerStats.data + '개';
   document.getElementById('lib-study-count').textContent = libStudyCount;
-  document.getElementById('lib-focus-val').textContent = libFocus + '%';
+  document.getElementById('lib-focus-val').textContent   = libFocus + '%';
+  // 책갈피 게이지
+  const bm = document.getElementById('lib-bookmark-fill');
+  if (bm) bm.style.width = libFocus + '%';
 }
 
-// 도서관 로그 추가
 function addLibLog(msg, cls) {
   const box = document.getElementById('lib-log');
-  box.innerHTML += '<br><span class="' + (cls || '') + '">' + msg + '</span>';
+  box.innerHTML += '<br><span class="' + (cls || 'lib-log-info') + '">' + msg + '</span>';
   box.scrollTop = box.scrollHeight;
 }
 
-// 공부 버튼 일괄 비활성화/활성화 (공부 중 중복 클릭 방지)
 function setLibButtons(disabled) {
   ['cs', 'math', 'eng', 'rest'].forEach(id => {
-    document.getElementById('study-btn-' + id).disabled = disabled;
+    const btn = document.getElementById('study-btn-' + id);
+    if (btn) btn.disabled = disabled;
   });
 }
 
-// 공부 시작 — 진행 바 애니메이션 후 데이터 조각 보상 지급
 window.startStudy = function(subjectId) {
-  if (subjectId !== 'rest' && !useDaily('library')) {  // 휴식 제외하고 일일 한도 체크 
-    addLibLog('[도서관] 오늘 공부는 충분히 했어요!', '');
+  if (subjectId !== 'rest' && !useDaily('library')) {
+    addLibLog('[❌] 오늘 공부는 충분히 했어요! (일일 5회 한도)', 'lib-log-info');
     return;
   }
   if (libBusy) return;
   if (libFocus <= 0 && subjectId !== 'rest') {
-    addLibLog('[도서관] 집중력이 바닥났습니다. 먼저 쉬어야 해요!', '');
+    addLibLog('[❌] 집중력이 바닥났어요! 먼저 쉬어야 해요.', 'lib-log-info');
     return;
   }
 
   libBusy = true;
   setLibButtons(true);
 
-  const sub = libSubjects[subjectId];
-  const btn = document.getElementById('study-btn-' + subjectId);
-  btn.classList.add('studying');
-
+  const sub   = libSubjects[subjectId];
   const fill  = document.getElementById('lib-progress-fill');
   const label = document.getElementById('lib-progress-label');
   const pct   = document.getElementById('lib-progress-pct');
 
-  fill.style.width = '0%';
-  // TODO : 휴식은 하루 한 번만 가능하도록 구현해주세요.
+  fill.style.width  = '0%';
   label.textContent = sub.isRest ? '😴 휴식 중...' : '📖 ' + sub.name + ' 공부 중...';
 
-  // 진행 바 애니메이션
+  // 사서 멘트 변경
+  const npc = document.getElementById('lib-npc-text');
+  if (npc) npc.textContent = sub.isRest ? '🤫 잠깐 쉬세요...' : '🤫 열심히 하시네요...';
+
   const start    = Date.now();
   const interval = setInterval(() => {
     const progress = Math.min(100, (Date.now() - start) / sub.time * 100);
-    fill.style.width  = progress + '%';
-    pct.textContent   = Math.round(progress) + '%';
+    fill.style.width = progress + '%';
+    pct.textContent  = Math.round(progress) + '%';
     if (progress >= 100) clearInterval(interval);
   }, 50);
 
-  // 공부/휴식 완료 처리
   setTimeout(() => {
-    btn.classList.remove('studying');
-    fill.style.width = '100%';
     clearInterval(interval);
+    fill.style.width = '0%';
 
     if (sub.isRest) {
-      // 휴식: 집중력 회복 (TODO : 하루 한 번만 가능하도록 구현하기)
       libFocus = Math.min(100, libFocus + 40);
-      addLibLog('[휴식] 집중력 회복! 현재 집중력: ' + libFocus + '%', 'lib-log-info');
+      addLibLog('[😴 휴식] 집중력 회복! 현재: ' + libFocus + '%', 'lib-log-info');
+      if (npc) npc.textContent = '🤫 잘 쉬셨나요? 다시 열심히 해봐요.';
     } else {
-      // 공부: 집중력에 따라 보상 차등 지급 (수정 가능)
       const focusBonus = libFocus >= 70 ? 1 : libFocus >= 40 ? 0.7 : 0.4;
       const base       = sub.minR + Math.floor(Math.random() * (sub.maxR - sub.minR + 1));
       const reward     = Math.max(1, Math.round(base * focusBonus));
       playerStats.data += reward;
       libStudyCount++;
       libFocus = Math.max(0, libFocus - 25);
-      addLibLog('[' + sub.name + '] 완료! 💎 +' + reward + '  (집중력: ' + libFocus + '%)', 'lib-log-reward');
+      addLibLog('[✅ ' + sub.name + '] 완료! 💎 +' + reward + ' (집중력: ' + libFocus + '%)', 'lib-log-reward');
       updateMapStats();
+      if (npc) npc.textContent = '🤫 수고하셨어요. 💎 ' + reward + '개 획득!';
     }
 
     label.textContent = '완료!';
     pct.textContent   = '';
-    fill.style.width  = '0%';
     syncLibStats();
     setLibButtons(false);
     libBusy = false;

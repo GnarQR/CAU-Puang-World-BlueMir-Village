@@ -371,75 +371,89 @@
   <!--         -->
   <!-- 학생식당 -->
   <!--         -->
+  <!--         -->
+  <!-- 학생식당 -->
+  <!--         -->
   <div id="cafeteria-container">
+
+    <!-- 헤더 -->
     <div class="caf-header">
       <div>
-        <div style="font-size:11px;color:#5dcaa5;letter-spacing:1px;">LOCATION</div>
-        <div class="caf-title">🍚 중앙대 학생식당</div>
+        <div class="caf-location-tag">[ 중앙대학교 학생식당 ]</div>
+        <div class="caf-title">🍚 학생식당</div>
       </div>
       <button class="caf-back-btn" onclick="leaveCafeteria()">← 맵으로</button>
     </div>
 
-    <div class="caf-stat-row">
-      <div class="caf-stat-card">
-        <div class="caf-stat-label">HP</div>
-        <div class="caf-stat-val" id="caf-hp-val">60 / 60</div>
-        <div class="caf-bar-bg">
-          <div class="caf-bar-fill" id="caf-hp-bar" style="width:80%;background:#1d9e75;"></div>
-        </div>
+    <!-- 아주머니 NPC -->
+    <div class="caf-npc-wrap">
+      <div class="caf-npc-avatar">👩‍🍳</div>
+      <div class="caf-npc-bubble">
+        <div class="caf-npc-name">식당 아주머니</div>
+        <div class="caf-npc-text" id="caf-npc-text">어서오세요~ 오늘 뭐 드실래요? 😊</div>
       </div>
-
-      <div class="caf-stat-card">
-        <div class="caf-stat-label">SP</div>
-        <div class="caf-stat-val" id="caf-sp-val">40 / 40</div>
-        <div class="caf-bar-bg">
-          <div class="caf-bar-fill" id="caf-sp-bar" style="width:75%;background:#a0c4ff;"></div>
-        </div>
+      <div class="caf-stat-mini">
+        <div>❤️ <span id="caf-hp-val">60</span>/<span id="caf-hp-max">60</span></div>
+        <div>💧 <span id="caf-sp-val">40</span>/<span id="caf-sp-max">40</span></div>
+        <div>💎 <span id="caf-data-val">0</span>개</div>
+        <div style="font-size:10px;color:#6b7280;">남은 주문 <span id="caf-remain">3</span>회</div>
       </div>
-
-      <div class="caf-stat-card" style="text-align:center;">
-        <div class="caf-stat-label">데이터 조각</div>
-        <div class="caf-stat-val" id="caf-data-val" style="color:#ef9f27;">0</div>
-        <div style="font-size:10px;color:#4a5a7a;margin-top:2px;">보유 중</div>
-      </div> 
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <div class="caf-menu-title">📋 오늘의 메뉴</div>
+    <!-- HP/SP 게이지 -->
+    <div class="caf-gauge-wrap">
+      <div class="caf-gauge-row">
+        <span class="caf-gauge-label">HP</span>
+        <div class="caf-bar-bg"><div class="caf-bar-fill" id="caf-hp-bar" style="width:100%;background:#ef4444;"></div></div>
+      </div>
+      <div class="caf-gauge-row">
+        <span class="caf-gauge-label">SP</span>
+        <div class="caf-bar-bg"><div class="caf-bar-fill" id="caf-sp-bar" style="width:100%;background:#3b82f6;"></div></div>
+      </div>
+    </div>
+
+    <!-- 칠판 메뉴판 -->
+    <div class="caf-chalkboard">
+      <div class="caf-chalkboard-title">✏️ 오늘의 메뉴</div>
       <div class="caf-menu-grid">
+
         <button class="caf-menu-item" onclick="orderFood('rice')">
           <div class="caf-menu-emoji">🍚</div>
           <div class="caf-menu-name">학식 정식</div>
-          <div class="caf-menu-desc">HP +20 · SP +10</div>
-          <div class="caf-menu-cost">💎 데이터 조각 3개</div>
+          <div class="caf-menu-effect">HP +20 · SP +10</div>
+          <div class="caf-menu-cost">💎 3개</div>
         </button>
 
         <button class="caf-menu-item" onclick="orderFood('ramen')">
           <div class="caf-menu-emoji">🍜</div>
           <div class="caf-menu-name">얼큰 라면</div>
-          <div class="caf-menu-desc">HP +10 · SP +20</div>
-          <div class="caf-menu-cost">💎 데이터 조각 2개</div>
+          <div class="caf-menu-effect">HP +10 · SP +20</div>
+          <div class="caf-menu-cost">💎 2개</div>
         </button>
 
         <button class="caf-menu-item" onclick="orderFood('coffee')">
           <div class="caf-menu-emoji">☕</div>
           <div class="caf-menu-name">아이스 아메리카노</div>
-          <div class="caf-menu-desc">SP +30</div>
-          <div class="caf-menu-cost">💎 데이터 조각 1개</div>
+          <div class="caf-menu-effect">SP +30</div>
+          <div class="caf-menu-cost">💎 1개</div>
         </button>
 
-        <button class="caf-menu-item" onclick="orderFood('special')">
+        <button class="caf-menu-item caf-menu-special" onclick="orderFood('special')">
+          <div class="caf-special-tag">오늘의 특선</div>
           <div class="caf-menu-emoji">🍱</div>
           <div class="caf-menu-name">특선 도시락</div>
-          <div class="caf-menu-desc">HP +40 · SP +20</div>
-          <div class="caf-menu-cost">💎 데이터 조각 6개</div>
+          <div class="caf-menu-effect">HP +40 · SP +20</div>
+          <div class="caf-menu-cost">💎 6개</div>
         </button>
+
       </div>
     </div>
 
+    <!-- 주문 로그 -->
     <div class="caf-log" id="caf-log">
-      <span style="color:#2a5a30;">[식당] 어서오세요! 오늘도 맛있게 드세요.</span>
+      <span class="caf-log-ok">[식당] 어서오세요! 오늘도 맛있게 드세요 😊</span>
     </div>
+
   </div>
 
   <!--       -->
@@ -528,81 +542,110 @@
   <!--          -->
   <!-- 중앙도서관 -->
   <!--          -->
+  <!--          -->
+  <!-- 중앙도서관 -->
+  <!--          -->
   <div id="library-container">
+
+    <!-- 헤더 -->
     <div class="lib-header">
       <div>
-        <div style="font-size:11px;color:#6c8ebf;letter-spacing:1px;">LOCATION</div>
-        <div class="lib-title">📚 중앙대학교 도서관</div>
+        <div class="lib-location-tag">[ 중앙대학교 중앙도서관 ]</div>
+        <div class="lib-title">📚 중앙도서관</div>
       </div>
       <button class="lib-back-btn" onclick="leaveLibrary()">← 맵으로</button>
     </div>
 
-    <div class="lib-info-row">
-      <div class="lib-info-card">
-        <div class="lib-info-label">데이터 조각</div>
-        <div class="lib-info-val" id="lib-data-val" style="color:#ef9f27;">12</div>
-        <div class="lib-info-sub">보유 중</div>
-      </div>
-
-      <div class="lib-info-card">
-        <div class="lib-info-label">오늘 공부 횟수</div>
-        <div class="lib-info-val" id="lib-study-count">0</div>
-        <div class="lib-info-sub">/ 5 최대</div>
-      </div>
-
-      <div class="lib-info-card">
-        <div class="lib-info-label">집중력</div>
-        <div class="lib-info-val" id="lib-focus-val" style="color:#a0c4ff;">100%</div>
-        <div class="lib-info-sub">공부할수록 감소</div>
+    <!-- 사서 NPC -->
+    <div class="lib-npc-wrap">
+      <div class="lib-npc-avatar">🧑‍💼</div>
+      <div class="lib-npc-bubble">
+        <div class="lib-npc-name">사서</div>
+        <div class="lib-npc-text" id="lib-npc-text">🤫 조용히 해주세요. 공부할 과목을 선택하세요.</div>
       </div>
     </div>
 
-    <div class="lib-study-panel">
-      <div class="lib-subject-title">📖 공부할 과목 선택</div>
-      <div class="lib-subject-grid">
-        <button class="lib-subject-btn" id="study-btn-cs" onclick="startStudy('cs')">
-          <div class="lib-subject-icon">💻</div>
-          <div class="lib-subject-name">컴퓨터공학</div>
-          <div class="lib-subject-reward">💎 데이터 조각 +3~6</div>
-          <div class="lib-subject-time">⏱ 5초 집중</div>
-        </button>
-
-        <button class="lib-subject-btn" id="study-btn-math" onclick="startStudy('math')">
-          <div class="lib-subject-icon">📐</div>
-          <div class="lib-subject-name">수학 / 통계</div>
-          <div class="lib-subject-reward">💎 데이터 조각 +2~4</div>
-          <div class="lib-subject-time">⏱ 4초 집중</div>
-        </button>
-
-        <button class="lib-subject-btn" id="study-btn-eng" onclick="startStudy('eng')">
-          <div class="lib-subject-icon">🌐</div>
-          <div class="lib-subject-name">영어 / 교양</div>
-          <div class="lib-subject-reward">💎 데이터 조각 +1~3</div>
-          <div class="lib-subject-time">⏱ 3초 집중</div>
-        </button>
-
-        <button class="lib-subject-btn" id="study-btn-rest" onclick="startStudy('rest')">
-          <div class="lib-subject-icon">😴</div>
-          <div class="lib-subject-name">잠깐 쉬기</div>
-          <div class="lib-subject-reward">집중력 +40% 회복</div>
-          <div class="lib-subject-time">⏱ 3초 휴식</div>
-        </button>
+    <!-- 스탯 카드 -->
+    <div class="lib-stat-row">
+      <div class="lib-stat-card">
+        <div class="lib-stat-icon">📖</div>
+        <div class="lib-stat-label">오늘 공부</div>
+        <div class="lib-stat-val"><span id="lib-study-count">0</span> / 5회</div>
       </div>
-
-      <div class="lib-progress-wrap">
-        <div class="lib-progress-label">
-          <span id="lib-progress-label">과목을 선택하세요</span>
-          <span id="lib-progress-pct"></span>
+      <div class="lib-stat-card">
+        <div class="lib-stat-icon">🧠</div>
+        <div class="lib-stat-label">집중력</div>
+        <div class="lib-stat-val" id="lib-focus-val">100%</div>
+        <!-- 책갈피 스타일 집중력 게이지 -->
+        <div class="lib-bookmark-wrap">
+          <div class="lib-bookmark-fill" id="lib-bookmark-fill" style="width:100%;"></div>
         </div>
-        <div class="lib-progress-bg">
-          <div class="lib-progress-fill" id="lib-progress-fill"></div>
-        </div>
+      </div>
+      <div class="lib-stat-card">
+        <div class="lib-stat-icon">💎</div>
+        <div class="lib-stat-label">데이터 조각</div>
+        <div class="lib-stat-val" id="lib-data-val" style="color:#d97706;">0개</div>
       </div>
     </div>
 
+    <!-- 책장 스타일 과목 선택 -->
+    <div class="lib-shelf-label">📋 과목 선택</div>
+    <div class="lib-bookshelf">
+
+      <button class="lib-book" id="study-btn-cs" onclick="startStudy('cs')" style="--book-color:#3b82f6;">
+        <div class="lib-book-spine">컴퓨터공학</div>
+        <div class="lib-book-info">
+          <div class="lib-book-icon">💻</div>
+          <div class="lib-book-reward">💎 +3~6</div>
+          <div class="lib-book-time">⏱ 5초</div>
+        </div>
+      </button>
+
+      <button class="lib-book" id="study-btn-math" onclick="startStudy('math')" style="--book-color:#8b5cf6;">
+        <div class="lib-book-spine">수학 / 통계</div>
+        <div class="lib-book-info">
+          <div class="lib-book-icon">📐</div>
+          <div class="lib-book-reward">💎 +2~4</div>
+          <div class="lib-book-time">⏱ 4초</div>
+        </div>
+      </button>
+
+      <button class="lib-book" id="study-btn-eng" onclick="startStudy('eng')" style="--book-color:#10b981;">
+        <div class="lib-book-spine">영어 / 교양</div>
+        <div class="lib-book-info">
+          <div class="lib-book-icon">🌐</div>
+          <div class="lib-book-reward">💎 +1~3</div>
+          <div class="lib-book-time">⏱ 3초</div>
+        </div>
+      </button>
+
+      <button class="lib-book lib-book-rest" id="study-btn-rest" onclick="startStudy('rest')" style="--book-color:#f59e0b;">
+        <div class="lib-book-spine">잠깐 쉬기</div>
+        <div class="lib-book-info">
+          <div class="lib-book-icon">😴</div>
+          <div class="lib-book-reward">집중력 +40%</div>
+          <div class="lib-book-time">⏱ 3초</div>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- 진행 바 -->
+    <div class="lib-progress-wrap">
+      <div class="lib-progress-label">
+        <span id="lib-progress-label">과목을 선택하세요</span>
+        <span id="lib-progress-pct"></span>
+      </div>
+      <div class="lib-progress-bg">
+        <div class="lib-progress-fill" id="lib-progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- 로그 -->
     <div class="lib-log" id="lib-log">
       <span class="lib-log-info">[도서관] 조용히 해주세요. 공부할 과목을 선택하세요.</span>
     </div>
+
   </div>
 
   <!--             -->
@@ -971,95 +1014,6 @@
       style="background:#0d1117;border:1px solid #2a2010;border-radius:10px;padding:10px 14px;font-size:12px;color:#ef9f27;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
       <span style="color:#4a7a4a;">[축제] 어서오세요! 미니게임을 즐겨보세요.</span>
     </div>
-  </div>
-
-  <!--           -->
-  <!-- 아이템 가게 -->
-  <!--           -->
-  <div id="store-container">
-
-    <!-- 편의점 간판 헤더 -->
-    <div class="store-header">
-      <div class="store-sign">
-        <span class="store-sign-icon">🏪</span>
-        <div>
-          <div class="store-sign-name">CAU 편의점</div>
-          <div class="store-sign-sub">24시간 영업 · 데이터 조각 사용 가능</div>
-        </div>
-      </div>
-      <button class="store-back-btn" onclick="leaveStore()">← 맵으로</button>
-    </div>
-
-    <!-- 점원 NPC -->
-    <div class="store-clerk-wrap">
-      <div class="store-clerk-avatar">🧑‍💼</div>
-      <div class="store-clerk-bubble">
-        <div class="store-clerk-name">점원</div>
-        <div class="store-clerk-text" id="store-clerk-text">어서오세요~ 필요한 거 있으면 말씀해 주세요!</div>
-      </div>
-      <div class="store-data-badge">💎 <span id="store-data-val">0</span>개 보유</div>
-    </div>
-
-    <!-- 진열대: 소모품 -->
-    <div class="store-shelf-title">🧃 소모품</div>
-    <div class="store-shelf">
-      <div class="store-item" onclick="buyStore('hp_potion')">
-        <div class="store-item-tag">인기</div>
-        <div class="store-item-icon">🧪</div>
-        <div class="store-item-name">HP 포션</div>
-        <div class="store-item-desc">HP +30 즉시 회복</div>
-        <div class="store-item-price">💎 5개</div>
-      </div>
-      <div class="store-item" onclick="buyStore('sp_potion')">
-        <div class="store-item-icon">💧</div>
-        <div class="store-item-name">SP 포션</div>
-        <div class="store-item-desc">SP +20 즉시 회복</div>
-        <div class="store-item-price">💎 4개</div>
-      </div>
-      <div class="store-item" onclick="buyStore('full_potion')">
-        <div class="store-item-tag new-tag">NEW</div>
-        <div class="store-item-icon">✨</div>
-        <div class="store-item-name">풀 회복 포션</div>
-        <div class="store-item-desc">HP+SP 완전 회복</div>
-        <div class="store-item-price">💎 15개</div>
-      </div>
-    </div>
-
-    <!-- 진열대: 전투 아이템 -->
-    <div class="store-shelf-title">⚔️ 전투 아이템</div>
-    <div class="store-shelf">
-      <div class="store-item" onclick="buyStore('dmg_boost')">
-        <div class="store-item-icon">🔥</div>
-        <div class="store-item-name">데미지 부스터</div>
-        <div class="store-item-desc">다음 전투 데미지 +50%</div>
-        <div class="store-item-price">💎 8개</div>
-      </div>
-      <div class="store-item" onclick="buyStore('shield')">
-        <div class="store-item-icon">🛡️</div>
-        <div class="store-item-name">방어막</div>
-        <div class="store-item-desc">다음 전투 피해 -50%</div>
-        <div class="store-item-price">💎 8개</div>
-      </div>
-      <div class="store-item store-item-locked">
-        <div class="store-item-tag soon-tag">준비중</div>
-        <div class="store-item-icon">🎁</div>
-        <div class="store-item-name">???</div>
-        <div class="store-item-desc">추후 업데이트 예정</div>
-        <div class="store-item-price">💎 —</div>
-      </div>
-    </div>
-
-    <!-- 영수증 로그 -->
-    <div class="store-receipt" id="store-log">
-      <div class="store-receipt-header">
-        <span>🧾 영수증</span>
-        <span id="store-receipt-time"></span>
-      </div>
-      <div id="store-receipt-body">
-        <span class="store-log-info">——— CAU 편의점 방문을 환영합니다 ———</span>
-      </div>
-    </div>
-
   </div>
 
   <!--         -->
