@@ -976,71 +976,107 @@
   <!--         -->
   <!-- 학생회관 -->
   <!--         -->
-  <div id="union-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
-    <div
-      style="background:#16213e;border:1px solid #c4a0ff;border-radius:12px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-size:11px;color:#c4a0ff;letter-spacing:1px;">LOCATION</div>
-        <div style="font-size:15px;font-weight:500;color:#c4a0ff;">🏬 학생회관</div>
+  <!--         -->
+  <!-- 학생회관 -->
+  <!--         -->
+  <div id="union-container">
+
+    <!-- 헤더: 학생회 사무실 간판 -->
+    <div class="union-header">
+      <div class="union-header-left">
+        <div class="union-stamp-badge">중앙대학교 학생회</div>
+        <div class="union-title">🏫 학생회 사무실</div>
       </div>
-      <button onclick="leaveUnion()"
-        style="background:rgba(196,160,255,0.15);border:1px solid #c4a0ff;border-radius:8px;padding:4px 12px;font-size:12px;color:#c4a0ff;cursor:pointer;font-family:inherit;">←
-        맵으로</button>
+      <button class="union-back-btn" onclick="leaveUnion()">← 맵으로</button>
     </div>
 
-    <div
-      style="background:#16213e;border:1px solid #2e1a5e;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:12px;color:#8060b0;">보유 데이터 조각</span>
-      <span style="font-size:16px;font-weight:600;color:#ef9f27;" id="union-data-val">12 💎</span>
+    <!-- 학생회장 멘트 -->
+    <div class="union-npc-wrap">
+      <div class="union-npc-avatar">👨‍💼</div>
+      <div class="union-npc-bubble">
+        <div class="union-npc-name">학생회장</div>
+        <div class="union-npc-text" id="union-npc-text">안녕하세요! 학생회관에 오신 걸 환영합니다 😊<br>오늘도 열심히 활동하시는 모습이 멋지네요!</div>
+      </div>
     </div>
 
-    <div style="font-size:11px;color:#c4a0ff;letter-spacing:1px;">✨ 프리미엄 아이템</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <button onclick="buyUnion('puang_doll')"
-        style="background:#16213e;border:1px solid #2e1a5e;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#c4a0ff';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#2e1a5e';this.style.transform='none'">
-        <div style="font-size:26px;">🐉</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">푸앙이 인형</div>
-        <div style="font-size:10px;color:#c4a0ff;margin-top:2px;">푸앙이 호감도 +20</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 25개</div>
-      </button>
-
-      <button onclick="buyUnion('hp_max')"
-        style="background:#16213e;border:1px solid #2e1a5e;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#c4a0ff';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#2e1a5e';this.style.transform='none'">
-        <div style="font-size:26px;">❤️</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">생명력 결정</div>
-        <div style="font-size:10px;color:#c4a0ff;margin-top:2px;">최대 HP +30</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 20개</div>
-      </button>
-
-      <button onclick="buyUnion('exp_boost')"
-        style="background:#16213e;border:1px solid #2e1a5e;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#c4a0ff';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#2e1a5e';this.style.transform='none'">
-        <div style="font-size:26px;">📚</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">집중력 교재</div>
-        <div style="font-size:10px;color:#c4a0ff;margin-top:2px;">도서관 보상 영구 +1</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 30개</div>
-      </button>
-
-      <button onclick="buyUnion('battle_str')"
-        style="background:#16213e;border:1px solid #2e1a5e;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#c4a0ff';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#2e1a5e';this.style.transform='none'">
-        <div style="font-size:26px;">⚔️</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">전투 매뉴얼</div>
-        <div style="font-size:10px;color:#c4a0ff;margin-top:2px;">전투 데미지 영구 +3</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 35개</div>
-      </button>
+    <!-- 공지판 -->
+    <div class="union-board">
+      <div class="union-board-title">📋 학생회 공지판</div>
+      <div class="union-board-content">
+        <span class="union-board-pin">📌</span> 오늘의 특가 아이템 안내 — 하루 <b>2회</b> 구매 가능<br>
+        <span class="union-board-pin">📌</span> 보유 데이터 조각: <b id="union-data-val" style="color:#1a56db;">0 💎</b><br>
+        <span class="union-board-pin">📌</span> 구매 후 도장이 찍힙니다. 영수증을 보관하세요!
+      </div>
     </div>
 
-    <div id="union-log"
-      style="background:#080510;border:1px solid #2e1a5e;border-radius:10px;padding:10px 14px;font-size:12px;color:#8060b0;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
-      <span>[학생회관] 프리미엄 아이템을 구매하세요.</span>
+    <!-- 아이템 목록 (서류/카드 스타일) -->
+    <div class="union-section-title">📦 구매 신청서</div>
+    <div class="union-item-grid">
+
+      <div class="union-item-card" onclick="buyUnion('puang_doll')" id="union-card-puang_doll">
+        <div class="union-item-top">
+          <span class="union-item-icon">🐉</span>
+          <div>
+            <div class="union-item-name">푸앙이 인형</div>
+            <div class="union-item-effect">푸앙이 호감도 +20</div>
+          </div>
+        </div>
+        <div class="union-item-bottom">
+          <span class="union-item-cost">💎 25개</span>
+          <span class="union-item-stamp" id="union-stamp-puang_doll"></span>
+        </div>
+      </div>
+
+      <div class="union-item-card" onclick="buyUnion('hp_max')" id="union-card-hp_max">
+        <div class="union-item-top">
+          <span class="union-item-icon">❤️</span>
+          <div>
+            <div class="union-item-name">생명력 결정</div>
+            <div class="union-item-effect">최대 HP +30</div>
+          </div>
+        </div>
+        <div class="union-item-bottom">
+          <span class="union-item-cost">💎 20개</span>
+          <span class="union-item-stamp" id="union-stamp-hp_max"></span>
+        </div>
+      </div>
+
+      <div class="union-item-card" onclick="buyUnion('exp_boost')" id="union-card-exp_boost">
+        <div class="union-item-top">
+          <span class="union-item-icon">📚</span>
+          <div>
+            <div class="union-item-name">집중력 교재</div>
+            <div class="union-item-effect">도서관 보상 영구 +1</div>
+          </div>
+        </div>
+        <div class="union-item-bottom">
+          <span class="union-item-cost">💎 30개</span>
+          <span class="union-item-stamp" id="union-stamp-exp_boost"></span>
+        </div>
+      </div>
+
+      <div class="union-item-card" onclick="buyUnion('battle_str')" id="union-card-battle_str">
+        <div class="union-item-top">
+          <span class="union-item-icon">⚔️</span>
+          <div>
+            <div class="union-item-name">전투 매뉴얼</div>
+            <div class="union-item-effect">전투 데미지 영구 +3</div>
+          </div>
+        </div>
+        <div class="union-item-bottom">
+          <span class="union-item-cost">💎 35개</span>
+          <span class="union-item-stamp" id="union-stamp-battle_str"></span>
+        </div>
+      </div>
+
     </div>
+
+    <!-- 영수증 로그 -->
+    <div class="union-receipt" id="union-log">
+      <div class="union-receipt-title">🧾 구매 내역</div>
+      <span class="union-log-info">[학생회관] 어서오세요! 구매할 항목을 선택하세요.</span>
+    </div>
+
   </div>
 
   <!--                      -->

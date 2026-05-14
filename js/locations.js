@@ -248,7 +248,6 @@ let labBusy = false;  // 연구 진행 중 여부
 // 연구실 입장
 window.enterLab = function() {
   document.getElementById('game-container').style.display = 'none';
-   document.getElementById('lab-container').style.display = '';   
   document.getElementById('lab-container').classList.add('visible');
   syncLabStats();
   updateLabBadge();
@@ -742,34 +741,60 @@ async function spinSlot() {
 // 학생회관
 // ================================================================
 
-// 영구 버프 누적 변수 (게임 내내 유지)
-let unionBonusDmg   = 0;  // 전투 매뉴얼 구매 시 전투 데미지 +3씩 누적
-let unionBonusStudy = 0;  // 집중력 교재 구매 시 도서관 보상 +1씩 누적
+// 영구 버프 누적 변수
+let unionBonusDmg   = 0;
+let unionBonusStudy = 0;
+
+// NPC 멘트 목록
+const unionNpcTexts = [
+  '안녕하세요! 학생회관에 오신 걸 환영합니다 😊<br>오늘도 열심히 활동하시는 모습이 멋지네요!',
+  '오늘의 추천 아이템은 <b>생명력 결정</b>이에요!<br>HP를 올려두면 전투에서 훨씬 유리해요 💪',
+  '데이터 조각을 모아서 좋은 아이템 챙겨가세요!<br>학생회가 항상 응원합니다 📣',
+  '푸앙이 인형은 호감도를 올려줘요!<br>푸앙이랑 친해지면 좋은 일이 생길지도? 🐉',
+];
 
 // 학생회관 입장
 window.enterUnion = function() {
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('union-container').style.display = 'flex';
+  document.getElementById('union-container').style.display = '';
+  document.getElementById('union-container').classList.add('visible');
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
+
+  // NPC 랜덤 멘트
+  const npc = document.getElementById('union-npc-text');
+  if (npc) npc.innerHTML = unionNpcTexts[Math.floor(Math.random() * unionNpcTexts.length)];
 }
 
 // 학생회관 퇴장
 window.leaveUnion = function() {
+  document.getElementById('union-container').classList.remove('visible');
   document.getElementById('union-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
 // 학생회관 로그 추가
-function addUnionLog(msg, color) {
+function addUnionLog(msg, cls) {
   const box = document.getElementById('union-log');
-  box.innerHTML += '<br><span style="color:' + (color || '#c4a0ff') + '">' + msg + '</span>';
+  box.innerHTML += '<br><span class="' + (cls || 'union-log-info') + '">' + msg + '</span>';
   box.scrollTop = box.scrollHeight;
 }
 
-// 프리미엄 아이템 구매 — 일일 한도 + 데이터 조각 체크 후 효과 적용
+// 도장 찍기 연출
+function stampItem(id) {
+  const el = document.getElementById('union-stamp-' + id);
+  if (!el) return;
+  el.textContent = '✅';
+  el.classList.add('stamped');
+  setTimeout(() => {
+    el.classList.remove('stamped');
+    el.textContent = '';
+  }, 2000);
+}
+
+// 아이템 구매
 window.buyUnion = function(id) {
   if (!useDaily('union')) {
-    addUnionLog('[학생회관] 오늘 구매 한도를 초과했어요! (일일 2회 한도)', '#f09595');
+    addUnionLog('[❌] 오늘 구매 한도를 초과했어요! (일일 2회)', 'union-log-err');
     return;
   }
 
@@ -782,15 +807,18 @@ window.buyUnion = function(id) {
   const item = items[id];
 
   if (playerStats.data < item.cost) {
-    addUnionLog('[실패] 데이터 조각 부족 (필요: ' + item.cost + '개)', '#f09595');
+    addUnionLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + playerStats.data + '개)', 'union-log-err');
     return;
   }
 
   playerStats.data -= item.cost;
-  if      (id === 'puang_doll') { changeFavor(20); addUnionLog('[구매] 푸앙이 인형! 호감도 +20', '#d4537e'); }
-  else if (id === 'hp_max')     { playerStats.maxHp += 30; addUnionLog('[구매] 생명력 결정! 최대 HP +30 → ' + playerStats.maxHp, '#5dcaa5'); }
-  else if (id === 'exp_boost')  { unionBonusStudy++; addUnionLog('[구매] 집중력 교재! 도서관 보상 +1 영구 적용', '#a0c4ff'); }
-  else if (id === 'battle_str') { unionBonusDmg += 3; addUnionLog('[구매] 전투 매뉴얼! 전투 데미지 +3 영구 적용', '#ef9f27'); }
+
+  if      (id === 'puang_doll') { changeFavor(20);    addUnionLog('[✅ 승인] 푸앙이 인형 구매 완료! 호감도 +20', 'union-log-ok'); }
+  else if (id === 'hp_max')     { playerStats.maxHp += 30; addUnionLog('[✅ 승인] 생명력 결정 구매 완료! 최대 HP +30 → ' + playerStats.maxHp, 'union-log-ok'); }
+  else if (id === 'exp_boost')  { unionBonusStudy++;  addUnionLog('[✅ 승인] 집중력 교재 구매 완료! 도서관 보상 +1 영구 적용', 'union-log-ok'); }
+  else if (id === 'battle_str') { unionBonusDmg += 3; addUnionLog('[✅ 승인] 전투 매뉴얼 구매 완료! 전투 데미지 +3 영구 적용', 'union-log-ok'); }
+
+  stampItem(id);
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
   updateMapStats();
 }
