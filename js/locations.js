@@ -235,11 +235,23 @@ window.startStudy = function(subjectId) {
 // 310관 연구실
 // ================================================================
 
+// ── 연구 프로젝트 데이터 ──
+const LAB_PROJECTS = {
+  'upgrade-hp':   { name: 'HP 강화 연구',      cost: 10, time: 4000, desc: '최대 HP +20' },
+  'upgrade-sp':   { name: 'SP 강화 연구',      cost: 8,  time: 3500, desc: '최대 SP +10' },
+  'upgrade-atk':  { name: '전투 알고리즘 개발', cost: 15, time: 5000, desc: '전투 데미지 +5' },
+  'upgrade-regen':{ name: '회복 프로토콜 연구', cost: 12, time: 4500, desc: '매 턴 HP +5' },
+};
+
+let labBusy = false;  // 연구 진행 중 여부
+
 // 연구실 입장
 window.enterLab = function() {
   document.getElementById('game-container').style.display = 'none';
+   document.getElementById('lab-container').style.display = '';   
   document.getElementById('lab-container').classList.add('visible');
   syncLabStats();
+  updateLabBadge();
 }
 
 // 연구실 퇴장
@@ -248,7 +260,7 @@ window.leaveLab = function() {
   document.getElementById('game-container').style.display = 'flex';
 }
 
-// 연구실 스탯 동기화 — HP/SP/데이터 조각/호감도 전부 갱신
+// 연구실 스탯 동기화 — 기존 유지 + 모니터 업데이트 추가
 function syncLabStats() {
   document.getElementById('lab-hp-val').textContent   = playerStats.hp;
   document.getElementById('lab-hp-max').textContent   = '/ ' + playerStats.maxHp;
@@ -262,16 +274,62 @@ function syncLabStats() {
   document.getElementById('lab-favor-num').textContent = fav + ' / 100';
 }
 
+// 남은 연구 횟수 배지 업데이트
+function updateLabBadge() {
+  const el = document.getElementById('lab-remain-badge');
+  if (el) el.textContent = '오늘 남은 연구 ' + remainDaily('lab') + '회';
+}
+
 // 연구실 로그 추가
 function addLabLog(msg, cls) {
   const box = document.getElementById('lab-log');
-  box.innerHTML += '<br><span class="' + (cls || '') + '">' + msg + '</span>';
+  box.innerHTML += '<br><span class="' + (cls || 'lab-log-info') + '">&gt; ' + msg + '</span>';
   box.scrollTop = box.scrollHeight;
 }
 
-// 연구실 기능 실행 — 저장/불러오기/HP 강화/SP 강화
+// ── 연구 프로젝트 실행 ──
+window.startResearch = function(action) {
+  if (labBusy) { addLabLog('이미 연구 중입니다!', 'lab-log-warning'); return; }
+  if (!useDaily('lab')) { addLabLog('오늘 연구 한도 초과! (일일 2회)', 'lab-log-warning'); updateLabBadge(); return; }
+
+  const proj = LAB_PROJECTS[action];
+  if (!proj) return;
+
+  if (playerStats.data < proj.cost) {
+    addLabLog('데이터 조각 부족! (필요: ' + proj.cost + '개)', 'lab-log-warning');
+    return;
+  }
+
+  // 비용 차감
+  playerStats.data -= proj.cost;
+  labBusy = true;
+  updateMapStats();
+  addLabLog('[START] ' + proj.name + ' 시작...', 'lab-log-info');
+
+  // 진행 바 애니메이션
+  const bar = document.getElementById('lab-bar-' + action);
+  if (bar) {
+    const start = Date.now();
+    const tick = setInterval(() => {
+      const pct = Math.min(100, (Date.now() - start) / proj.time * 100);
+      bar.style.width = pct + '%';
+      if (pct >= 100) clearInterval(tick);
+    }, 50);
+  }
+
+  // 완료 처리
+  setTimeout(() => {
+    doLabAction(action);  // 기존 doLabAction 재활용
+    labBusy = false;
+    if (bar) bar.style.width = '0%';
+    updateLabBadge();
+    addLabLog('[DONE] ' + proj.desc + ' 적용 완료!', 'lab-log-save');
+  }, proj.time);
+}
+
+// ── 연구실 기능 실행 (기존 유지) ──
 window.doLabAction = function(action) {
-  if (action === 'save') {  // 현재 playerStats와 호감도를 localStorage에 저장
+  if (action === 'save') {
     const saveData = { playerStats, puangFav: puangState.favorability, ts: new Date().toLocaleTimeString() };
     localStorage.setItem('cau_save', JSON.stringify(saveData));
     addLabLog('[SAVE] 저장 완료 (' + saveData.ts + ')', 'lab-log-save');
@@ -279,9 +337,8 @@ window.doLabAction = function(action) {
     header.classList.remove('save-flash');
     void header.offsetWidth;
     header.classList.add('save-flash');
-  } 
-  
-  else if (action === 'load') {  // 마지막 저장 시점으로 복구
+  }
+  else if (action === 'load') {
     const raw = localStorage.getItem('cau_save');
     if (!raw) { addLabLog('[LOAD] 저장 데이터가 없습니다.', 'lab-log-warning'); return; }
     const save = JSON.parse(raw);
@@ -290,22 +347,24 @@ window.doLabAction = function(action) {
     savePuangState();
     syncLabStats(); updateMapStats();
     addLabLog('[LOAD] 불러오기 완료 (' + save.ts + ')', 'lab-log-save');
-  } 
-  
-  else if (action === 'upgrade-hp') {  // 영구적으로 최대 HP +20 (데이터 조각 10개 소모)
-    if (playerStats.data < 10) { addLabLog('[강화 실패] 데이터 조각 부족 (필요: 10개)', 'lab-log-warning'); return; }
-    playerStats.data -= 10;
+  }
+  else if (action === 'upgrade-hp') {
+    if (playerStats.data < 0) return;  // 이미 startResearch에서 차감됨
     playerStats.maxHp += 20;
     syncLabStats(); updateMapStats();
-    addLabLog('[강화] 최대 HP +20 → ' + playerStats.maxHp, 'lab-log-save');
-  } 
-  
-  else if (action === 'upgrade-sp') {  // 영구적으로 최대 SP +10 (데이터 조각 8개 소모)
-    if (playerStats.data < 8) { addLabLog('[강화 실패] 데이터 조각 부족 (필요: 8개)', 'lab-log-warning'); return; }
-    playerStats.data -= 8;
+  }
+  else if (action === 'upgrade-sp') {
+    if (playerStats.data < 0) return;
     playerStats.maxSp += 10;
     syncLabStats(); updateMapStats();
-    addLabLog('[강화] 최대 SP +10 → ' + playerStats.maxSp, 'lab-log-save');
+  }
+  else if (action === 'upgrade-atk') {
+    if (typeof unionBonusDmg !== 'undefined') unionBonusDmg += 5;
+    syncLabStats(); updateMapStats();
+  }
+  else if (action === 'upgrade-regen') {
+    playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 5;
+    syncLabStats(); updateMapStats();
   }
 }
 

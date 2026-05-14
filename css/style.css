@@ -1668,97 +1668,116 @@ h1 {
     gap: 12px;
 }
 
-#lab-container.visible {
-    display: flex;
-}
+#lab-container.visible { display: flex; }
 
 .lab-header {
-    background: #1a1030;
-    border: 1px solid #3a1e6e;
-    border-radius: 12px;
+    background: #070d07;
+    border: 1px solid #1a3a1a;
+    border-radius: 10px;
     padding: 10px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
+.lab-location-tag {
+    font-size: 10px;
+    color: #2a6a2a;
+    letter-spacing: 2px;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 3px;
+}
+
 .lab-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
-    color: #c4a0ff;
+    color: #4dff88;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 8px rgba(77,255,136,0.4);
 }
 
 .lab-back-btn {
-    background: rgba(196, 160, 255, 0.1);
-    border: 1px solid #c4a0ff;
-    border-radius: 8px;
+    background: rgba(77,255,136,0.08);
+    border: 1px solid #1a4a1a;
+    border-radius: 6px;
     padding: 4px 12px;
-    font-size: 12px;
-    color: #c4a0ff;
+    font-size: 11px;
+    color: #4dff88;
     cursor: pointer;
-    font-family: inherit;
+    font-family: 'Courier New', monospace;
     transition: background 0.2s;
 }
 
-.lab-back-btn:hover {
-    background: rgba(196, 160, 255, 0.2);
-}
+.lab-back-btn:hover { background: rgba(77,255,136,0.15); border-color: #4dff88; }
 
-.lab-stat-grid {
+/* 모니터 3개 */
+.lab-monitors {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 8px;
 }
 
-.lab-stat-card {
-    background: #1a1030;
-    border: 1px solid #2e1a5e;
-    border-radius: 12px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.lab-monitor {
+    background: #050c05;
+    border: 1px solid #1a3a1a;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.lab-stat-icon {
-    font-size: 22px;
-}
-
-.lab-stat-label {
-    font-size: 10px;
-    color: #8060b0;
-}
-
-.lab-stat-val {
-    font-size: 20px;
-    font-weight: 600;
-    color: #e0e0e0;
-}
-
-.lab-stat-sub {
-    font-size: 10px;
-    color: #8060b0;
-}
-
-.lab-bar-bg {
-    height: 4px;
-    background: #1a0a3a;
-    border-radius: 2px;
-    margin-top: 2px;
-}
-
-.lab-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.5s ease;
-}
-
-.lab-action-title {
-    font-size: 11px;
-    color: #8060b0;
+.lab-monitor-title {
+    background: #0d1f0d;
+    border-bottom: 1px solid #1a3a1a;
+    padding: 5px 10px;
+    font-size: 9px;
+    color: #2a6a2a;
+    font-family: 'Courier New', monospace;
     letter-spacing: 1px;
 }
 
+.lab-monitor-body {
+    padding: 8px 10px;
+    font-size: 10px;
+    color: #4dff88;
+    font-family: 'Courier New', monospace;
+    line-height: 1.9;
+    min-height: 72px;
+    max-height: 72px;
+    overflow-y: auto;
+}
+
+/* LED */
+.lab-rack-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.lab-led { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.lab-led-on   { background: #00ff55; box-shadow: 0 0 5px #00ff55; animation: ledBlink 2s ease-in-out infinite; }
+.lab-led-warn { background: #ef9f27; box-shadow: 0 0 5px #ef9f27; animation: ledBlink 0.8s ease-in-out infinite; }
+.lab-led-off  { background: #333; }
+@keyframes ledBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.lab-mon-ok   { color: #4dff88; }
+.lab-mon-warn { color: #ef9f27; }
+.lab-mon-err  { color: #e24b4a; }
+
+/* 섹션 타이틀 */
+.lab-action-title {
+    font-size: 11px;
+    color: #2a6a2a;
+    letter-spacing: 1px;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lab-remain-badge {
+    background: rgba(77,255,136,0.1);
+    border: 1px solid #1a4a1a;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 10px;
+    color: #4dff88;
+}
+
+/* 버튼 그리드 */
 .lab-action-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1766,65 +1785,71 @@ h1 {
 }
 
 .lab-action-btn {
-    background: #1a1030;
-    border: 1px solid #2e1a5e;
+    background: #070d07;
+    border: 1px solid #1a3a1a;
     border-radius: 10px;
     padding: 14px 12px;
     cursor: pointer;
-    font-family: inherit;
+    font-family: 'Courier New', monospace;
     text-align: left;
-    transition: border-color 0.2s, background 0.2s, transform 0.15s;
     color: #e0e0e0;
     display: flex;
     flex-direction: column;
     gap: 4px;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
 }
 
 .lab-action-btn:hover {
-    background: #251545;
-    border-color: #c4a0ff;
+    background: #0d1f0d;
+    border-color: #4dff88;
     transform: translateY(-2px);
 }
 
-.lab-btn-icon {
-    font-size: 20px;
+.lab-action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.lab-util-btn { border-color: #1a2a3a; }
+.lab-util-btn:hover { border-color: #a0c4ff; background: #070d14; }
+
+.lab-btn-icon { font-size: 20px; }
+.lab-btn-name { font-size: 12px; font-weight: 500; color: #c0e0c0; }
+.lab-btn-desc { font-size: 10px; color: #4a8a4a; }
+
+/* 진행 바 */
+.lab-proj-bar-wrap {
+    height: 3px;
+    background: #1a3a1a;
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
 }
 
-.lab-btn-name {
-    font-size: 13px;
-    font-weight: 500;
+.lab-proj-bar {
+    height: 100%;
+    width: 0%;
+    background: #4dff88;
+    border-radius: 2px;
+    transition: width 0.05s linear;
+    box-shadow: 0 0 6px rgba(77,255,136,0.6);
 }
 
-.lab-btn-desc {
-    font-size: 10px;
-    color: #8060b0;
-}
-
+/* 로그 */
 .lab-log {
-    background: #080510;
-    border: 1px solid #2e1a5e;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 12px;
-    color: #8060b0;
+    background: #030803;
+    border: 1px solid #1a3a1a;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 10px;
+    color: #4dff88;
     font-family: 'Courier New', monospace;
-    min-height: 60px;
-    max-height: 80px;
+    min-height: 72px;
+    max-height: 72px;
     overflow-y: auto;
-    line-height: 1.7;
+    line-height: 1.9;
 }
 
-.lab-log-save {
-    color: #c4a0ff;
-}
-
-.lab-log-info {
-    color: #a0c4ff;
-}
-
-.lab-log-warning {
-    color: #ef9f27;
-}
+.lab-log-save    { color: #a0c4ff; }
+.lab-log-info    { color: #4dff88; }
+.lab-log-warning { color: #ef9f27; }
 
 @keyframes savePulse {
     0% {

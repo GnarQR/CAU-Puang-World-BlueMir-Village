@@ -109,6 +109,7 @@ const dailyLimits = {
   lab2:      3,  // 공대 실험실 아이템 제조 3회
   union:     2,  // 학생회관 구매 2회
   praise:    2,  // 푸앙이 칭찬 2회
+  lab:       2,   // 연구실 사용 3회
 };
 
 
@@ -117,7 +118,7 @@ const dailyLimits = {
 const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
   date: '',  // 마지막으로 초기화된 날짜 (toDateString() 형식)
   cafeteria: 0, library: 0, gym: 0,
-  clinic: 0, festival: 0, lab2: 0, union: 0, praise: 0
+  clinic: 0, festival: 0, lab2: 0, union: 0, praise: 0,lab: 0
 };
 
 
@@ -130,6 +131,10 @@ function checkAndResetDaily() {
     dailyUsage.date = today;
     saveDailyUsage();
   }
+  // localStorage에 저장된 이전 데이터에 새 키가 없을 경우 보완
+  Object.keys(dailyLimits).forEach(k => {
+    if (dailyUsage[k] === undefined) dailyUsage[k] = 0;
+  });
 }
 
 // dailyUsage가 바뀔 때마다 Firebase에 저장

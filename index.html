@@ -611,79 +611,90 @@
   <div id="lab-container">
     <div class="lab-header">
       <div>
-        <div style="font-size:11px;color:#8060b0;letter-spacing:1px;">LOCATION</div>
-        <div class="lab-title">💻 310관 연구실</div>
+        <div class="lab-location-tag">[ 310관 B1 — 제한구역 ]</div>
+        <div class="lab-title">💻 이면 세계 연구실</div>
       </div>
       <button class="lab-back-btn" onclick="leaveLab()">← 맵으로</button>
     </div>
 
-    <div class="lab-stat-grid">
-      <div class="lab-stat-card">
-        <div class="lab-stat-icon">❤️</div>
-        <div class="lab-stat-label">HP</div>
-        <div class="lab-stat-val" id="lab-hp-val">80</div>
-        <div class="lab-stat-sub" id="lab-hp-max">/ 100</div>
-        <div class="lab-bar-bg">
-          <div class="lab-bar-fill" id="lab-hp-bar" style="width:80%;background:#1d9e75;"></div>
+    <!-- 모니터 3개 -->
+    <div class="lab-monitors">
+      <div class="lab-monitor">
+        <div class="lab-monitor-title">SYS_STAT.exe</div>
+        <div class="lab-monitor-body">
+          <span class="lab-mon-ok">&gt; HP  : <span id="lab-hp-val">60</span> <span id="lab-hp-max">/ 60</span></span><br>
+          <span class="lab-mon-ok">&gt; SP  : <span id="lab-sp-val">40</span> <span id="lab-sp-max">/ 40</span></span><br>
+          <span style="color:#ef9f27;">&gt; 💎  : <span id="lab-data-val">0</span>개</span><br>
+          <span style="color:#d4537e;">&gt; FAV : <span id="lab-favor-num">50</span>/100</span>
         </div>
       </div>
-
-      <div class="lab-stat-card">
-        <div class="lab-stat-icon">💧</div>
-        <div class="lab-stat-label">SP</div>
-        <div class="lab-stat-val" id="lab-sp-val">45</div>
-        <div class="lab-stat-sub" id="lab-sp-max">/ 60</div>
-        <div class="lab-bar-bg">
-          <div class="lab-bar-fill" id="lab-sp-bar" style="width:75%;background:#a0c4ff;"></div>
+      <div class="lab-monitor">
+        <div class="lab-monitor-title">PROJECT_LOG.exe</div>
+        <div class="lab-monitor-body lab-log" id="lab-log">
+          <span class="lab-log-info">&gt; 연구실 접속 완료...</span><br>
+          <span class="lab-log-info">&gt; 시스템 준비 완료</span>
         </div>
       </div>
-
-      <div class="lab-stat-card">
-        <div class="lab-stat-icon">💎</div>
-        <div class="lab-stat-label">데이터 조각</div>
-        <div class="lab-stat-val" id="lab-data-val" style="color:#ef9f27;">12</div>
-        <div class="lab-stat-sub">개 보유</div>
-      </div>
-
-      <div class="lab-stat-card">
-        <div class="lab-stat-icon">🐉</div>
-        <div class="lab-stat-label">푸앙이 호감도</div>
-        <div class="lab-stat-val" id="lab-favor-val" style="color:#d4537e;font-size:16px;">♥♥♥♡♡</div>
-        <div class="lab-stat-sub" id="lab-favor-num">60 / 100</div>
+      <div class="lab-monitor">
+        <div class="lab-monitor-title">RACK_STATUS.exe</div>
+        <div class="lab-monitor-body">
+          <div class="lab-rack-row"><span class="lab-led lab-led-on"></span> NODE_A &nbsp;<span class="lab-mon-ok">ONLINE</span></div>
+          <div class="lab-rack-row"><span class="lab-led lab-led-on"></span> NODE_B &nbsp;<span class="lab-mon-ok">ONLINE</span></div>
+          <div class="lab-rack-row"><span class="lab-led lab-led-warn"></span> NODE_C &nbsp;<span class="lab-mon-warn">UNSTABLE</span></div>
+          <div class="lab-rack-row"><span class="lab-led lab-led-off"></span> NODE_D &nbsp;<span class="lab-mon-err">OFFLINE</span></div>
+        </div>
       </div>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <div class="lab-action-title">⚙ 연구실 기능</div>
-      <div class="lab-action-grid">
-        <button class="lab-action-btn" onclick="doLabAction('save')">
-          <div class="lab-btn-icon">💾</div>
-          <div class="lab-btn-name">게임 저장</div>
-          <div class="lab-btn-desc">현재 상태를 저장합니다</div>
-        </button>
-
-        <button class="lab-action-btn" onclick="doLabAction('load')">
-          <div class="lab-btn-icon">📂</div>
-          <div class="lab-btn-name">불러오기</div>
-          <div class="lab-btn-desc">마지막 저장 시점으로</div>
-        </button>
-
-        <button class="lab-action-btn" onclick="doLabAction('upgrade-hp')">
-          <div class="lab-btn-icon">❤️‍🔥</div>
-          <div class="lab-btn-name">HP 상한 강화</div>
-          <div class="lab-btn-desc">최대 HP +20 · 💎 10개</div>
-        </button>
-
-        <button class="lab-action-btn" onclick="doLabAction('upgrade-sp')">
-          <div class="lab-btn-icon">⚡</div>
-          <div class="lab-btn-name">SP 상한 강화</div>
-          <div class="lab-btn-desc">최대 SP +10 · 💎 8개</div>
-        </button>
-      </div>
+    <!-- 숨겨진 기존 스탯 요소 (syncLabStats 호환용) -->
+    <div style="display:none;">
+      <div id="lab-favor-val"></div>
+      <div id="lab-hp-bar"></div>
+      <div id="lab-sp-bar"></div>
     </div>
 
-    <div class="lab-log" id="lab-log">
-      <span class="lab-log-info">[연구실] 이곳에서 강화 및 세이브가 가능합니다.</span>
+    <!-- 연구 프로젝트 -->
+    <div class="lab-action-title">&gt; 연구 프로젝트 <span id="lab-remain-badge" class="lab-remain-badge"></span></div>
+    <div class="lab-action-grid">
+      <button class="lab-action-btn" onclick="startResearch('upgrade-hp')">
+        <div class="lab-btn-icon">❤️‍🔥</div>
+        <div class="lab-btn-name">HP 강화 연구</div>
+        <div class="lab-btn-desc">최대 HP +20 · 💎 10개</div>
+        <div class="lab-proj-bar-wrap"><div class="lab-proj-bar" id="lab-bar-upgrade-hp"></div></div>
+      </button>
+      <button class="lab-action-btn" onclick="startResearch('upgrade-sp')">
+        <div class="lab-btn-icon">⚡</div>
+        <div class="lab-btn-name">SP 강화 연구</div>
+        <div class="lab-btn-desc">최대 SP +10 · 💎 8개</div>
+        <div class="lab-proj-bar-wrap"><div class="lab-proj-bar" id="lab-bar-upgrade-sp"></div></div>
+      </button>
+      <button class="lab-action-btn" onclick="startResearch('upgrade-atk')">
+        <div class="lab-btn-icon">⚔️</div>
+        <div class="lab-btn-name">전투 알고리즘 개발</div>
+        <div class="lab-btn-desc">전투 데미지 +5 · 💎 15개</div>
+        <div class="lab-proj-bar-wrap"><div class="lab-proj-bar" id="lab-bar-upgrade-atk"></div></div>
+      </button>
+      <button class="lab-action-btn" onclick="startResearch('upgrade-regen')">
+        <div class="lab-btn-icon">🌿</div>
+        <div class="lab-btn-name">회복 프로토콜 연구</div>
+        <div class="lab-btn-desc">매 턴 HP +5 · 💎 12개</div>
+        <div class="lab-proj-bar-wrap"><div class="lab-proj-bar" id="lab-bar-upgrade-regen"></div></div>
+      </button>
+    </div>
+
+    <!-- 저장/불러오기 -->
+    <div class="lab-action-title">&gt; 데이터 관리</div>
+    <div class="lab-action-grid">
+      <button class="lab-action-btn lab-util-btn" onclick="doLabAction('save')">
+        <div class="lab-btn-icon">💾</div>
+        <div class="lab-btn-name">데이터 백업</div>
+        <div class="lab-btn-desc">현재 상태 저장 · 무료</div>
+      </button>
+      <button class="lab-action-btn lab-util-btn" onclick="doLabAction('load')">
+        <div class="lab-btn-icon">📂</div>
+        <div class="lab-btn-name">백업 복원</div>
+        <div class="lab-btn-desc">마지막 저장 시점으로 · 무료</div>
+      </button>
     </div>
   </div>
 
