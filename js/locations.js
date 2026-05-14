@@ -5,6 +5,93 @@
 // ================================================================
 
 // ================================================================
+// 아이템 가게 — 편의점
+// ================================================================
+
+// 아이템 데이터 (나중에 아이템 추가 시 여기에만 추가하면 됨)
+const STORE_ITEMS = {
+  hp_potion:  { name: 'HP 포션',       cost: 5,  desc: 'HP +30 즉시 회복',         clerk: '체력 회복에 딱이죠~ 많이 사 가세요!' },
+  sp_potion:  { name: 'SP 포션',       cost: 4,  desc: 'SP +20 즉시 회복',         clerk: '집중력 포션이에요! 공부할 때 좋아요 😊' },
+  full_potion:{ name: '풀 회복 포션',  cost: 15, desc: 'HP+SP 완전 회복',          clerk: '저희 가게 최고 인기 상품이에요! ✨' },
+  dmg_boost:  { name: '데미지 부스터', cost: 8,  desc: '다음 전투 데미지 +50%',    clerk: '전투 전에 꼭 챙겨가세요 💪' },
+  shield:     { name: '방어막',        cost: 8,  desc: '다음 전투 피해 -50%',      clerk: '안전이 최우선이죠! 방어막 추천해요 🛡️' },
+};
+
+// 점원 기본 멘트
+const STORE_CLERK_DEFAULT = [
+  '어서오세요~ 필요한 거 있으면 말씀해 주세요!',
+  '오늘 날씨 좋죠? 포션 한 병 어떠세요? 😊',
+  '이면 세계 탐험 가세요? 미리 준비해두세요!',
+  '데이터 조각 많이 모으셨네요! 좋은 거 사 가세요 🎉',
+];
+
+// 아이템 가게 입장
+window.enterStore = function() {
+  document.getElementById('game-container').style.display = 'none';
+  document.getElementById('store-container').style.display = '';
+  document.getElementById('store-container').classList.add('visible');
+  document.getElementById('store-data-val').textContent = playerStats.data;
+
+  // 점원 랜덤 멘트
+  const el = document.getElementById('store-clerk-text');
+  if (el) el.textContent = STORE_CLERK_DEFAULT[Math.floor(Math.random() * STORE_CLERK_DEFAULT.length)];
+
+  // 영수증 시간 표시
+  const timeEl = document.getElementById('store-receipt-time');
+  if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
+}
+
+// 아이템 가게 퇴장
+window.leaveStore = function() {
+  document.getElementById('store-container').classList.remove('visible');
+  document.getElementById('store-container').style.display = 'none';
+  document.getElementById('game-container').style.display = 'flex';
+}
+
+// 영수증 로그 추가
+function addStoreLog(msg, cls) {
+  const box = document.getElementById('store-receipt-body');
+  box.innerHTML += '<br><span class="' + (cls || 'store-log-info') + '">' + msg + '</span>';
+  const receipt = document.getElementById('store-log');
+  if (receipt) receipt.scrollTop = receipt.scrollHeight;
+}
+
+// 아이템 구매
+window.buyStore = function(id) {
+  const item = STORE_ITEMS[id];
+  if (!item) return;
+
+  if (playerStats.data < item.cost) {
+    addStoreLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + playerStats.data + '개)', 'store-log-err');
+    // 점원 멘트 변경
+    const el = document.getElementById('store-clerk-text');
+    if (el) el.textContent = '앗, 데이터 조각이 부족하네요... 더 모아오세요! 😅';
+    return;
+  }
+
+  // 비용 차감
+  playerStats.data -= item.cost;
+
+  // 효과 적용
+  if      (id === 'hp_potion')   { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); }
+  else if (id === 'sp_potion')   { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); }
+  else if (id === 'full_potion') { playerStats.hp = playerStats.maxHp; playerStats.sp = playerStats.maxSp; }
+  else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost', name: item.name, icon: '🔥', desc: item.desc }); saveInventory(); }
+  else if (id === 'shield')      { inventory.push({ id: 'shield',    name: item.name, icon: '🛡️', desc: item.desc }); saveInventory(); }
+
+  // 점원 멘트 변경
+  const el = document.getElementById('store-clerk-text');
+  if (el) el.textContent = item.clerk;
+
+  // 영수증 로그
+  addStoreLog('[✅] ' + item.name + ' 구매 완료! · 💎 -' + item.cost + '개', 'store-log-ok');
+
+  // 스탯 갱신
+  document.getElementById('store-data-val').textContent = playerStats.data;
+  updateMapStats();
+}
+
+// ================================================================
 // 청룡산 (보스전)
 // ================================================================
 
@@ -741,60 +828,34 @@ async function spinSlot() {
 // 학생회관
 // ================================================================
 
-// 영구 버프 누적 변수
-let unionBonusDmg   = 0;
-let unionBonusStudy = 0;
-
-// NPC 멘트 목록
-const unionNpcTexts = [
-  '안녕하세요! 학생회관에 오신 걸 환영합니다 😊<br>오늘도 열심히 활동하시는 모습이 멋지네요!',
-  '오늘의 추천 아이템은 <b>생명력 결정</b>이에요!<br>HP를 올려두면 전투에서 훨씬 유리해요 💪',
-  '데이터 조각을 모아서 좋은 아이템 챙겨가세요!<br>학생회가 항상 응원합니다 📣',
-  '푸앙이 인형은 호감도를 올려줘요!<br>푸앙이랑 친해지면 좋은 일이 생길지도? 🐉',
-];
+// 영구 버프 누적 변수 (게임 내내 유지)
+let unionBonusDmg   = 0;  // 전투 매뉴얼 구매 시 전투 데미지 +3씩 누적
+let unionBonusStudy = 0;  // 집중력 교재 구매 시 도서관 보상 +1씩 누적
 
 // 학생회관 입장
 window.enterUnion = function() {
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('union-container').style.display = '';
-  document.getElementById('union-container').classList.add('visible');
+  document.getElementById('union-container').style.display = 'flex';
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
-
-  // NPC 랜덤 멘트
-  const npc = document.getElementById('union-npc-text');
-  if (npc) npc.innerHTML = unionNpcTexts[Math.floor(Math.random() * unionNpcTexts.length)];
 }
 
 // 학생회관 퇴장
 window.leaveUnion = function() {
-  document.getElementById('union-container').classList.remove('visible');
   document.getElementById('union-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
 // 학생회관 로그 추가
-function addUnionLog(msg, cls) {
+function addUnionLog(msg, color) {
   const box = document.getElementById('union-log');
-  box.innerHTML += '<br><span class="' + (cls || 'union-log-info') + '">' + msg + '</span>';
+  box.innerHTML += '<br><span style="color:' + (color || '#c4a0ff') + '">' + msg + '</span>';
   box.scrollTop = box.scrollHeight;
 }
 
-// 도장 찍기 연출
-function stampItem(id) {
-  const el = document.getElementById('union-stamp-' + id);
-  if (!el) return;
-  el.textContent = '✅';
-  el.classList.add('stamped');
-  setTimeout(() => {
-    el.classList.remove('stamped');
-    el.textContent = '';
-  }, 2000);
-}
-
-// 아이템 구매
+// 프리미엄 아이템 구매 — 일일 한도 + 데이터 조각 체크 후 효과 적용
 window.buyUnion = function(id) {
   if (!useDaily('union')) {
-    addUnionLog('[❌] 오늘 구매 한도를 초과했어요! (일일 2회)', 'union-log-err');
+    addUnionLog('[학생회관] 오늘 구매 한도를 초과했어요! (일일 2회 한도)', '#f09595');
     return;
   }
 
@@ -807,18 +868,15 @@ window.buyUnion = function(id) {
   const item = items[id];
 
   if (playerStats.data < item.cost) {
-    addUnionLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + playerStats.data + '개)', 'union-log-err');
+    addUnionLog('[실패] 데이터 조각 부족 (필요: ' + item.cost + '개)', '#f09595');
     return;
   }
 
   playerStats.data -= item.cost;
-
-  if      (id === 'puang_doll') { changeFavor(20);    addUnionLog('[✅ 승인] 푸앙이 인형 구매 완료! 호감도 +20', 'union-log-ok'); }
-  else if (id === 'hp_max')     { playerStats.maxHp += 30; addUnionLog('[✅ 승인] 생명력 결정 구매 완료! 최대 HP +30 → ' + playerStats.maxHp, 'union-log-ok'); }
-  else if (id === 'exp_boost')  { unionBonusStudy++;  addUnionLog('[✅ 승인] 집중력 교재 구매 완료! 도서관 보상 +1 영구 적용', 'union-log-ok'); }
-  else if (id === 'battle_str') { unionBonusDmg += 3; addUnionLog('[✅ 승인] 전투 매뉴얼 구매 완료! 전투 데미지 +3 영구 적용', 'union-log-ok'); }
-
-  stampItem(id);
+  if      (id === 'puang_doll') { changeFavor(20); addUnionLog('[구매] 푸앙이 인형! 호감도 +20', '#d4537e'); }
+  else if (id === 'hp_max')     { playerStats.maxHp += 30; addUnionLog('[구매] 생명력 결정! 최대 HP +30 → ' + playerStats.maxHp, '#5dcaa5'); }
+  else if (id === 'exp_boost')  { unionBonusStudy++; addUnionLog('[구매] 집중력 교재! 도서관 보상 +1 영구 적용', '#a0c4ff'); }
+  else if (id === 'battle_str') { unionBonusDmg += 3; addUnionLog('[구매] 전투 매뉴얼! 전투 데미지 +3 영구 적용', '#ef9f27'); }
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
   updateMapStats();
 }

@@ -37,7 +37,7 @@ window.enterPlace = function(place) {
     'game-container', 'battle-container', 'cafeteria-container', 
     'library-container', 'lab-container', 'explore-container', 
     'puang-room', 'gym-container', 'clinic-container', 'lab2-container',
-    'festival-container', 'union-container', 'mountain-container'
+    'festival-container', 'union-container', 'mountain-container', 'store-container'
   ];
 
   containers.forEach(id => {
@@ -70,6 +70,7 @@ window.enterPlace = function(place) {
   if (place === 'union')     { enterUnion();      return; }
   if (place === 'mountain')  { enterMountain();   return; }
   if (place === 'gym')       { enterGym();        return; }
+  if (place === 'store')     { enterStore();      return; }
 
   // 미구현 장소는 툴팁으로 안내
   showSystemMsgOnMap('[' + info.label + '] ' + info.desc + ' (추후 구현 예정)');
