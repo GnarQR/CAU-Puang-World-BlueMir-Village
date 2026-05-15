@@ -1953,3 +1953,177 @@ h1 {
 .save-flash {
     animation: savePulse 0.6s ease;
 }
+/* ================================================================
+   학생회관 — 학생회 사무실 스타일
+   ================================================================ */
+
+#union-container {
+    display: none;
+    width: 100%;
+    max-width: 680px;
+    flex-direction: column;
+    gap: 12px;
+}
+#union-container.visible { display: flex; }
+
+.union-header {
+    background: #1a56db;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.union-header-left {}
+.union-stamp-badge { font-size: 10px; color: rgba(255,255,255,0.7); letter-spacing: 1px; margin-bottom: 3px; }
+.union-title { font-size: 15px; font-weight: 600; color: #fff; }
+.union-back-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 8px; padding: 4px 12px;
+    font-size: 12px; color: #fff; cursor: pointer;
+    font-family: inherit; transition: background 0.2s;
+}
+.union-back-btn:hover { background: rgba(255,255,255,0.25); }
+
+.union-npc-wrap {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: #f0f4ff; border: 1px solid #c7d7f5;
+    border-radius: 12px; padding: 12px 14px;
+}
+.union-npc-avatar { font-size: 32px; flex-shrink: 0; }
+.union-npc-bubble { flex: 1; }
+.union-npc-name { font-size: 11px; font-weight: 600; color: #1a56db; margin-bottom: 4px; }
+.union-npc-text { font-size: 12px; color: #374151; line-height: 1.7; }
+
+.union-board {
+    background: #fffbeb; border: 2px solid #d4a017;
+    border-radius: 10px; padding: 12px 14px;
+}
+.union-board-title { font-size: 12px; font-weight: 600; color: #92400e; margin-bottom: 8px; border-bottom: 1px dashed #d4a017; padding-bottom: 6px; }
+.union-board-content { font-size: 12px; color: #374151; line-height: 2; }
+.union-board-pin { margin-right: 4px; }
+
+.union-section-title { font-size: 12px; font-weight: 600; color: #374151; letter-spacing: 0.5px; }
+
+.union-item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.union-item-card {
+    background: #fff; border: 1.5px solid #d1d5db;
+    border-radius: 10px; padding: 14px; cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.union-item-card:hover { border-color: #1a56db; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26,86,219,0.12); }
+.union-item-top { display: flex; align-items: center; gap: 10px; }
+.union-item-icon { font-size: 26px; flex-shrink: 0; }
+.union-item-name { font-size: 13px; font-weight: 600; color: #111827; }
+.union-item-effect { font-size: 11px; color: #1a56db; margin-top: 2px; }
+.union-item-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e5e7eb; padding-top: 8px; }
+.union-item-cost { font-size: 12px; font-weight: 600; color: #d97706; }
+.union-item-stamp {
+    font-size: 22px; opacity: 0;
+    transform: rotate(-15deg) scale(0.5);
+    transition: opacity 0.3s, transform 0.3s;
+    display: inline-block;
+}
+.union-item-stamp.stamped { opacity: 1; transform: rotate(-15deg) scale(1); }
+
+.union-receipt {
+    background: #f9fafb; border: 1.5px solid #d1d5db;
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 12px; font-family: 'Courier New', monospace;
+    min-height: 70px; max-height: 90px; overflow-y: auto; line-height: 1.8;
+}
+.union-receipt-title { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 6px; border-bottom: 1px dashed #d1d5db; padding-bottom: 4px; }
+.union-log-info { color: #374151; }
+.union-log-ok   { color: #065f46; }
+.union-log-err  { color: #991b1b; }
+
+/* ================================================================
+   아이템 가게 — 편의점 스타일
+   ================================================================ */
+
+#store-container {
+    display: none;
+    width: 100%;
+    max-width: 680px;
+    flex-direction: column;
+    gap: 12px;
+}
+#store-container.visible { display: flex; }
+
+.store-header {
+    background: #1e40af; border-radius: 12px;
+    padding: 12px 16px; display: flex;
+    justify-content: space-between; align-items: center;
+}
+.store-sign { display: flex; align-items: center; gap: 10px; }
+.store-sign-icon { font-size: 28px; }
+.store-sign-name { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+.store-sign-sub  { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+.store-back-btn {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 8px; padding: 4px 12px; font-size: 12px; color: #fff;
+    cursor: pointer; font-family: inherit; transition: background 0.2s;
+}
+.store-back-btn:hover { background: rgba(255,255,255,0.25); }
+
+.store-clerk-wrap {
+    display: flex; align-items: center; gap: 10px;
+    background: #eff6ff; border: 1px solid #bfdbfe;
+    border-radius: 12px; padding: 10px 14px;
+}
+.store-clerk-avatar { font-size: 28px; flex-shrink: 0; }
+.store-clerk-bubble { flex: 1; }
+.store-clerk-name { font-size: 11px; font-weight: 600; color: #1e40af; margin-bottom: 3px; }
+.store-clerk-text { font-size: 12px; color: #374151; line-height: 1.5; }
+.store-data-badge {
+    background: #fff; border: 1.5px solid #fbbf24;
+    border-radius: 20px; padding: 4px 10px;
+    font-size: 12px; font-weight: 600; color: #d97706;
+    white-space: nowrap; flex-shrink: 0;
+}
+
+.store-shelf-title { font-size: 12px; font-weight: 600; color: #374151; padding: 4px 0; border-bottom: 2px solid #e5e7eb; }
+
+.store-shelf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+.store-item {
+    background: #fff; border: 1.5px solid #e5e7eb;
+    border-radius: 10px; padding: 12px 10px;
+    cursor: pointer; text-align: center; position: relative;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.store-item:hover { border-color: #1e40af; transform: translateY(-3px); box-shadow: 0 4px 12px rgba(30,64,175,0.12); }
+.store-item-locked { opacity: 0.5; cursor: not-allowed; }
+.store-item-locked:hover { transform: none; box-shadow: none; border-color: #e5e7eb; }
+
+.store-item-tag {
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    background: #ef4444; color: #fff; font-size: 9px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px; letter-spacing: 0.5px; white-space: nowrap;
+}
+.new-tag  { background: #059669; }
+.soon-tag { background: #6b7280; }
+
+.store-item-icon  { font-size: 28px; margin-top: 4px; }
+.store-item-name  { font-size: 12px; font-weight: 600; color: #111827; }
+.store-item-desc  { font-size: 10px; color: #6b7280; line-height: 1.4; }
+.store-item-price { font-size: 12px; font-weight: 700; color: #d97706; margin-top: 2px; }
+
+.store-receipt {
+    background: #fafafa; border: 1.5px dashed #d1d5db;
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 11px; font-family: 'Courier New', monospace;
+    min-height: 70px; max-height: 90px; overflow-y: auto; line-height: 1.9;
+}
+.store-receipt-header {
+    display: flex; justify-content: space-between;
+    font-size: 11px; font-weight: 600; color: #6b7280;
+    border-bottom: 1px dashed #d1d5db; padding-bottom: 4px; margin-bottom: 6px;
+}
+.store-log-info { color: #374151; }
+.store-log-ok   { color: #065f46; }
+.store-log-err  { color: #991b1b; }
