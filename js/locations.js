@@ -140,36 +140,45 @@ window.orderFood = function(id) {
 // 중앙도서관
 // ================================================================
 
-const libSubjects = {
-  cs:   { name: '컴퓨터공학', minR: 3, maxR: 6, time: 5000 },
-  math: { name: '수학/통계',  minR: 2, maxR: 4, time: 4000 },
-  eng:  { name: '영어/교양',  minR: 1, maxR: 3, time: 3000 },
-  rest: { name: '휴식',       minR: 0, maxR: 0, time: 3000, isRest: true },
-};
-
-const libNpcTexts = [
-  '🤫 조용히 해주세요. 공부할 과목을 선택하세요.',
-  '🤫 집중력이 높을수록 더 많은 데이터 조각을 얻어요.',
-  '🤫 피곤하면 잠깐 쉬어도 돼요. 무리하지 마세요.',
-  '🤫 컴퓨터공학이 보상이 제일 높답니다...',
+// ── 단어 목록 (중앙대 관련) ──
+const LIB_WORDS = [
+  '푸앙이','청룡호','블루미르','중앙대학교','이면세계',
+  '데드라인','학점귀신','블루미르홀','청룡산','동아리',
+  '족보','교양','수강신청','과제','시험기간',
+  '학생식당','도서관','연구실','체육관','공대',
 ];
 
-let libStudyCount = 0;
-let libFocus      = 100;
-let libBusy       = false;
+const libNpcTexts = [
+  '🤫 조용히 해주세요. 과목을 선택하면 타이핑 게임이 시작돼요!',
+  '🤫 5단어 모두 맞추면 💎 6개! 도전해보세요.',
+  '🤫 10초 안에 입력해야 해요. 집중하세요!',
+  '🤫 오탈자 주의! 정확하게 입력해야 정답이에요.',
+];
+
+let libStudyCount  = 0;
+let libFocus       = 100;
+let libBusy        = false;
+
+// 타이핑 게임 상태
+let libTypingWords   = [];
+let libTypingIdx     = 0;
+let libTypingCorrect = 0;
+let libTypingTimer   = null;
 
 window.enterLibrary = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('library-container').style.display = '';
   document.getElementById('library-container').classList.add('visible');
+  document.getElementById('lib-select-panel').style.display = 'block';
+  document.getElementById('lib-typing-panel').style.display = 'none';
   syncLibStats();
-
-  // 사서 랜덤 멘트
   const el = document.getElementById('lib-npc-text');
   if (el) el.textContent = libNpcTexts[Math.floor(Math.random() * libNpcTexts.length)];
 }
 
 window.leaveLibrary = function() {
+  if (libTypingTimer) { clearInterval(libTypingTimer); libTypingTimer = null; }
+  libBusy = false;
   document.getElementById('library-container').classList.remove('visible');
   document.getElementById('library-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
@@ -179,7 +188,6 @@ function syncLibStats() {
   document.getElementById('lib-data-val').textContent    = playerStats.data + '개';
   document.getElementById('lib-study-count').textContent = libStudyCount;
   document.getElementById('lib-focus-val').textContent   = libFocus + '%';
-  // 책갈피 게이지
   const bm = document.getElementById('lib-bookmark-fill');
   if (bm) bm.style.width = libFocus + '%';
 }
@@ -190,73 +198,139 @@ function addLibLog(msg, cls) {
   box.scrollTop = box.scrollHeight;
 }
 
-function setLibButtons(disabled) {
-  ['cs', 'math', 'eng', 'rest'].forEach(id => {
-    const btn = document.getElementById('study-btn-' + id);
-    if (btn) btn.disabled = disabled;
-  });
-}
-
 window.startStudy = function(subjectId) {
-  if (subjectId !== 'rest' && !useDaily('library')) {
+  if (libBusy) return;
+
+  // 휴식
+  if (subjectId === 'rest') {
+    libFocus = Math.min(100, libFocus + 40);
+    syncLibStats();
+    addLibLog('[😴 휴식] 집중력 회복! 현재: ' + libFocus + '%', 'lib-log-info');
+    const npc = document.getElementById('lib-npc-text');
+    if (npc) npc.textContent = '🤫 잘 쉬셨나요? 다시 열심히 해봐요.';
+    return;
+  }
+
+  if (!useDaily('library')) {
     addLibLog('[❌] 오늘 공부는 충분히 했어요! (일일 5회 한도)', 'lib-log-info');
     return;
   }
-  if (libBusy) return;
-  if (libFocus <= 0 && subjectId !== 'rest') {
-    addLibLog('[❌] 집중력이 바닥났어요! 먼저 쉬어야 해요.', 'lib-log-info');
+
+  libBusy          = true;
+  libTypingIdx     = 0;
+  libTypingCorrect = 0;
+
+  // 5개 랜덤 단어 선택
+  const shuffled   = [...LIB_WORDS].sort(() => Math.random() - 0.5);
+  libTypingWords   = shuffled.slice(0, 5);
+
+  // 화면 전환
+  document.getElementById('lib-select-panel').style.display = 'none';
+  document.getElementById('lib-typing-panel').style.display = 'block';
+
+  const subjects = { cs: '💻 컴퓨터공학', math: '📐 수학/통계', eng: '🌐 영어/교양' };
+  document.getElementById('lib-typing-subject').textContent = subjects[subjectId] || '📚 공부';
+
+  const npc = document.getElementById('lib-npc-text');
+  if (npc) npc.textContent = '🤫 빠르고 정확하게 입력하세요!';
+
+  showNextLibWord();
+}
+
+function showNextLibWord() {
+  if (libTypingIdx >= 5) {
+    finishTyping();
     return;
   }
 
-  libBusy = true;
-  setLibButtons(true);
+  const word  = libTypingWords[libTypingIdx];
+  const input = document.getElementById('lib-typing-input');
+  const bar   = document.getElementById('lib-typing-timer-bar');
 
-  const sub   = libSubjects[subjectId];
-  const fill  = document.getElementById('lib-progress-fill');
-  const label = document.getElementById('lib-progress-label');
-  const pct   = document.getElementById('lib-progress-pct');
+  document.getElementById('lib-typing-word').textContent     = word;
+  document.getElementById('lib-typing-cur').textContent      = libTypingIdx;
+  document.getElementById('lib-typing-feedback').textContent = '';
+  input.value = '';
+  input.focus();
 
-  fill.style.width  = '0%';
-  label.textContent = sub.isRest ? '😴 휴식 중...' : '📖 ' + sub.name + ' 공부 중...';
-
-  // 사서 멘트 변경
-  const npc = document.getElementById('lib-npc-text');
-  if (npc) npc.textContent = sub.isRest ? '🤫 잠깐 쉬세요...' : '🤫 열심히 하시네요...';
-
-  const start    = Date.now();
-  const interval = setInterval(() => {
-    const progress = Math.min(100, (Date.now() - start) / sub.time * 100);
-    fill.style.width = progress + '%';
-    pct.textContent  = Math.round(progress) + '%';
-    if (progress >= 100) clearInterval(interval);
-  }, 50);
-
+  // 타이머 바 10초
+  bar.style.transition = 'none';
+  bar.style.width      = '100%';
   setTimeout(() => {
-    clearInterval(interval);
-    fill.style.width = '0%';
+    bar.style.transition = 'width 10s linear';
+    bar.style.width      = '0%';
+  }, 30);
 
-    if (sub.isRest) {
-      libFocus = Math.min(100, libFocus + 40);
-      addLibLog('[😴 휴식] 집중력 회복! 현재: ' + libFocus + '%', 'lib-log-info');
-      if (npc) npc.textContent = '🤫 잘 쉬셨나요? 다시 열심히 해봐요.';
-    } else {
-      const focusBonus = libFocus >= 70 ? 1 : libFocus >= 40 ? 0.7 : 0.4;
-      const base       = sub.minR + Math.floor(Math.random() * (sub.maxR - sub.minR + 1));
-      const reward     = Math.max(1, Math.round(base * focusBonus));
-      playerStats.data += reward;
-      libStudyCount++;
-      libFocus = Math.max(0, libFocus - 25);
-      addLibLog('[✅ ' + sub.name + '] 완료! 💎 +' + reward + ' (집중력: ' + libFocus + '%)', 'lib-log-reward');
-      updateMapStats();
-      if (npc) npc.textContent = '🤫 수고하셨어요. 💎 ' + reward + '개 획득!';
+  if (libTypingTimer) clearInterval(libTypingTimer);
+  let timeLeft = 10;
+  libTypingTimer = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(libTypingTimer);
+      const fb = document.getElementById('lib-typing-feedback');
+      fb.textContent = '⏰ 시간 초과! (정답: ' + word + ')';
+      fb.style.color = '#ef4444';
+      libTypingIdx++;
+      setTimeout(showNextLibWord, 900);
     }
+  }, 1000);
+}
 
-    label.textContent = '완료!';
-    pct.textContent   = '';
-    syncLibStats();
-    setLibButtons(false);
-    libBusy = false;
-  }, sub.time);
+// Enter 키 처리 — DOMContentLoaded에서 한 번만 등록
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('lib-typing-input');
+  if (!input) return;
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    if (!libBusy || libTypingIdx >= 5) return;
+
+    clearInterval(libTypingTimer);
+
+    const val     = input.value.trim();
+    const correct = libTypingWords[libTypingIdx];
+    const fb      = document.getElementById('lib-typing-feedback');
+
+    if (val === correct) {
+      libTypingCorrect++;
+      fb.textContent = '✅ 정답!';
+      fb.style.color = '#059669';
+    } else {
+      fb.textContent = '❌ 오답 (정답: ' + correct + ')';
+      fb.style.color = '#ef4444';
+    }
+    libTypingIdx++;
+    setTimeout(showNextLibWord, 600);
+  });
+});
+
+function finishTyping() {
+  if (libTypingTimer) { clearInterval(libTypingTimer); libTypingTimer = null; }
+
+  document.getElementById('lib-select-panel').style.display = 'block';
+  document.getElementById('lib-typing-panel').style.display = 'none';
+
+  // 보상 기준: 5개→6개, 3~4개→3개, 1~2개→1개, 0개→0개
+  let reward = 0;
+  if      (libTypingCorrect === 5) reward = 6;
+  else if (libTypingCorrect >= 3)  reward = 3;
+  else if (libTypingCorrect >= 1)  reward = 1;
+
+  playerStats.data += reward;
+  libStudyCount++;
+  libFocus = Math.max(0, libFocus - 20);
+  libBusy  = false;
+
+  addLibLog(
+    '[✅ 완료] ' + libTypingCorrect + '/5 정답 → 💎 +' + reward,
+    'lib-log-reward'
+  );
+  syncLibStats();
+  updateMapStats();
+
+  const npc = document.getElementById('lib-npc-text');
+  if (npc) npc.textContent = libTypingCorrect === 5
+    ? '🤫 완벽해요! 💎 ' + reward + '개 획득!'
+    : '🤫 수고하셨어요. 💎 ' + reward + '개 획득!';
 }
 
 // ================================================================
