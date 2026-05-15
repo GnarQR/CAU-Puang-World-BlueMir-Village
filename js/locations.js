@@ -35,7 +35,7 @@ window.enterBoss = function(bossId) {
     return;
   }
 
-  const boss = BOSSES[bossId];
+  const boss = window.BOSSES[bossId];
   if (!boss) return;
 
   addMountainLog('[진입] ' + boss.name + ' 과의 전투를 시작합니다!', '#ef9f27');
@@ -276,14 +276,23 @@ let labBusy = false;  // 연구 진행 중 여부
 // 연구실 입장
 window.enterLab = function() {
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('lab-container').classList.add('visible');
+  const labCont = document.getElementById('lab-container');
+  labCont.style.display = 'flex';  // 명시적으로 flex로 변경 (display 속성 깨우기)
+  labCont.classList.add('visible');
   syncLabStats();
   updateLabBadge();
 }
 
 // 연구실 퇴장
 window.leaveLab = function() {
-  document.getElementById('lab-container').classList.remove('visible');
+  // 310관 컨테이너를 숨김
+  const labCont = document.getElementById('lab-container');
+  if (labCont) {
+    labCont.style.display = 'none';
+    labCont.classList.remove('visible');
+  }
+
+  // 메인 맵 표시
   document.getElementById('game-container').style.display = 'flex';
 }
 

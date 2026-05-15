@@ -3,8 +3,8 @@
 // ================================================================
 
 // 랜덤 몬스터 생성 함수 (나중에 몬스터 풀 확장 시 활용)
-function getRandomMonster() {
-  const pool = Object.values(MONSTERS);
+window.getRandomMonster = function() {
+  const pool = Object.values(window.MONSTERS);  // window.MONSTERS에서 몬스터 목록 가져오기
   const total = pool.reduce((sum, m) => sum + m.spawnRate, 0);
   let rand = Math.random() * total;
   for (const m of pool) {
@@ -15,7 +15,7 @@ function getRandomMonster() {
 }
 
 // ── 일반 몹 ──
-const MONSTERS = {
+window.MONSTERS = {
   ghost: {
     id:        'ghost',
     name:      '학점귀신',
@@ -33,7 +33,7 @@ const MONSTERS = {
 };
 
 // ── 보스 ──
-const BOSSES = {
+window.BOSSES = {
   deadline: {
     id:        'deadline',
     name:      '데드라인 악령',

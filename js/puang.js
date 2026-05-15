@@ -314,7 +314,9 @@ window.enterRoom = function() {
   
   updateRoomUI();
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('puang-room').classList.add('visible');
+  const roomEl = document.getElementById('puang-room');
+  roomEl.style.display = 'flex';  // 명시적으로 flex로 변경 (호출 방식 안 꼬이도록)
+  roomEl.classList.add('visible');
 }
 
 // ── 방 퇴장 ──

@@ -24,8 +24,8 @@ const placeInfo = {
 
 // ── 장소 진입 함수 ──
 // 맵 버튼 클릭 시 호출, 잠금 여부 확인 후 해당 화면으로 전환
-window.enterPlace = function(place) {
-  const info = placeInfo[place];
+window.enterPlace = function(placeId) {
+  const info = placeInfo[placeId];
   if (info.locked) {
     alert('🔒 ' + info.desc);
     return;
@@ -40,13 +40,17 @@ window.enterPlace = function(place) {
     'festival-container', 'union-container', 'mountain-container', 'store-container'
   ];
 
+  // 장소 이동 시 모든 컨테이너 숨기기
   containers.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
+    if (el) {
+      el.style.display = 'none';
+      el.classList.remove('visible');
+    }
   });
 
   // 2. 이면 세계 (탐험) 진입
-  if (place === 'battle') {
+  if (placeId === 'battle') {
     showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 균열 속으로 뛰어듭니다...');
     setTimeout(() => {
       // 탐험 컨테이너 표시
@@ -60,17 +64,17 @@ window.enterPlace = function(place) {
   };
 
   // 각 장소 진입 함수 연결
-  if (place === 'dormitory') { enterRoom();       return; }
-  if (place === 'cafeteria') { enterCafeteria();  return; }
-  if (place === 'library')   { enterLibrary();    return; }
-  if (place === 'lab')       { enterLab();        return; }
-  if (place === 'clinic')    { enterClinic();     return; }
-  if (place === 'lab2')      { enterLab2();       return; }
-  if (place === 'festival')  { enterFestival();   return; }
-  if (place === 'union')     { enterUnion();      return; }
-  if (place === 'mountain')  { enterMountain();   return; }
-  if (place === 'gym')       { enterGym();        return; }
-  if (place === 'store')     { enterStore();      return; }
+  if (placeId === 'dormitory') { enterRoom();       return; }
+  if (placeId === 'cafeteria') { enterCafeteria();  return; }
+  if (placeId === 'library')   { enterLibrary();    return; }
+  if (placeId === 'lab')       { enterLab();        return; }
+  if (placeId === 'clinic')    { enterClinic();     return; }
+  if (placeId === 'lab2')      { enterLab2();       return; }
+  if (placeId === 'festival')  { enterFestival();   return; }
+  if (placeId === 'union')     { enterUnion();      return; }
+  if (placeId === 'mountain')  { enterMountain();   return; }
+  if (placeId === 'gym')       { enterGym();        return; }
+  if (placeId === 'store')     { enterStore();      return; }
 
   // 미구현 장소는 툴팁으로 안내
   showSystemMsgOnMap('[' + info.label + '] ' + info.desc + ' (추후 구현 예정)');
@@ -91,8 +95,32 @@ function showSystemMsgOnMap(msg) {
 // ── 맵으로 복귀 ──
 // 전투/장소 화면에서 맵으로 돌아올 때 공통으로 사용
 window.returnToGame = function() {
-  document.getElementById('battle-container').classList.remove('visible');
-  document.getElementById('game-container').style.display = 'flex';
+  // 1. 모든 전투 화면 정리
+  const battleCont = document.getElementById('battle-container');
+  if (battleCont) {
+    battleCont.classList.remove('visible');
+    battleCont.style.display = 'none';
+  }
+
+  // 2. 복귀 위치 분기 처리
+  if (battleOrigin === 'map'){
+    // 205관 탐험 맵으로 복귀
+    const exploreCont = document.getElementById('explore-container');
+    if (exploreCont) exploreCont.style.display = 'block';
+
+    // 🌟 중요: 이동 잠금 해제 및 좌표 동기화
+    player.isMoving = false;
+    player.x = player.gridX * 32;
+    player.y = player.gridY * 32;
+
+    // 🌟 루프 재실행
+    requestAnimationFrame(update);
+  } 
+  
+  else {
+    // 일반 전체 맵(청룡산 등)으로 복귀
+    document.getElementById('game-container').style.display = 'flex';
+  }
 }
 
 // ── 실시간 날짜/시간 표시 ──
