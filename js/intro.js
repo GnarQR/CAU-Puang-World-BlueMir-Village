@@ -3,6 +3,24 @@
 // 순서: 1단계(API 키 입력) → 2단계(스토리 타이핑) → 3단계(닉네임 입력) → 게임 시작
 // ================================================================
 
+// ── 새로 고침 시 전투 데이터 이어하기 확인 ──
+window.checkResumeBattle = function() {
+  const inBattle = localStorage.getItem('inBattle');
+  if (inBattle === 'true') {
+    const origin = localStorage.getItem('battleOrigin') || 'map';
+    const bossId = localStorage.getItem('battleBossId');
+
+    console.log("전투 복구 시도:", { origin, bossId });
+    
+    // 🌟 약간의 지연을 주어 다른 데이터(playerStats 등)가 로드된 후 실행
+    setTimeout(() => {
+      if (typeof window.initBattle === 'function') {
+        window.initBattle(origin, bossId);
+      }
+    }, 100); 
+  }
+};
+
 // ── 인트로 스킵 ──
 // Firebase에 키+닉네임이 이미 있으면 인트로 전체를 건너뜀 (재방문 유저)
 // DOMContentLoaded 이벤트에서 자동 호출됨
@@ -49,14 +67,14 @@ const STORY_TEXT =  // 스토리 내용 변경 시 STORY_TEXT 수정
   `이제 선택받은 당신이 그 문을 열 차례다.`;
 
 function startStoryTyping() { 
-  const el = document.getElementById('story-text');
+  const element = document.getElementById('story-text');
   const nextBtn = document.getElementById('story-next-btn');
-  el.textContent = '';
+  element.textContent = '';
   let i = 0;
 
   function step() {
     if (i < STORY_TEXT.length) {
-      el.textContent += STORY_TEXT[i];
+      element.textContent += STORY_TEXT[i];
       i++;
       setTimeout(step, i < 60 ? 40 : 28);
     } 
@@ -96,17 +114,18 @@ function switchStep(fromId, toId) {  // fromId 단계를 숨기고 toId 단계�
 // ── 입력 오류 시 흔들기 ──
 // API 키나 닉네임 검증 실패 시 시각적 피드백
 function shakeInput(id) {
-  const el = document.getElementById(id);
-  el.style.borderColor = '#f09595';
-  el.style.animation = 'none';
+  const element = document.getElementById(id);
+  element.style.borderColor = '#f09595';
+  element.style.animation = 'none';
   setTimeout(() => {
-    el.style.animation = 'shake 0.3s ease';
+    element.style.animation = 'shake 0.3s ease';
     setTimeout(() => {
-      el.style.animation = '';
-      el.style.borderColor = '';
+      element.style.animation = '';
+      element.style.borderColor = '';
     }, 300);
   }, 10);
 }
+
 
 // ── DOMContentLoaded: 초기화 ──
 // 페이지 로드 시 재방문 유저면 인트로 스킵
@@ -118,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedKey && savedName) {
     GROQ_API_KEY = savedKey;
     window.skipIntro();
+    window.checkResumeBattle();  // 전투 데이터 이어하기 확인
   }
 
   document.getElementById('api-key-btn').onclick = () => window.submitApiKey();

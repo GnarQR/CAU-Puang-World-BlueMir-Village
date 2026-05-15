@@ -257,30 +257,63 @@ window.initBattle = function(origin = 'map', bossId = null) {
   }
 
   // ERROR 체크: 몬스터 데이터가 제대로 로드되지 않았을 때 대비
-  if (!currentMonster) {
-    console.error("몬스터 데이터를 찾을 수 없습니다. 체크:", {origin, bossId});
-    return;
-  }
+  if (!currentMonster) return;
 
   // 3. 적 스탯 초기화
   enemyMaxHp = currentMonster.hp;
   enemyHp = currentMonster.hp;
 
-  // 4. UI 업데이트
-  // 몬스터 이름 및 정보
-  const enemyNameEl = document.getElementById('enemy-name');
-  if (enemyNameEl) {
-    enemyNameEl.textContent = `${currentMonster.name} (Lv.${currentMonster.level || '?'})`;
+  // 세부 상태 복구 (새로고침 시 저장된 값이 있으면 사용)
+  const savedInBattle = localStorage.getItem('inBattle') === 'true';
+  const savedEnemyHp = localStorage.getItem('battleEnemyHp');
+  const savedPlayerHP = localStorage.getItem('battlePlayerHp');
+  const savedTurn = localStorage.getItem('battleTurn');
+
+  if (savedInBattle && savedEnemyHp !== null && savedPlayerHP !== null) {
+    // 저장된 값이 있으면 해당 값으로 복구
+    enemyHp = parseInt(savedEnemyHp);
+    battlePlayerHp = parseInt(savedPlayerHP);
+    battleTurn = parseInt(savedTurn) || 1;
+  } 
+  
+  else {  // 새로 시작하는 전투일 때만 초기화
+    enemyHp = currentMonster.hp;
+    battlePlayerHP = playerStats.hp;
+    battleTurn = 1;
   }
 
-  // 몬스터 HP 바 및 텍스트 (유저님 코드의 ID 기준)
-  const hpValEl = document.getElementById('enemy-hp-val');
-  const hpMaxEl = document.getElementById('enemy-hp-max');
-  const hpFillEl = document.getElementById('enemy-hp-fill');
+  enemyMaxHp = currentMonster.hp;
+  battlePlayerMaxHp = playerStats.maxHp;
+
+  // 현재 전투 상태를 localStorage에 동기화
+  localStorage.setItem('inBattle', 'true');
+  localStorage.setItem('battleOrigin', battleOrigin);
+  localStorage.setItem('battleEnemyHp', enemyHp);
+  localStorage.setItem('battlePlayerHp', battlePlayerHp);
+  localStorage.setItem('battleTurn', battleTurn);
+  if (bossId) localStorage.setItem('bossId', bossId);
+
+  // 4. UI 업데이트
+  // 복구된 데이터를 기반으로 턴 정보 갱신
+  if (typeof updateBattleBars === 'function') updateBattleBars(); 
+  const turnDisplay = document.getElementById('turn-display');
+  // '턴 1' 대신 복구된 battleTurn 사용
+  if (turnDisplay) turnDisplay.textContent = '턴 ' + battleTurn; 
+
+  // 몬스터 이름 및 정보
+  const enemyNameElement = document.getElementById('enemy-name');
+  if (enemyNameElement) {
+    enemyNameElement.textContent = `${currentMonster.name} (Lv.${currentMonster.level || '?'})`;
+  }
+
+  // 몬스터 HP 수치 및 바 및 텍스트
+  const hpValElement = document.getElementById('enemy-hp-val');
+  const hpMaxElement = document.getElementById('enemy-hp-max');
+  const hpFillElement = document.getElementById('enemy-hp-fill');
   
-  if (hpValEl) hpValEl.textContent = enemyHp;
-  if (hpMaxEl) hpMaxEl.textContent = enemyMaxHp;
-  if (hpFillEl) hpFillEl.style.width = '100%';
+  if (hpValElement) hpValElement.textContent = enemyHp;
+  if (hpMaxElement) hpMaxElement.textContent = enemyMaxHp;
+  // if (hpFillElement) hpFillElement.style.width = '100%';
   
   // 5. 이미지 로드
   const enemyImg = document.getElementById('enemy-img');
@@ -293,7 +326,6 @@ window.initBattle = function(origin = 'map', bossId = null) {
   }
 
   // 6. 로그 초기화 및 화면 전환
-  document.getElementById('turn-display').textContent = '턴 1';
   document.getElementById('dice-display').textContent = '🎲';
   document.getElementById('dice-result').textContent = '커맨드를 선택하세요';
 
@@ -308,8 +340,8 @@ window.initBattle = function(origin = 'map', bossId = null) {
   // 7. 화면 표시 및 이전 화면 숨기기
   const containers = ['explore-container', 'game-container', 'mountain-container'];
   containers.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
+    const element = document.getElementById(id);
+    if (element) element.style.display = 'none';
   });
 
   const battleCont = document.getElementById('battle-container');
@@ -324,29 +356,6 @@ window.initBattle = function(origin = 'map', bossId = null) {
     setBattleButtons(false);
   }
 };
-
-/*
-window.initBattle = function() {
-  battleOrigin = 'map';  // 전투 시작 위치 (나중에 전투 시작 전 탐험 맵을 만들 시 이 부분 수정)
-  const monster = getRandomMonster();  // 몬스터 데이터베이스에서 랜덤 몬스터 선택
-  battlePlayerHp = playerStats.hp; 
-  battlePlayerMaxHp = playerStats.maxHp;
-  enemyHp = monster.hp;        
-  enemyMaxHp = monster.hp;  
-  battleTurn = 1; buffActive = false; battleBusy = false;
-
-  applyMonsterUI(monster);  // 몬스터 데이터에 맞게 UI 업데이트
-  updateBattleBars();
-  document.getElementById('turn-display').textContent  = '턴 1';
-  document.getElementById('dice-display').textContent  = '🎲';
-  document.getElementById('dice-result').textContent   = '커맨드를 선택하세요';
-  document.getElementById('battle-log').innerHTML =
-    '<span class="log-system2">[SYSTEM] ' + monster.intro + '</span><br>' +
-    '<span class="log-system2">[RAG] ' + monster.name + ' 약점 DB → ' + monster.weakness + '에 취약</span><br>' +
-    '<span class="log-system2">[AGENT] 룰 판정 에이전트 대기 중...</span>';
-  setBattleButtons(false);
-}
-*/
 
 // ── 보스 전투 초기화 ──
 // 청룡산에서 보스 선택 시 호출
@@ -407,6 +416,16 @@ function sleepMs(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+// ── 전투 종료 시 상태 삭제 ──
+function clearBattleState() {
+  localStorage.removeItem('inBattle');
+  localStorage.removeItem('battleOrigin');
+  localStorage.removeItem('bossId');
+  localStorage.removeItem('battleEnemyHp');
+  localStorage.removeItem('battlePlayerHp');
+  localStorage.removeItem('battleTurn');
+}
+
 // ── 주사위 굴리기 애니메이션 ──
 // sides: 주사위 면 수 (d20이면 20, d10이면 10)
 // 애니메이션 후 1~sides 사이 랜덤 결과 반환
@@ -422,35 +441,35 @@ function sleepMs(ms) {
 //   - 완전히 다른 효과로 교체 시 isPuangMode 블록 전체 교체
 //   - 예: 하트가 쏟아지는 연출 → faces 배열을 ['♥','♥','♥','♥','♥','♥']로 교체
 async function animateDice(sides, ignoreGold = false) {
-  const el    = document.getElementById('dice-display');
-  const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];  // 인덱스 0 ~ 5
+  const element = document.getElementById('dice-display');
+  const faces   = ['⚀','⚁','⚂','⚃','⚄','⚅'];  // 인덱스 0 ~ 5
 
   // 호감도 80 이상이면 황금 주사위 (최소 4 보장)
   // 다른 효과로 교체 시 이 블록을 교체할 것.
   const isPuangMode = !ignoreGold && puangState.favorability >= 80;
   if (isPuangMode) {
-    el.style.filter    = 'sepia(1) saturate(5) hue-rotate(10deg)';
-    el.style.transform = 'scale(1.3)';
+    element.style.filter    = 'sepia(1) saturate(5) hue-rotate(10deg)';
+    element.style.transform = 'scale(1.3)';
   }
 
   // 주사위 굴리는 애니메이션 연출
-  el.classList.add('rolling');  // CSS의 diceShake 애니메이션 시작 (주사위가 흔들림)
+  element.classList.add('rolling');  // CSS의 diceShake 애니메이션 시작 (주사위가 흔들림)
   for (let i = 0; i < 8; i++) {
     // ⚀⚁⚂⚃⚄⚅ 중 랜덤으로 골라서 화면에 표시
-    el.textContent = faces[Math.floor(Math.random() * faces.length)];
+    element.textContent = faces[Math.floor(Math.random() * faces.length)];
     await sleepMs(50);  // 50ms 대기 → 다시 2번 반복 (총 8번)
   }  // 결과: 주사위 눈이 50ms마다 빠르게 바뀌는 것처럼 보임
-  el.classList.remove('rolling');  // 흔들림 애니메이션 종료
+  element.classList.remove('rolling');  // 흔들림 애니메이션 종료
 
   // 황금 주사위는 최소 4 보장 (변경 가능)
   const result = isPuangMode  // 조건: 황금 주사위 모드인가?
     ? Math.max(4, Math.floor(Math.random() * sides) + 1)  // true  → 황금 주사위 (최소 4 보장)
     : Math.floor(Math.random() * sides) + 1;              // false → 일반 주사위
 
-  el.textContent = faces[Math.min(result - 1, 5)];  // 주사위 결과값을 화면에 표시 (d20이어도 1~6으로 표시)
+  element.textContent = faces[Math.min(result - 1, 5)];  // 주사위 결과값을 화면에 표시 (d20이어도 1~6으로 표시)
 
   if (isPuangMode) {  // 황금 주사위 모드일 때 500ms 후에 주사위를 원래 모습으로 되돌리는 코드
-    setTimeout(() => { el.style.filter = ''; el.style.transform = ''; }, 500);
+    setTimeout(() => { element.style.filter = ''; element.style.transform = ''; }, 500);
   }
 
   return result;
@@ -479,7 +498,9 @@ async function enemyTurn() {
   }
 
   battlePlayerHp -= dmg;
+  localStorage.setItem('battlePlayerHp', battlePlayerHp);  // 플레이어 HP 상태 저장
   playerStats.hp = battlePlayerHp;
+  updateBattleBars();
 
   if (typeof updateBattleBars === 'function') updateBattleBars();
   addBattleLog('[결과] 플레이어가 ' + dmg + ' 데미지를 받았다!', 'log-damage');
@@ -563,8 +584,12 @@ window.doCmd = async function(cmd) {
     const roll = await animateDice(10);
     addBattleLog('[RAG] 과거 데이터 검색 중... 완료', 'log-system2');
     const heal = roll + 2;  // 회복량 조정 시 이 공식 수정
+
     battlePlayerHp = Math.min(battlePlayerMaxHp, battlePlayerHp + heal);
+    localStorage.setItem('battlePlayerHp', battlePlayerHp);  // 플레이어 HP 상태 저장
+    playerStats.hp = battlePlayerHp;
     updateBattleBars();
+
     addBattleLog('[결과] HP ' + heal + ' 회복!', 'log-success');
     document.getElementById('dice-result').textContent = 'HP +' + heal + ' 회복';
   }
@@ -586,6 +611,7 @@ window.doCmd = async function(cmd) {
     const roll = await animateDice(2, true); // 도망은 황금 주사위 효과 없음
 
     if (roll === 2) {
+      clearBattleState();  // 전투 상태 삭제
       addBattleLog('[결과] 전투에서 벗어났다!', 'log-success');
       document.getElementById('dice-result').textContent = '탈출 성공!';
 
