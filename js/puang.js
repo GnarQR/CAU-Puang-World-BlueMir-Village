@@ -322,6 +322,20 @@ window.enterRoom = function() {
 // ── 방 퇴장 ──
 // 푸앙이 방을 닫고 맵으로 복귀
 window.leaveRoom = function() {
-  document.getElementById('puang-room').classList.remove('visible');
-  document.getElementById('game-container').style.display = 'flex';
+  // 1. 푸앙이 방 컨테이너(puang-room)를 완전히 숨깁니다.
+  const roomCont = document.getElementById('puang-room');
+  if (roomCont) {
+    roomCont.style.display = 'none';
+  }
+
+  // 2. 메인 맵 컨테이너를 보여줍니다.
+  const gameCont = document.getElementById('game-container');
+  if (gameCont) {
+    gameCont.style.display = 'flex';
+  }
+
+  // 3. 맵으로 돌아왔으므로 상단 스탯 UI를 최신화합니다.
+  if (typeof updateMapStats === 'function') {
+    window.updateMapStats();
+  }
 }

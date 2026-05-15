@@ -92,29 +92,27 @@
 
   <!-- 맵 화면 -->
   <div class="map-container" id="game-container">
-
-    <!-- 상단 스탯 바 : 지금은 고정값 구현, 나중에는 수치 저장되도록 -->
-    <div class="map-stat-bar">
-      <!-- 게임 제목 로고 -->
-      <div style="display:flex;align-items:center;gap:8px;margin-right:4px;">
-        <img src="images/puang/puang_title.png"
-          style="width:32px;height:32px;object-fit:contain;animation:puangBounce 0.8s ease infinite alternate;"
-          onerror="this.style.display='none'" />
-        <span style="font-size:14px;font-weight:700;color:#a0c4ff;letter-spacing:1px;">CAU 푸앙 월드 : 블루미르 빌리지</span>
+    <div class="map-stat-bar">  <!-- 상단 스탯 바 -->
+      <div class="stat-brand">
+        <img src="images/puang/puang_title.png" class="puang-logo" />
+        <span>CAU 푸앙 월드 : 블루미르 빌리지</span>
       </div>
-      <div class="map-stat-pill"> HP <span id="hp-val">80 / 100</span></div>
-      <div class="map-stat-pill"> SP <span id="sp-val">45 / 60</span></div>
-      <div class="map-stat-pill"> 데이터 조각 <span id="data-val">12개</span></div>
-      <div class="map-stat-pill"> 푸앙이 호감도 <span id="favor-display" style="color:#d4537e;"> ♥♥♥♡♡ </span></div>
-      <div class="map-stat-pill"> 💎 <span id="diamond-val">0</span></div>
+      
+      <div class="stat-main">
+        <div class="map-stat-pill"> HP <span id="hp-val">40 / 40</span></div>
+        <div class="map-stat-pill"> SP <span id="sp-val">20 / 20</span></div>
+        <div class="map-stat-pill"> 데이터 조각 💎 <span id="data-val">0개</span></div>
+      </div>
     </div>
 
-    <!-- 맵 배경 + 장소 버튼 -->
-    <div class="map-bg" id="map-bg">
-      <img class="map-image" src="images/map/cau_map.png" alt="CAU 푸앙 월드 : 블루미르 빌리지 맵" />
-
-      <!-- 날짜/시간 표시 (맵 좌측 상단) -->
-      <div id="datetime-display" class="map-datetime"></div>
+    <div class="map-bg" id="map-bg">  <!-- 맵 배경 + 장소 버튼 -->
+      <img class="map-image" src="images/map/cau_map.png" />
+      <div class="map-info-group">
+        <div id="datetime-display" class="map-datetime"></div>  <!-- 날짜/시간 표시 -->
+        <div class="map-favor-mini"> <!-- 푸앙이 호감도 표시 -->
+          푸앙이 호감도 <span id="favor-display">♥♥♥♡♡</span>  
+        </div>
+      </div> 
 
       <!-- TODO : 장소 들어가는 버튼 노가다로 나중에 위치 조정해주세요. -->
       <!-- 블루미르홀 (푸앙이와 호감도작 하는 곳) -->

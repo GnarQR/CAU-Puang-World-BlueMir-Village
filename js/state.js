@@ -42,6 +42,35 @@ async function loadAllDataFromServer() {
   }
 }
 
+// 데이터를 변경한 후 호출할 통합 업데이트 함수
+async function syncAndSave() {
+  updateMapStats();  // 화면 업데이트 (즉각적인 피드백)
+  await saveAllDataToServer(); // 서버에 전체 데이터 저장
+}
+
+// ── 맵 상단 스탯 바 업데이트 ──
+window.updateMapStats = function() {
+  // 1. 요소 확인 (방어코드)
+  const hpElement = document.getElementById('hp-val');
+  const spElement = document.getElementById('sp-val');
+  const dataElement = document.getElementById('data-val');
+  const favorElement = document.getElementById('favor-display');
+
+  if (hpElement) hpElement.textContent = playerStats.hp + ' / ' + playerStats.maxHp;
+  if (spElement) spElement.textContent = playerStats.sp + ' / ' + playerStats.maxSp;
+  if (dataElement) dataElement.textContent = (playerStats.data || 0) + '개'; 
+
+  if (favorElement) {  // 푸앙이 호감도 업데이트
+    const favorScore = puangState.favorability || 0; 
+    const heartCount = Math.floor((favorScore || 0) / 20);
+    const finalHearts = Math.min(5, Math.max(0, heartCount)); // 0~5 사이로 제한
+    favorElement.textContent = "♥".repeat(finalHearts) + "♡".repeat(5 - finalHearts);
+  }
+};
+
+// 함수 밖에서 페이지 로드 시 최초 1회 실행 설정
+document.addEventListener('DOMContentLoaded', () => {window.updateMapStats();});
+
 // 2. 서버에 통합 데이터 저장하기 (디바운싱 권장: 너무 자주 호출 방지)
 async function saveAllDataToServer() {
   if (!GROQ_API_KEY) return;
@@ -67,8 +96,7 @@ async function saveAllDataToServer() {
 const playerStats = {       // 초기값 (게임 시작 시)
   hp: 60, maxHp: 60,        // 현재 HP / 최대 HP
   sp: 40, maxSp: 40,        // 현재 SP / 최대 SP
-  data: 0,                  // 보유 데이터 조각 수 (게임 내 화폐)
-  diamond: 0,               // 💎 다이아 (상점 화폐)
+  data: 0,                  // 보유 데이터 조각 수 💎 (게임 내 화폐)
   ownedRoomItems: [],       // 구매한 방 아이템 ID 배열
   roomDecorations: {        // 현재 설치된 아이템
     background: 'default',  // 배경 테마
@@ -88,7 +116,6 @@ const puangState = JSON.parse(localStorage.getItem('puangState')) || {
   moodToday: Math.floor(Math.random() * 100),  // 오늘의 기분 (0~100, 날짜 기준으로 고정)
   moodDate: ''                                 // 마지막으로 기분이 결정된 날짜
 };
-
 
 // puangState가 바뀔 때마다 Firebase에 저장
 // changeFavor(), giveItem(), enterRoom() 등에서 호출
@@ -172,16 +199,4 @@ const inventory = JSON.parse(localStorage.getItem('cau_inventory')) || [];
 window.saveInventory = function() {
   localStorage.setItem('cau_inventory', JSON.stringify(inventory));
   saveAllDataToServer(); // 서버 저장 추가
-}
-
-// ── 맵 상단 스탯 바 업데이트 ──
-// playerStats가 바뀔 때마다 호출해서 화면에 반영
-// 식당/의무실/체육관 등에서 수치 변경 후 반드시 호출
-window.updateMapStats = function() {
-  document.getElementById('hp-val').textContent = playerStats.hp + ' / ' + playerStats.maxHp;
-  document.getElementById('sp-val').textContent = playerStats.sp + ' / ' + playerStats.maxSp;
-  document.getElementById('data-val').textContent = playerStats.data + '개';
-  document.getElementById('diamond-val').textContent = playerStats.diamond + '💎';
-  // HP / SP / 데이터 조각 수치 업데이트
-  document.addEventListener('DOMContentLoaded', () => {updateMapStats();});
 }
