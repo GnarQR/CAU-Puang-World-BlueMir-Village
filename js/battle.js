@@ -230,13 +230,102 @@ function triggerBattle() {
 
   // 3. 전투 시스템 초기화
   if (typeof window.initBattle === 'function') {
-    window.initBattle();
+    window.initBattle('map', bossId = null); // 일반 몬스터 전투로 초기화
   }
 }
 
 // ── 전투 초기화 ──
 // 205관 이면 세계 진입 시 호출
 // 모든 전투 변수를 초기값으로 리셋 (나중에는 플레이어 현재 HP / SP 상태 연동되도록)
+
+window.initBattle = function(origin = 'map', bossId = null) {
+  // 1. 전역 변수 설정
+  battleOrigin = origin;
+  battleBusy = false;
+  battlePlayerHp = playerStats.hp; 
+  battlePlayerMaxHp = playerStats.maxHp;
+  battleTurn = 1; 
+  buffActive = false;
+
+  // 2. 몬스터 / 보스 데이터 가져오기
+  if (origin === 'mountain' && bossId) {
+    currentMonster = window.BOSSES[bossId];  // 보스 데이터베이스에서 해당 보스 정보 가져오기
+  } 
+  
+  else {
+    currentMonster = window.getRandomMonster();  // 몬스터 데이터베이스에서 랜덤 몬스터 선택 
+  }
+
+  // ERROR 체크: 몬스터 데이터가 제대로 로드되지 않았을 때 대비
+  if (!currentMonster) {
+    console.error("몬스터 데이터를 찾을 수 없습니다. 체크:", {origin, bossId});
+    return;
+  }
+
+  // 3. 적 스탯 초기화
+  enemyMaxHp = currentMonster.hp;
+  enemyHp = currentMonster.hp;
+
+  // 4. UI 업데이트
+  // 몬스터 이름 및 정보
+  const enemyNameEl = document.getElementById('enemy-name');
+  if (enemyNameEl) {
+    enemyNameEl.textContent = `${currentMonster.name} (Lv.${currentMonster.level || '?'})`;
+  }
+
+  // 몬스터 HP 바 및 텍스트 (유저님 코드의 ID 기준)
+  const hpValEl = document.getElementById('enemy-hp-val');
+  const hpMaxEl = document.getElementById('enemy-hp-max');
+  const hpFillEl = document.getElementById('enemy-hp-fill');
+  
+  if (hpValEl) hpValEl.textContent = enemyHp;
+  if (hpMaxEl) hpMaxEl.textContent = enemyMaxHp;
+  if (hpFillEl) hpFillEl.style.width = '100%';
+  
+  // 5. 이미지 로드
+  const enemyImg = document.getElementById('enemy-img');
+  if (enemyImg) {
+    enemyImg.src = currentMonster.image;  // monster.js에 정의된 경로 삽입
+    enemyImg.style.display = 'block';
+    enemyImg.onerror = () => { 
+      console.warn("몬스터 이미지 로드 실패, 기본 이미지로 대체합니다.");
+      enemyImg.src = 'images/monster/default.png'; };  // 실패 시 대비
+  }
+
+  // 6. 로그 초기화 및 화면 전환
+  document.getElementById('turn-display').textContent = '턴 1';
+  document.getElementById('dice-display').textContent = '🎲';
+  document.getElementById('dice-result').textContent = '커맨드를 선택하세요';
+
+  const logBox = document.getElementById('battle-log');
+  if (logBox) {
+    logBox.innerHTML = 
+      `<span class="log-system2">[SYSTEM] ${currentMonster.intro}</span><br>` +
+      `<span class="log-system2">[RAG] ${currentMonster.name} 약점 DB → ${currentMonster.weakness}에 취약</span><br>` +
+      `<span class="log-system2">[AGENT] 룰 판정 에이전트 대기 중...</span>`;
+  }
+
+  // 7. 화면 표시 및 이전 화면 숨기기
+  const containers = ['explore-container', 'game-container', 'mountain-container'];
+  containers.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  const battleCont = document.getElementById('battle-container');
+  if (battleCont) {
+    battleCont.style.display = 'flex';
+    battleCont.classList.add('visible');
+    battleCont.style.zIndex = '2000';
+  }
+
+  // (선택사항) 버튼 잠금 해제 함수가 있다면 호출
+  if (typeof setBattleButtons === 'function') {
+    setBattleButtons(false);
+  }
+};
+
+/*
 window.initBattle = function() {
   battleOrigin = 'map';  // 전투 시작 위치 (나중에 전투 시작 전 탐험 맵을 만들 시 이 부분 수정)
   const monster = getRandomMonster();  // 몬스터 데이터베이스에서 랜덤 몬스터 선택
@@ -257,6 +346,7 @@ window.initBattle = function() {
     '<span class="log-system2">[AGENT] 룰 판정 에이전트 대기 중...</span>';
   setBattleButtons(false);
 }
+*/
 
 // ── 보스 전투 초기화 ──
 // 청룡산에서 보스 선택 시 호출
@@ -373,15 +463,25 @@ async function enemyTurn() {
   await sleepMs(600);
   const roll = Math.floor(Math.random() * 12) + 1;
   const dmg  = Math.max(1, roll - 5);  // 몹 딜량 조정 시 이 줄 수정
+
   addBattleLog('[룰 판정] ' + (currentMonster ? currentMonster.name : '적') + ' 공격! 주사위: ' + roll, 'log-dice');
   await sleepMs(400);
 
   // 플레이어 피격 애니메이션
-  document.getElementById('player-svg2').classList.add('flash-player');
-  setTimeout(() => document.getElementById('player-svg2').classList.remove('flash-player'), 300);
+  const playerImg = document.getElementById('player-img');
+  if (playerImg) {
+    playerImg.classList.add('flash-player');
+    setTimeout(() => playerImg.classList.remove('flash-player'), 300);
+  } 
+  
+  else {
+    console.warn("ID 'player-img'를 찾을 수 없어 애니메이션을 건너뜁니다.");
+  }
 
   battlePlayerHp -= dmg;
-  updateBattleBars();
+  playerStats.hp = battlePlayerHp;
+
+  if (typeof updateBattleBars === 'function') updateBattleBars();
   addBattleLog('[결과] 플레이어가 ' + dmg + ' 데미지를 받았다!', 'log-damage');
 
   // 플레이어 사망 → 패배 처리
@@ -389,7 +489,9 @@ async function enemyTurn() {
     addBattleLog('[SYSTEM] 플레이어가 쓰러졌다... 3초 후 복귀합니다.', 'log-damage');
     document.getElementById('dice-result').textContent = '전투 패배...';
     await sleepMs(3000);
-    returnToGame();
+    if (typeof returnToGame === 'function') {
+      returnToGame();
+    }
     return;
   }
 
@@ -397,7 +499,8 @@ async function enemyTurn() {
   battleTurn++;
   document.getElementById('turn-display').textContent = '턴 ' + battleTurn;
   document.getElementById('dice-result').textContent  = '커맨드를 선택하세요';
-  setBattleButtons(false);
+
+  if (typeof setBattleButtons === 'function') setBattleButtons(false);
   battleBusy = false;
 }
 
@@ -407,7 +510,7 @@ async function enemyTurn() {
 window.doCmd = async function(cmd) {
   if (battleBusy) return;
   battleBusy = true;
-  setBattleButtons(true);
+  if (typeof setBattleButtons === 'function') setBattleButtons(true);
 
   // ── 벡터 캐논 (공격) ──
   if (cmd === 'attack') {
@@ -426,8 +529,8 @@ window.doCmd = async function(cmd) {
       }
 
       // 적 피격 애니메이션
-      document.getElementById('enemy-svg').classList.add('shake-enemy');
-      setTimeout(() => document.getElementById('enemy-svg').classList.remove('shake-enemy'), 300);
+      document.getElementById('enemy-img').classList.add('shake-enemy');
+      setTimeout(() => document.getElementById('enemy-img').classList.remove('shake-enemy'), 300);
 
       enemyHp -= dmg;
       updateBattleBars();
@@ -471,6 +574,8 @@ window.doCmd = async function(cmd) {
   else if (cmd === 'hyper') {
     buffActive = true;
     addBattleLog('[버프] 하이퍼 프롬프트! 다음 공격 데미지 2배', 'log-success');
+
+    // UI 업데이트
     document.getElementById('dice-result').textContent = '다음 공격 데미지 2배!';
     document.getElementById('dice-display').textContent = '⚡';
   }
@@ -484,29 +589,34 @@ window.doCmd = async function(cmd) {
       addBattleLog('[결과] 전투에서 벗어났다!', 'log-success');
       document.getElementById('dice-result').textContent = '탈출 성공!';
 
-      // 탈출 성공 → 즉시 탐험 화면으로 복귀
-      document.getElementById('battle-container').classList.remove('visible');
-      document.getElementById('battle-container').style.display = 'none';  // 확실히 숨김
-      document.getElementById('explore-container').style.display = 'flex';
+      await sleepMs(1000);
 
-      // 🌟 이동 잠금 해제 및 좌표 동기화 🌟
-      player.isMoving = false;  // 다시 움직일 수 있게 잠금을 풉니다.
-      player.x = player.gridX * 32; // 현재 위치 픽셀 동기화
-      player.y = player.gridY * 32;
-        
-      // 3. 루프가 멈췄을 경우를 대비해 다시 깨우기
-      requestAnimationFrame(update); //
+      // 탈출 성공 → 전투 화면 숨기기
+      document.getElementById('battle-container').classList.remove('visible');
+      document.getElementById('battle-container').style.display = 'none'; 
+
+      // 전투 시작 지점(battleOrigin)에 따라 복귀 장소 결정
+      if (battleOrigin === 'mountain') {  // 청룡산 화면으로 복귀
+        document.getElementById('mountain-container').style.display = 'flex';
+      }
+
+      else {  //그 외에는 일반 탐험 화면으로 복귀
+        document.getElementById('explore-container').style.display = 'block';
+        player.isMoving = false;  // 이동 잠금 해제
+        player.x = player.gridX * 32;
+        player.y = player.gridY * 32;
+        requestAnimationFrame(update); // 탐험 루프 재개
+      }
 
       battleBusy = false;
       return;
-    } 
-    
+    }
+
     else {
       addBattleLog('[결과] 탈출 실패! ' + (currentMonster ? currentMonster.name : '적') + '이(가) 가로막았다.', 'log-damage');
       document.getElementById('dice-result').textContent = '탈출 실패...';
+      await enemyTurn();  // 탈출 실패 시 즉시 적 턴으로 넘어감
     }
   }
-
-  // 적 턴 실행
-  await enemyTurn();
+  await enemyTurn();  // 플레이어 행동 후 적 턴 자동 실행 
 }

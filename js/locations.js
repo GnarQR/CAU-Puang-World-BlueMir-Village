@@ -43,7 +43,7 @@ window.enterBoss = function(bossId) {
   setTimeout(() => {  // BOSS DB에서 이미지와 이름 불러온 후 전투 화면으로 전환
     document.getElementById('mountain-container').style.display = 'none';
     document.getElementById('battle-container').classList.add('visible');
-    initBossBattle(boss);
+    window.initBattle('mountain', bossId);
   }, 1500);  // 1.5초 후 전투 화면으로 전환
 }
 
