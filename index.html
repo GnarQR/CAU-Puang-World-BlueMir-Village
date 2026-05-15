@@ -67,26 +67,7 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 접속 대기 화면 추가 -->
-  <div id="video-start-overlay" class="hidden" onclick="startIntroVideo()"
-     style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1600; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
-    <div style="color:#a0c4ff; font-size:20px; margin-bottom:20px; animation: puangBounce 0.8s infinite alternate;">
-        [ 이면 세계 접속 승인됨 ]
-    </div>
-    <div style="color:#fff; font-size:14px; opacity:0.7;">화면을 클릭하여 진입하세요</div>
-  </div>
-
-  <!-- 인트로 영상 재생 -->
-  <div id="video-container" class="hidden" ondblclick="finishVideo()" 
-    style="position:fixed; inset:0; background:#000; z-index:1500; display:flex; align-items:center; justify-content:center;">
-    <video id="intro-video" width="100%" height="100%" style="max-width:100%; max-height:100%;">
-        <source src="videos/Intro.mp4" type="video/mp4">
-    </video>
-    <div style="position:absolute; bottom:20px; width:100%; text-align:center; color:rgba(255,255,255,0.4); font-size:12px; pointer-events:none;">
-        Double Click to Skip
-    </div>
   </div>
 
   <!-- 맵 화면 -->
@@ -487,83 +468,90 @@
   <!--       -->
   <!-- 체육관 -->
   <!--       -->
-  <div id="gym-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
-    <div
-      style="background:#16213e;border:1px solid #5dcaa5;border-radius:12px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+  <!--       -->
+  <!-- 체육관 -->
+  <!--       -->
+  <div id="gym-container" style="display:none; flex-direction:column; gap:12px; width:100%; max-width:680px;">
+    <div class="gym-header">
       <div>
-        <div style="font-size:11px;color:#5dcaa5;letter-spacing:1px;">LOCATION</div>
-        <div style="font-size:15px;font-weight:500;color:#5dcaa5;">🏃 중앙대 체육관</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:1px;">[ 중앙대학교 체육관 ]</div>
+        <div style="font-size:15px;font-weight:700;color:#6ee7b7;">🏋️ 체육관</div>
       </div>
-      <button onclick="leaveGym()"
-        style="background:rgba(93,202,165,0.15);border:1px solid #5dcaa5;border-radius:8px;padding:4px 12px;font-size:12px;color:#5dcaa5;cursor:pointer;font-family:inherit;">←
-        맵으로</button>
+      <button onclick="leaveGym()" style="background:rgba(110,231,183,0.15);border:1px solid #6ee7b7;border-radius:8px;padding:4px 12px;font-size:12px;color:#6ee7b7;cursor:pointer;font-family:inherit;">← 맵으로</button>
     </div>
 
-    <div style="display:flex;gap:8px;">
-      <div
-        style="flex:1;background:#16213e;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;text-align:center;">
-        <div style="font-size:10px;color:#5dcaa5;">최대 HP</div>
-        <div style="font-size:18px;font-weight:600;color:#e0e0e0;" id="gym-maxhp-val">100</div>
-      </div>
 
-      <div
-        style="flex:1;background:#16213e;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;text-align:center;">
-        <div style="font-size:10px;color:#5dcaa5;">체력</div>
-        <div style="font-size:18px;font-weight:600;color:#a0c4ff;" id="gym-stamina-val">100%</div>
+    <!-- 스탯 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">최대 HP</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="gym-maxhp-val">60</div>
       </div>
-
-      <div
-        style="flex:1;background:#16213e;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;text-align:center;">
-        <div style="font-size:10px;color:#5dcaa5;">데이터 조각</div>
-        <div style="font-size:18px;font-weight:600;color:#ef9f27;" id="gym-data-val">12</div>
+      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">최대 SP</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="gym-maxsp-val">40</div>
+      </div>
+      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">데이터 조각</div>
+        <div style="font-size:16px;font-weight:600;color:#ef9f27;" id="gym-data-val">0</div>
+      </div>
+      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">남은 훈련</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="gym-remain-val">3회</div>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <button onclick="doGym('run')"
-        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-        <div style="font-size:26px;">🏃</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">달리기</div>
-        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">최대 HP +5</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개 · 체력 -20%</div>
-      </button>
-
-      <button onclick="doGym('weight')"
-        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-        <div style="font-size:26px;">🏋️</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">웨이트</div>
-        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">최대 HP +10</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 8개 · 체력 -35%</div>
-      </button>
-
-      <button onclick="doGym('yoga')"
-        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-        <div style="font-size:26px;">🧘</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">요가</div>
-        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">최대 SP +5</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개 · 체력 -15%</div>
-      </button>
-
-      <button onclick="doGym('rest')"
-        style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-        <div style="font-size:26px;">💤</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">휴식</div>
-        <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">체력 +50% 회복</div>
-        <div style="font-size:10px;color:#6c8ebf;margin-top:2px;">무료</div>
-      </button>
+    <!-- 종목 선택 패널 -->
+    <div id="gym-select-panel">
+      <div style="font-size:12px;font-weight:600;color:#5dcaa5;border-bottom:2px solid #065f46;padding-bottom:4px;margin-bottom:8px;">🏅 훈련 종목 선택 — 순서 기억 미니게임</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="startGymGame('run')" style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#6ee7b7';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#065f46';this.style.transform='none'">
+          <div style="font-size:26px;">🏃</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px;">달리기</div>
+          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">성공 시 최대 HP +5</div>
+          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개</div>
+        </button>
+        <button onclick="startGymGame('weight')" style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#6ee7b7';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#065f46';this.style.transform='none'">
+          <div style="font-size:26px;">🏋️</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px;">웨이트</div>
+          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">성공 시 최대 HP +10</div>
+          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 8개</div>
+        </button>
+        <button onclick="startGymGame('yoga')" style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#6ee7b7';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#065f46';this.style.transform='none'">
+          <div style="font-size:26px;">🧘</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px;">요가</div>
+          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">성공 시 최대 SP +5</div>
+          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개</div>
+        </button>
+        <button onclick="doGymRest()" style="background:#022c22;border:1.5px solid #1e3a5f;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#1e3a5f';this.style.transform='none'">
+          <div style="font-size:26px;">💤</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px;">휴식</div>
+          <div style="font-size:10px;color:#a0c4ff;margin-top:2px;">HP/SP 완전 회복</div>
+          <div style="font-size:10px;color:#a0c4ff;margin-top:2px;">무료</div>
+        </button>
+      </div>
     </div>
 
-    <div id="gym-log"
-      style="background:#0a1a0d;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;font-size:12px;color:#5dcaa5;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
-      <span>[체육관] 훈련으로 최대 HP/SP를 올려보세요!</span>
+    <!-- 미니게임 패널 -->
+    <div id="gym-game-panel" style="display:none;background:#022c22;border:1.5px solid #065f46;border-radius:12px;padding:16px;display:none;flex-direction:column;align-items:center;gap:14px;">
+      <div id="gym-game-title" style="font-size:13px;font-weight:600;color:#6ee7b7;text-align:center;">버튼 순서를 기억하세요!</div>
+      <div style="display:flex;gap:10px;">
+        <div id="gym-seq-0" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
+        <div id="gym-seq-1" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
+        <div id="gym-seq-2" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
+        <div id="gym-seq-3" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
+      </div>
+      <div id="gym-input-btns" style="display:none;gap:10px;">
+        <button onclick="gymInputBtn(0)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🔴</button>
+        <button onclick="gymInputBtn(1)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🔵</button>
+        <button onclick="gymInputBtn(2)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🟢</button>
+        <button onclick="gymInputBtn(3)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🟡</button>
+      </div>
+      <div id="gym-game-status" style="font-size:12px;color:#5dcaa5;"></div>
+    </div>
+
+    <div id="gym-log" style="background:#011a14;border:1px solid #065f46;border-radius:8px;padding:10px 14px;font-size:12px;color:#5dcaa5;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.8;">
+      <span>[체육관] 훈련 종목을 선택하고 미니게임을 클리어하세요!</span>
     </div>
   </div>
 
@@ -586,7 +574,7 @@
       <div class="lib-npc-avatar">🧑‍💼</div>
       <div class="lib-npc-bubble">
         <div class="lib-npc-name">사서</div>
-        <div class="lib-npc-text" id="lib-npc-text">🤫 조용히 해주세요. 공부할 과목을 선택하세요.</div>
+        <div class="lib-npc-text" id="lib-npc-text">🤫 조용히 해주세요. 과목을 선택하면 타이핑 게임이 시작돼요!</div>
       </div>
     </div>
 
@@ -750,6 +738,13 @@
       </button>
     </div>
 
+    <!-- 코드 디버깅 퀴즈 패널 -->
+    <div id="lab-quiz-panel" style="display:none;background:#050c05;border:1.5px solid #4dff88;border-radius:10px;padding:14px;flex-direction:column;gap:10px;">
+      <div style="font-size:12px;color:#4dff88;font-family:'Courier New',monospace;font-weight:600;">🖥️ 연구 전 코드 디버깅 퀴즈</div>
+      <div id="lab-quiz-q" style="font-size:12px;color:#c0e0c0;font-family:'Courier New',monospace;line-height:1.7;white-space:pre-line;"></div>
+      <div id="lab-quiz-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+    </div>
+
     <!-- 저장/불러오기 -->
     <div class="lab-action-title">&gt; 데이터 관리</div>
     <div class="lab-action-grid">
@@ -858,72 +853,74 @@
   <!--           -->
   <!-- 공대 실험실 -->
   <!--           -->
-  <div id="lab2-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
-    <div
-      style="background:#16213e;border:1px solid #5dcaa5;border-radius:12px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+  <!--          -->
+  <!-- 공대 실험실 -->
+  <!--          -->
+  <div id="lab2-container" style="display:none; flex-direction:column; gap:12px; width:100%; max-width:680px;">
+    <div style="background:#1a0a3a;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
       <div>
-        <div style="font-size:11px;color:#5dcaa5;letter-spacing:1px;">LOCATION</div>
-        <div style="font-size:15px;font-weight:500;color:#5dcaa5;">⚗️ 공대 실험실</div>
+        <div style="font-size:10px;color:rgba(160,196,255,0.6);letter-spacing:1px;">[ 중앙대학교 공과대학 실험실 ]</div>
+        <div style="font-size:15px;font-weight:700;color:#a0c4ff;">⚗️ 공대 실험실</div>
       </div>
-      <button onclick="leaveLab2()"
-        style="background:rgba(93,202,165,0.15);border:1px solid #5dcaa5;border-radius:8px;padding:4px 12px;font-size:12px;color:#5dcaa5;cursor:pointer;font-family:inherit;">←
-        맵으로</button>
+      <button onclick="leaveLab2()" style="background:rgba(160,196,255,0.15);border:1px solid #a0c4ff;border-radius:8px;padding:4px 12px;font-size:12px;color:#a0c4ff;cursor:pointer;font-family:inherit;">← 맵으로</button>
     </div>
 
-    <div
-      style="background:#16213e;border:1px solid #1e3a2a;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:11px;color:#5dcaa5;letter-spacing:1px;">🧪 조합 레시피</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="craftItem('speed')"
-          style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-          <div style="font-size:22px;">⚡</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">집중력 포션</div>
-          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">다음 전투 데미지 +50%</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 8개 소모</div>
-        </button>
-
-        <button onclick="craftItem('shield')"
-          style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-          <div style="font-size:22px;">🛡️</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">방어막 생성</div>
-          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">다음 전투 피해 -50%</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 10개 소모</div>
-        </button>
-
-        <button onclick="craftItem('regen')"
-          style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-          <div style="font-size:22px;">🌿</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">재생 포션</div>
-          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">전투 중 매 턴 HP +5</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 12개 소모</div>
-        </button>
-
-        <button onclick="craftItem('lucky')"
-          style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#5dcaa5';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#1e3a2a';this.style.transform='none'">
-          <div style="font-size:22px;">🍀</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">행운의 시약</div>
-          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">도서관 보상 2배</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 6개 소모</div>
-        </button>
+    <!-- 스탯 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">💎 데이터 조각</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="lab2-data-val">0</div>
+      </div>
+      <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">🎒 보유 아이템</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="lab2-inv-count">0개</div>
+      </div>
+      <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">🔬 남은 제조</div>
+        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="lab2-remain-val">3회</div>
       </div>
     </div>
 
-    <div style="background:#16213e;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;">
-      <div style="font-size:10px;color:#5dcaa5;margin-bottom:6px;">🎒 보유 아이템</div>
+    <!-- 재료 선택 -->
+    <div style="font-size:12px;font-weight:600;color:#a0c4ff;border-bottom:2px solid #2e1a5e;padding-bottom:4px;">🧪 재료 선택 (3가지 선택 후 조합)</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+      <button id="mat-fire"    onclick="selectMaterial('fire')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">🔥<br><span style="font-size:10px;color:#8060b0;">불꽃 결정</span></button>
+      <button id="mat-water"   onclick="selectMaterial('water')"   style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">💧<br><span style="font-size:10px;color:#8060b0;">정화 물방울</span></button>
+      <button id="mat-leaf"    onclick="selectMaterial('leaf')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">🌿<br><span style="font-size:10px;color:#8060b0;">치유 잎사귀</span></button>
+      <button id="mat-crystal" onclick="selectMaterial('crystal')" style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">💎<br><span style="font-size:10px;color:#8060b0;">이면 결정</span></button>
+      <button id="mat-gear"    onclick="selectMaterial('gear')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">⚙️<br><span style="font-size:10px;color:#8060b0;">마법 톱니</span></button>
+      <button id="mat-star"    onclick="selectMaterial('star')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">⭐<br><span style="font-size:10px;color:#8060b0;">별빛 가루</span></button>
+    </div>
+
+    <!-- 슬롯 + 조합 버튼 -->
+    <div style="display:flex;align-items:center;gap:8px;background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 14px;">
+      <div id="lab2-slot-0" style="width:44px;height:44px;background:#1a0a3a;border:1.5px dashed #2e1a5e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#8060b0;flex-shrink:0;">?</div>
+      <span style="font-size:16px;color:#8060b0;">+</span>
+      <div id="lab2-slot-1" style="width:44px;height:44px;background:#1a0a3a;border:1.5px dashed #2e1a5e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#8060b0;flex-shrink:0;">?</div>
+      <span style="font-size:16px;color:#8060b0;">+</span>
+      <div id="lab2-slot-2" style="width:44px;height:44px;background:#1a0a3a;border:1.5px dashed #2e1a5e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#8060b0;flex-shrink:0;">?</div>
+      <button id="lab2-craft-btn" onclick="craftByRecipe()" disabled style="margin-left:auto;background:#c4a0ff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;color:#1a0a3a;cursor:pointer;opacity:0.4;">조합!</button>
+    </div>
+
+    <!-- 레시피 힌트 -->
+    <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px 14px;">
+      <div style="font-size:11px;font-weight:600;color:#8060b0;margin-bottom:6px;">📋 레시피 힌트</div>
+      <div style="font-size:11px;color:#6040a0;line-height:2;font-family:'Courier New',monospace;">
+        🔥+💧+🌿 = 재생 포션 (전투 중 매 턴 HP +5)<br>
+        🔥+⚙️+💎 = 집중력 포션 (데미지 +50%)<br>
+        💧+🌿+⭐ = 행운의 시약 (도서관 보상 2배)<br>
+        💎+⚙️+⭐ = 방어막 (피해 -50%)
+      </div>
+    </div>
+
+    <!-- 인벤토리 -->
+    <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px 14px;">
+      <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">🎒 보유 아이템</div>
       <div id="inventory-display" style="font-size:12px;color:#e0e0e0;line-height:1.8;">없음</div>
     </div>
 
-    <div id="lab2-log"
-      style="background:#0d1a12;border:1px solid #1e3a2a;border-radius:10px;padding:10px 14px;font-size:12px;color:#5dcaa5;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
-      <span>[실험실] 데이터 조각으로 아이템을 제조하세요.</span>
+    <div id="lab2-log" style="background:#080510;border:1px solid #2e1a5e;border-radius:8px;padding:10px 14px;font-size:12px;color:#5dcaa5;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.8;">
+      <span>[실험실] 재료 3가지를 선택하고 조합하세요!</span>
     </div>
   </div>
 
@@ -1136,9 +1133,16 @@
 
     </div>
 
+    <!-- 뽑기 -->
+    <div style="background:#fffbeb;border:2px solid #d4a017;border-radius:10px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="font-size:13px;font-weight:700;color:#92400e;">🎰 행운의 뽑기</div>
+      <div style="font-size:11px;color:#6b7280;">⚪ 일반 50% · 💜 희귀 30% · 🌟 전설 10% · 꽝 10%</div>
+      <button onclick="doGacha()" style="background:#d4a017;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;transition:opacity 0.2s,transform 0.15s;" onmouseover="this.style.opacity='0.85';this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='1';this.style.transform='none'">💎 3개로 뽑기!</button>
+    </div>
+
     <!-- 영수증 로그 -->
     <div class="union-receipt" id="union-log">
-      <div class="union-receipt-title">🧾 구매 내역</div>
+      <div class="union-receipt-title">🧾 구매 / 뽑기 내역</div>
       <span class="union-log-info">[학생회관] 어서오세요! 구매할 항목을 선택하세요.</span>
     </div>
 

@@ -137,10 +137,9 @@ window.orderFood = function(id) {
 }
 
 // ================================================================
-// 중앙도서관
+// 중앙도서관 — 단어 타이핑 게임
 // ================================================================
 
-// ── 단어 목록 (중앙대 관련) ──
 const LIB_WORDS = [
   '푸앙이','청룡호','블루미르','중앙대학교','이면세계',
   '데드라인','학점귀신','블루미르홀','청룡산','동아리',
@@ -158,12 +157,10 @@ const libNpcTexts = [
 let libStudyCount  = 0;
 let libFocus       = 100;
 let libBusy        = false;
-
-// 타이핑 게임 상태
-let libTypingWords   = [];
-let libTypingIdx     = 0;
+let libTypingWords = [];
+let libTypingIdx   = 0;
 let libTypingCorrect = 0;
-let libTypingTimer   = null;
+let libTypingTimer = null;
 
 window.enterLibrary = function() {
   document.getElementById('game-container').style.display = 'none';
@@ -219,12 +216,8 @@ window.startStudy = function(subjectId) {
   libBusy          = true;
   libTypingIdx     = 0;
   libTypingCorrect = 0;
+  libTypingWords   = [...LIB_WORDS].sort(() => Math.random() - 0.5).slice(0, 5);
 
-  // 5개 랜덤 단어 선택
-  const shuffled   = [...LIB_WORDS].sort(() => Math.random() - 0.5);
-  libTypingWords   = shuffled.slice(0, 5);
-
-  // 화면 전환
   document.getElementById('lib-select-panel').style.display = 'none';
   document.getElementById('lib-typing-panel').style.display = 'block';
 
@@ -239,7 +232,7 @@ window.startStudy = function(subjectId) {
 
 function showNextLibWord() {
   if (libTypingIdx >= 5) {
-    finishTyping();
+    finishLibTyping();
     return;
   }
 
@@ -276,14 +269,13 @@ function showNextLibWord() {
   }, 1000);
 }
 
-// Enter 키 처리 — DOMContentLoaded에서 한 번만 등록
+// Enter 키 처리
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('lib-typing-input');
   if (!input) return;
   input.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     if (!libBusy || libTypingIdx >= 5) return;
-
     clearInterval(libTypingTimer);
 
     const val     = input.value.trim();
@@ -303,13 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function finishTyping() {
+function finishLibTyping() {
   if (libTypingTimer) { clearInterval(libTypingTimer); libTypingTimer = null; }
 
   document.getElementById('lib-select-panel').style.display = 'block';
   document.getElementById('lib-typing-panel').style.display = 'none';
 
-  // 보상 기준: 5개→6개, 3~4개→3개, 1~2개→1개, 0개→0개
+  // 보상: 5개→6개, 3~4개→3개, 1~2개→1개, 0개→0개
   let reward = 0;
   if      (libTypingCorrect === 5) reward = 6;
   else if (libTypingCorrect >= 3)  reward = 3;
@@ -320,10 +312,7 @@ function finishTyping() {
   libFocus = Math.max(0, libFocus - 20);
   libBusy  = false;
 
-  addLibLog(
-    '[✅ 완료] ' + libTypingCorrect + '/5 정답 → 💎 +' + reward,
-    'lib-log-reward'
-  );
+  addLibLog('[✅ 완료] ' + libTypingCorrect + '/5 정답 → 💎 +' + reward, 'lib-log-reward');
   syncLibStats();
   updateMapStats();
 
@@ -397,7 +386,21 @@ function addLabLog(msg, cls) {
   box.scrollTop = box.scrollHeight;
 }
 
-// ── 연구 프로젝트 실행 ──
+// 코드 디버깅 퀴즈 문제
+const LAB_QUIZ_BANK = [
+  { q: '다음 코드의 버그는?\nfor(i=0; i<10; i--)',            choices:['i-- → i++','i=0 → i=1','i<10 → i>10','세미콜론 누락'], ans:0 },
+  { q: '재할당 불가능한 변수 선언 방법은?',                    choices:['let','var','const','function'], ans:2 },
+  { q: '올바른 배열 선언은?',                                  choices:['arr={1,2,3}','arr=[1,2,3]','arr=(1,2,3)','arr=<1,2,3>'], ans:1 },
+  { q: 'null과 undefined의 차이는?',                           choices:['같다','null은 의도적 없음, undefined는 선언만','undefined가 null 포함','모두 0과 같다'], ans:1 },
+  { q: 'querySelector("#id")와 같은 결과를 내는 것은?',        choices:['getElementsByClass','getElementById','getElementByTag','getAllElements'], ans:1 },
+  { q: '비동기 처리 방법이 아닌 것은?',                        choices:['async/await','Promise','Callback','for loop'], ans:3 },
+  { q: 'JSON.parse()의 반대 함수는?',                          choices:['JSON.convert()','JSON.stringify()','JSON.encode()','JSON.toString()'], ans:1 },
+  { q: 'localStorage에 데이터 저장 메서드는?',                 choices:['localStorage.save()','localStorage.put()','localStorage.setItem()','localStorage.store()'], ans:2 },
+];
+
+let labPendingAction = null;
+
+// ── 연구 프로젝트 실행 — 퀴즈 먼저 ──
 window.startResearch = function(action) {
   if (labBusy) { addLabLog('이미 연구 중입니다!', 'lab-log-warning'); return; }
   if (!useDaily('lab')) { addLabLog('오늘 연구 한도 초과! (일일 2회)', 'lab-log-warning'); updateLabBadge(); return; }
@@ -410,13 +413,55 @@ window.startResearch = function(action) {
     return;
   }
 
-  // 비용 차감
+  // 퀴즈 먼저! (한도/비용은 정답 후 차감)
+  labPendingAction = action;
+  showLabQuiz();
+}
+
+function showLabQuiz() {
+  const q     = LAB_QUIZ_BANK[Math.floor(Math.random() * LAB_QUIZ_BANK.length)];
+  const panel = document.getElementById('lab-quiz-panel');
+  if (!panel) { proceedResearch(labPendingAction); return; }
+
+  panel.style.display = 'flex';
+  document.getElementById('lab-quiz-q').textContent = q.q;
+  const choicesEl = document.getElementById('lab-quiz-choices');
+  choicesEl.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = c;
+    btn.style.cssText = 'background:#070d07;border:1px solid #1a3a1a;border-radius:6px;padding:8px 10px;cursor:pointer;font-family:Courier New,monospace;font-size:11px;color:#c0e0c0;text-align:left;';
+    btn.onmouseover = () => { btn.style.borderColor = '#4dff88'; btn.style.background = '#0d1f0d'; };
+    btn.onmouseout  = () => { btn.style.borderColor = '#1a3a1a'; btn.style.background = '#070d07'; };
+    btn.onclick     = () => answerLabQuiz(i, q.ans);
+    choicesEl.appendChild(btn);
+  });
+  addLabLog('[QUIZ] 연구 전 코드 디버깅 퀴즈를 풀어야 해요!', 'lab-log-info');
+}
+
+window.answerLabQuiz = function(idx, ans) {
+  const panel = document.getElementById('lab-quiz-panel');
+  if (panel) panel.style.display = 'none';
+
+  if (idx === ans) {
+    addLabLog('[QUIZ] 정답! 연구를 시작합니다.', 'lab-log-save');
+    proceedResearch(labPendingAction);
+  } else {
+    addLabLog('[QUIZ] 오답! 연구가 취소됐어요. 데이터 조각은 소모되지 않았어요.', 'lab-log-warning');
+    // 한도 복구
+    if (dailyUsage['lab'] > 0) dailyUsage['lab']--;
+    updateLabBadge();
+  }
+  labPendingAction = null;
+}
+
+function proceedResearch(action) {
+  const proj = LAB_PROJECTS[action];
   playerStats.data -= proj.cost;
   labBusy = true;
   updateMapStats();
   addLabLog('[START] ' + proj.name + ' 시작...', 'lab-log-info');
 
-  // 진행 바 애니메이션
   const bar = document.getElementById('lab-bar-' + action);
   if (bar) {
     const start = Date.now();
@@ -427,9 +472,8 @@ window.startResearch = function(action) {
     }, 50);
   }
 
-  // 완료 처리
   setTimeout(() => {
-    doLabAction(action);  // 기존 doLabAction 재활용
+    doLabAction(action);
     labBusy = false;
     if (bar) bar.style.width = '0%';
     updateLabBadge();
@@ -482,77 +526,129 @@ window.doLabAction = function(action) {
 // 체육관
 // ================================================================
 
-// 오늘의 체력 (운동할수록 감소, 휴식으로 회복)
-let gymStamina = 100;
+// ── 체육관 — 버튼 순서 기억 미니게임 ──
+let gymCurrentMode  = null;
+let gymSequence     = [];
+let gymPlayerSeq    = [];
+let gymShowingSeq   = false;
+const GYM_COLORS    = ['🔴','🔵','🟢','🟡'];
 
-// 체육관 입장
 window.enterGym = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('gym-container').style.display = 'flex';
   syncGymStats();
+  document.getElementById('gym-select-panel').style.display = 'block';
+  document.getElementById('gym-game-panel').style.display = 'none';
 }
 
-// 체육관 퇴장
 window.leaveGym = function() {
   document.getElementById('gym-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
-// 체육관 스탯 동기화
 function syncGymStats() {
-  document.getElementById('gym-maxhp-val').textContent   = playerStats.maxHp;
-  document.getElementById('gym-stamina-val').textContent = gymStamina + '%';
-  document.getElementById('gym-data-val').textContent    = playerStats.data;
+  document.getElementById('gym-maxhp-val').textContent  = playerStats.maxHp;
+  document.getElementById('gym-maxsp-val').textContent  = playerStats.maxSp;
+  document.getElementById('gym-data-val').textContent   = playerStats.data;
+  document.getElementById('gym-remain-val').textContent = remainDaily('gym') + '회';
 }
 
-// 체육관 로그 추가
 function addGymLog(msg, color) {
   const box = document.getElementById('gym-log');
   box.innerHTML += '<br><span style="color:' + (color || '#5dcaa5') + '">' + msg + '</span>';
   box.scrollTop = box.scrollHeight;
 }
 
-// 운동 실행 — 데이터 조각/체력 소모 후 최대 HP/SP 영구 증가
-window.doGym = function(type) {
-  if (type !== 'rest' && !useDaily('gym')) {  // 휴식 제외하고 일일 한도 체크
-    addGymLog('[체육관] 오늘은 충분히 훈련했어요! (일일 3회 한도)', '#f09595');
-    return;
-  }
+window.doGymRest = function() {
+  playerStats.hp = playerStats.maxHp;
+  playerStats.sp = playerStats.maxSp;
+  updateMapStats();
+  addGymLog('[💤 휴식] HP/SP 완전 회복!', '#a0c4ff');
+}
 
-  if (type === 'rest') {  // 휴식: 체력 50% 회복 (무료)
-    gymStamina = Math.min(100, gymStamina + 50);
-    addGymLog('[휴식] 체력 회복! 현재 체력: ' + gymStamina + '%', '#a0c4ff');
+window.startGymGame = function(mode) {
+  if (!useDaily('gym')) {
+    addGymLog('[❌] 오늘 훈련 한도 초과! (일일 3회)', '#f09595');
     syncGymStats();
     return;
   }
+  const costs = { run: 4, weight: 8, yoga: 4 };
+  if (playerStats.data < costs[mode]) {
+    addGymLog('[❌] 데이터 조각 부족! (필요: ' + costs[mode] + '개)', '#f09595');
+    return;
+  }
+  playerStats.data -= costs[mode];
+  gymCurrentMode = mode;
+  gymSequence    = [];
+  gymPlayerSeq   = [];
+  updateMapStats();
+  syncGymStats();
 
-  const trains = {  // 운동 종류별 비용/효과 정의
-    run:    { cost: 4,  stamina: 20, hpUp: 5,  spUp: 0, name: '달리기' },
-    weight: { cost: 8,  stamina: 35, hpUp: 10, spUp: 0, name: '웨이트' },
-    yoga:   { cost: 4,  stamina: 15, hpUp: 0,  spUp: 5, name: '요가'   },
-  };
-  const t = trains[type];
+  document.getElementById('gym-select-panel').style.display = 'none';
+  document.getElementById('gym-game-panel').style.display = 'flex';
+  document.getElementById('gym-input-btns').style.display = 'none';
 
-  if (playerStats.data < t.cost) {
-    addGymLog('[실패] 데이터 조각 부족 (필요: ' + t.cost + '개)', '#f09595');
+  const names = { run: '달리기 🏃', weight: '웨이트 🏋️', yoga: '요가 🧘' };
+  document.getElementById('gym-game-title').textContent = names[mode] + ' — 순서를 기억하세요!';
+
+  for (let i = 0; i < 4; i++) gymSequence.push(Math.floor(Math.random() * 4));
+  showGymSequence();
+}
+
+function showGymSequence() {
+  gymShowingSeq = true;
+  document.getElementById('gym-game-status').textContent = '👀 순서를 기억하세요...';
+  for (let i = 0; i < 4; i++) document.getElementById('gym-seq-' + i).textContent = '❓';
+
+  let idx = 0;
+  const iv = setInterval(() => {
+    if (idx > 0) document.getElementById('gym-seq-' + (idx-1)).textContent = '❓';
+    if (idx < gymSequence.length) {
+      document.getElementById('gym-seq-' + idx).textContent = GYM_COLORS[gymSequence[idx]];
+      idx++;
+    } else {
+      clearInterval(iv);
+      if (idx > 0) document.getElementById('gym-seq-' + (idx-1)).textContent = '❓';
+      gymShowingSeq = false;
+      gymPlayerSeq  = [];
+      document.getElementById('gym-game-title').textContent = '이제 순서대로 눌러보세요!';
+      document.getElementById('gym-game-status').textContent = '0 / 4 입력';
+      document.getElementById('gym-input-btns').style.display = 'flex';
+    }
+  }, 700);
+}
+
+window.gymInputBtn = function(colorIdx) {
+  if (gymShowingSeq) return;
+  gymPlayerSeq.push(colorIdx);
+  const cur = gymPlayerSeq.length - 1;
+  document.getElementById('gym-game-status').textContent = gymPlayerSeq.length + ' / 4 입력';
+
+  if (gymPlayerSeq[cur] !== gymSequence[cur]) {
+    document.getElementById('gym-game-title').textContent = '❌ 틀렸어요!';
+    document.getElementById('gym-game-status').textContent = '정답: ' + gymSequence.map(i => GYM_COLORS[i]).join(' ');
+    document.getElementById('gym-input-btns').style.display = 'none';
+    addGymLog('[❌] 훈련 실패! 데이터 조각만 소모됐어요.', '#f09595');
+    setTimeout(() => {
+      document.getElementById('gym-select-panel').style.display = 'block';
+      document.getElementById('gym-game-panel').style.display = 'none';
+    }, 1500);
     return;
   }
 
-  if (gymStamina < t.stamina) {
-    addGymLog('[실패] 체력 부족! 먼저 휴식하세요. (필요: ' + t.stamina + '%)', '#f09595');
-    return;
+  if (gymPlayerSeq.length === 4) {
+    document.getElementById('gym-game-title').textContent = '🎉 성공!';
+    document.getElementById('gym-input-btns').style.display = 'none';
+    const mode = gymCurrentMode;
+    if      (mode === 'run')    { playerStats.maxHp += 5;  addGymLog('[🏃 달리기] 성공! 최대 HP +5 → ' + playerStats.maxHp, '#5dcaa5'); }
+    else if (mode === 'weight') { playerStats.maxHp += 10; addGymLog('[🏋️ 웨이트] 성공! 최대 HP +10 → ' + playerStats.maxHp, '#5dcaa5'); }
+    else if (mode === 'yoga')   { playerStats.maxSp += 5;  addGymLog('[🧘 요가] 성공! 최대 SP +5 → ' + playerStats.maxSp, '#5dcaa5'); }
+    syncGymStats(); updateMapStats();
+    setTimeout(() => {
+      document.getElementById('gym-select-panel').style.display = 'block';
+      document.getElementById('gym-game-panel').style.display = 'none';
+    }, 1500);
   }
-
-  playerStats.data -= t.cost;
-  gymStamina = Math.max(0, gymStamina - t.stamina);
-  if (t.hpUp > 0) playerStats.maxHp += t.hpUp;
-  if (t.spUp > 0) playerStats.maxSp += t.spUp;
-  syncGymStats(); updateMapStats();
-
-  let msg = '[' + t.name + '] 훈련 완료! ';
-  if (t.hpUp > 0) msg += '최대 HP +' + t.hpUp + ' → ' + playerStats.maxHp;
-  if (t.spUp > 0) msg += '최대 SP +' + t.spUp + ' → ' + playerStats.maxSp;
-  addGymLog(msg, '#5dcaa5');
 }
 
 // ================================================================
@@ -641,47 +737,97 @@ const craftRecipes = {
 window.enterLab2 = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('lab2-container').style.display = 'flex';
-  renderInventory();
+  syncLab2Stats();
+  resetLab2();
 }
 
-// 공대 실험실 퇴장
 window.leaveLab2 = function() {
   document.getElementById('lab2-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
-// 실험실 로그 추가
+function syncLab2Stats() {
+  document.getElementById('lab2-data-val').textContent   = playerStats.data;
+  document.getElementById('lab2-inv-count').textContent  = inventory.length + '개';
+  document.getElementById('lab2-remain-val').textContent = remainDaily('lab2') + '회';
+  renderInventory();
+}
+
 function addLab2Log(msg) {
   const box = document.getElementById('lab2-log');
   box.innerHTML += '<br><span style="color:#5dcaa5">' + msg + '</span>';
   box.scrollTop = box.scrollHeight;
 }
 
-// 인벤토리 화면에 보유 아이템 목록 표시
 function renderInventory() {
   const el = document.getElementById('inventory-display');
   if (!el) return;
-  el.textContent = inventory.length === 0
-    ? '없음'
-    : inventory.map(i => i.icon + ' ' + i.name).join('  ·  ');
+  el.textContent = inventory.length === 0 ? '없음' : inventory.map(i => i.icon + ' ' + i.name).join('  ·  ');
 }
 
-// 아이템 제조 — 일일 한도 + 데이터 조각 체크 후 인벤토리에 추가
-window.craftItem = function(id) {
-  if (!useDaily('lab2')) {
-    addLab2Log('[실험실] 오늘 제조는 다 했어요! (일일 3회 한도)');
-    return;
-  }
-  const r = craftRecipes[id];
-  if (playerStats.data < r.cost) {
-    addLab2Log('[실패] 데이터 조각 부족 (필요: ' + r.cost + '개)');
-    return;
-  }
-  playerStats.data -= r.cost;
-  inventory.push({ id, name: r.name, icon: r.icon, desc: r.desc });
-  saveInventory(); renderInventory(); updateMapStats();
-  addLab2Log('[제조 완료] ' + r.icon + ' ' + r.name + ' 획득! · 데이터 조각 -' + r.cost);
+// 재료 조합 레시피
+const LAB2_RECIPES = [
+  { materials: ['fire','water','leaf'],   result: { id:'regen',  name:'재생 포션',   icon:'🌿', desc:'전투 중 매 턴 HP +5' }},
+  { materials: ['fire','gear','crystal'], result: { id:'speed',  name:'집중력 포션', icon:'⚡', desc:'다음 전투 데미지 +50%' }},
+  { materials: ['water','leaf','star'],   result: { id:'lucky',  name:'행운의 시약', icon:'🍀', desc:'도서관 보상 2배' }},
+  { materials: ['crystal','gear','star'], result: { id:'shield', name:'방어막',       icon:'🛡️', desc:'다음 전투 피해 -50%' }},
+];
+const LAB2_EMOJI = { fire:'🔥', water:'💧', leaf:'🌿', crystal:'💎', gear:'⚙️', star:'⭐' };
+let lab2Selected = [];
+
+function resetLab2() {
+  lab2Selected = [];
+  updateLab2Slots();
+  ['fire','water','leaf','crystal','gear','star'].forEach(id => {
+    const btn = document.getElementById('mat-' + id);
+    if (btn) { btn.style.borderColor = '#2e1a5e'; btn.style.background = '#0d0720'; btn.classList.remove('selected'); }
+  });
 }
+
+function updateLab2Slots() {
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById('lab2-slot-' + i);
+    if (!el) continue;
+    el.textContent = lab2Selected[i] ? LAB2_EMOJI[lab2Selected[i]] : '?';
+    el.style.borderColor = lab2Selected[i] ? '#c4a0ff' : '#2e1a5e';
+  }
+  const btn = document.getElementById('lab2-craft-btn');
+  if (btn) { btn.disabled = lab2Selected.length < 3; btn.style.opacity = lab2Selected.length < 3 ? '0.4' : '1'; }
+}
+
+window.selectMaterial = function(matId) {
+  const btn = document.getElementById('mat-' + matId);
+  if (lab2Selected.includes(matId)) {
+    lab2Selected = lab2Selected.filter(m => m !== matId);
+    if (btn) { btn.style.borderColor = '#2e1a5e'; btn.style.background = '#0d0720'; btn.classList.remove('selected'); }
+  } else if (lab2Selected.length < 3) {
+    lab2Selected.push(matId);
+    if (btn) { btn.style.borderColor = '#c4a0ff'; btn.style.background = '#1a0a3a'; btn.classList.add('selected'); }
+  }
+  updateLab2Slots();
+}
+
+window.craftByRecipe = function() {
+  if (lab2Selected.length < 3) return;
+  if (!useDaily('lab2')) { addLab2Log('[❌] 오늘 제조 한도 초과! (일일 3회)'); syncLab2Stats(); return; }
+  if (playerStats.data < 5) { addLab2Log('[❌] 데이터 조각 부족! (최소 5개 필요)'); return; }
+
+  const sorted  = [...lab2Selected].sort();
+  const matched = LAB2_RECIPES.find(r => [...r.materials].sort().join() === sorted.join());
+  playerStats.data -= 5;
+
+  if (matched) {
+    inventory.push(matched.result);
+    saveInventory();
+    addLab2Log('[✅ 조합 성공!] ' + matched.result.icon + ' ' + matched.result.name + ' 제조! · 💎 -5');
+  } else {
+    addLab2Log('[💥 실패] 알 수 없는 조합... 재료가 낭비됐어요. · 💎 -5');
+  }
+  syncLab2Stats(); updateMapStats(); resetLab2();
+}
+
+// 기존 craftItem 호환
+window.craftItem = function(id) { addLab2Log('[안내] 이제 재료를 직접 선택해서 조합하세요!'); }
 
 // ================================================================
 // 중앙 축제
@@ -927,6 +1073,55 @@ window.buyUnion = function(id) {
   if (npc) npc.innerHTML = item.name + ' 구매 완료! 도장 찍어드렸어요 😊';
 
   updateMapStats();
+}
+
+// 뽑기
+const GACHA_TABLE = {
+  common: [
+    { name: 'HP 포션',        icon: '🧪', effect: () => { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); } },
+    { name: 'SP 포션',        icon: '💧', effect: () => { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); } },
+    { name: '데이터 조각 +3', icon: '💎', effect: () => { playerStats.data += 3; } },
+  ],
+  rare: [
+    { name: '방어막',      icon: '🛡️', effect: () => { inventory.push({ id:'shield', name:'방어막',       icon:'🛡️', desc:'다음 전투 피해 -50%'   }); saveInventory(); } },
+    { name: '집중력 포션', icon: '⚡', effect: () => { inventory.push({ id:'speed',  name:'집중력 포션', icon:'⚡', desc:'다음 전투 데미지 +50%' }); saveInventory(); } },
+    { name: '최대 HP +10', icon: '❤️', effect: () => { playerStats.maxHp += 10; } },
+  ],
+  legend: [
+    { name: '최대 HP +30', icon: '💖', effect: () => { playerStats.maxHp += 30; } },
+    { name: '최대 SP +20', icon: '💫', effect: () => { playerStats.maxSp += 20; } },
+    { name: '푸앙이 인형', icon: '🐉', effect: () => { changeFavor(30); } },
+  ],
+};
+
+window.doGacha = function() {
+  if (playerStats.data < 3) {
+    addUnionLog('[❌] 데이터 조각 부족! (뽑기 비용: 3개)', 'union-log-err');
+    return;
+  }
+  playerStats.data -= 3;
+  document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
+
+  const rand = Math.random() * 100;
+  let grade, pool;
+  if      (rand < 10) { grade = '🌟 전설'; pool = GACHA_TABLE.legend; }
+  else if (rand < 40) { grade = '💜 희귀'; pool = GACHA_TABLE.rare;   }
+  else if (rand < 90) { grade = '⚪ 일반'; pool = GACHA_TABLE.common;  }
+  else                { grade = '💨 꽝';   pool = null; }
+
+  if (pool) {
+    const item = pool[Math.floor(Math.random() * pool.length)];
+    item.effect();
+    updateMapStats();
+    const cls = grade.includes('전설') ? 'union-log-legend' : grade.includes('희귀') ? 'union-log-rare' : 'union-log-ok';
+    addUnionLog('[🎰 뽑기] ' + grade + ' — ' + item.icon + ' ' + item.name + ' 획득!', cls);
+    const npc = document.getElementById('union-npc-text');
+    if (npc) npc.innerHTML = grade.includes('전설') ? '🎉 전설!! 정말 운이 좋으시네요!' : item.icon + ' ' + item.name + ' 획득!';
+  } else {
+    addUnionLog('[🎰 뽑기] 💨 꽝... 아쉽네요!', 'union-log-info');
+    const npc = document.getElementById('union-npc-text');
+    if (npc) npc.innerHTML = '아쉽지만 다음엔 좋은 결과가 있을 거예요! 😅';
+  }
 }
 
 // ================================================================
