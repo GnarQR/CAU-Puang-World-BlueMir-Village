@@ -246,6 +246,17 @@ h1 {
     }
 }
 
+/* ================================================================
+   Intro video 관련
+   ================================================================= */
+/* video-container는 평소에 숨김 처리 (인트로 스토리 단계에서만 보이도록) */
+#video-container.hidden {display: none !important;}  
+
+#intro-video {object-fit: contain; /* 영상 비율 유지 */}
+
+/* ================================================================
+   Intro video 관련
+   ================================================================= */
 .map-datetime {  /* ── 현재 시간 표시 ── */
     position: absolute;
     top: 12px;
@@ -996,8 +1007,8 @@ h1 {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 928px;
-    height: 512px;
+    width: 1027px;
+    height: 601px;
     z-index: 1000;  /* 메인 맵보다 위에 오도록 설정 */
     background: #000;
     border: 2px solid #5dcaa5;  /* 테두리를 주면 더 깔끔합니다 */

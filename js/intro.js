@@ -93,16 +93,26 @@ window.goToNameStep = function() {
 
 // ── 닉네임 제출 ──
 window.submitName = function() {  // Firebase에 저장 후 오버레이 페이드아웃
-  const name = document.getElementById('name-input').value.trim();
+  const nameInput = document.getElementById('name-input');
+  const name = nameInput.value.trim();
+  
   if (!name) {
-    shakeInput('name-input');
+    if (typeof shakeInput === 'function') shakeInput('name-input');
     return;
   }
+
   localStorage.setItem('playerName', name);
+
   const overlay = document.getElementById('intro-overlay');
   overlay.style.transition = 'opacity 0.6s ease';
   overlay.style.opacity = '0';
-  setTimeout(() => overlay.classList.add('hidden'), 600);
+
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    if (typeof window.playIntroVideo === 'function') {
+      window.playIntroVideo();
+    }
+  }, 600);
 }
 
 // ── 단계 전환 헬퍼 ──
@@ -126,6 +136,56 @@ function shakeInput(id) {
   }, 10);
 }
 
+// 1. 유저가 화면을 클릭하면 실행됨
+window.startIntroVideo = function() {
+  const startOverlay = document.getElementById('video-start-overlay');
+  if (startOverlay) {
+    startOverlay.classList.add('hidden');
+    startOverlay.style.display = 'none';
+  }
+  
+  // 🌟 클릭을 통해 브라우저의 '재생 허용' 권한을 얻은 상태에서 영상 실행
+  if (typeof window.playIntroVideo === 'function') {
+    window.playIntroVideo();
+  }
+};
+
+// 실제 비디오 재생 로직
+window.playIntroVideo = function() {
+    const videoCont = document.getElementById('video-container');
+    const video = document.getElementById('intro-video');
+    if (!videoCont || !video) return;  // 이미 이번 세션에 영상을 봤다면 바로 종료 처리
+
+    videoCont.classList.remove('hidden');
+    videoCont.style.display = 'flex';
+    
+    video.currentTime = 0;
+    video.play().catch(e => {
+        console.warn("재생 실패:", e);
+        finishVideo(); 
+    });
+
+    video.onended = finishVideo;  
+};
+
+// 영상을 종료하고 메인 게임을 보여주는 함수
+window.finishVideo = function() {
+    const videoCont = document.getElementById('video-container');
+    const video = document.getElementById('intro-video');
+    
+    if (video) video.pause();
+    if (videoCont) {
+      videoCont.classList.add('hidden');
+      videoCont.style.display = 'none';
+    }
+    
+    // 영상 재생 완료 상태를 세션에 저장 (새로고침 시 무시용)
+    sessionStorage.setItem('introVideoPlayed', 'true');
+
+    // 맵 화면 표시
+    const gameCont = document.getElementById('game-container');
+    if (gameCont) gameCont.style.display = 'flex';
+};
 
 // ── DOMContentLoaded: 초기화 ──
 // 페이지 로드 시 재방문 유저면 인트로 스킵
@@ -136,10 +196,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (savedKey && savedName) {
     GROQ_API_KEY = savedKey;
-    window.skipIntro();
-    window.checkResumeBattle();  // 전투 데이터 이어하기 확인
+
+    // 1. 로그인/이름 입력창(인트로 오버레이)은 안 보이게 치웁니다.
+    if (typeof window.skipIntro === 'function') window.skipIntro(); 
+    
+    // 2. 세션 체크 : 새로고침 여부 확인 (영상 재생 결정)
+    if (sessionStorage.getItem('introVideoPlayed') !== 'true') {
+      // 바로 틀지 않고 클릭 대기 레이어 보여주기 (자동 재생 차단 대비)
+      const startOverlay = document.getElementById('video-start-overlay');
+      if (startOverlay) {
+        startOverlay.classList.remove('hidden');
+        startOverlay.style.display = 'flex';
+      }
+
+      else {
+        document.getElementById('game-container').style.display = 'flex';  
+      }
+    } 
+    
+    // 3. 전투 데이터 이어하기 확인
+    if (typeof window.checkResumeBattle === 'function') window.checkResumeBattle();
   }
 
+  // 버튼 클릭 이벤트 등록
   document.getElementById('api-key-btn').onclick = () => window.submitApiKey();
   document.getElementById('name-confirm-btn').onclick = () => window.submitName();
 

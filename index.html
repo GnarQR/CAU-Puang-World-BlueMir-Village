@@ -67,7 +67,26 @@
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- 접속 대기 화면 추가 -->
+  <div id="video-start-overlay" class="hidden" onclick="startIntroVideo()"
+     style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1600; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+    <div style="color:#a0c4ff; font-size:20px; margin-bottom:20px; animation: puangBounce 0.8s infinite alternate;">
+        [ 이면 세계 접속 승인됨 ]
+    </div>
+    <div style="color:#fff; font-size:14px; opacity:0.7;">화면을 클릭하여 진입하세요</div>
+  </div>
+
+  <!-- 인트로 영상 재생 -->
+  <div id="video-container" class="hidden" ondblclick="finishVideo()" 
+    style="position:fixed; inset:0; background:#000; z-index:1500; display:flex; align-items:center; justify-content:center;">
+    <video id="intro-video" width="100%" height="100%" style="max-width:100%; max-height:100%;">
+        <source src="videos/Intro.mp4" type="video/mp4">
+    </video>
+    <div style="position:absolute; bottom:20px; width:100%; text-align:center; color:rgba(255,255,255,0.4); font-size:12px; pointer-events:none;">
+        Double Click to Skip
+    </div>
   </div>
 
   <!-- 맵 화면 -->
