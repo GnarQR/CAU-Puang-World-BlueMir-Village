@@ -219,9 +219,21 @@
   <!--                -->
   <div id="game-screens">
     <div id="explore-container">
-      <canvas id="map-canvas" width="928" height="512"></canvas>
+      <button id="explore-exit-btn" onclick="showExitPopup()">← 탈출하기</button>
+      <canvas id="map-canvas" width="1024" height="598"></canvas>
+    
+      <div id="exit-popup" class="custom-popup hidden">
+        <div class="popup-content">
+          <div class="popup-icon">⚠️</div>
+          <h3 class="popup-title">이면 세계 탈출</h3>
+          <p class="popup-desc">지금 캠퍼스로 돌아가면 현재 층의 탐험 기록과<br>전투 상태가 초기화됩니다. 계속하시겠습니까?</p>
+          <div class="popup-btns">
+            <button class="popup-confirm" onclick="confirmExitExploration()">확인</button>
+            <button class="popup-cancel" onclick="closeExitPopup()">취소</button>
+          </div>
+        </div>
+      </div>
     </div>
-
   </div>
 
   <!--          -->
