@@ -565,7 +565,9 @@ window.enterGym = function() {
 }
 
 window.leaveGym = function() {
-  document.getElementById('gym-container').classList.remove('visible');
+  const gymEl = document.getElementById('gym-container');
+  gymEl.classList.remove('visible');
+  gymEl.style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
