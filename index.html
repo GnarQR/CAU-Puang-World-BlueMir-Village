@@ -508,86 +508,90 @@
   <!--       -->
   <!-- 체육관 -->
   <!--       -->
-  <div id="gym-container" style="display:none; flex-direction:column; gap:12px; width:100%; max-width:680px;">
+  <!--       -->
+  <!-- 체육관 -->
+  <!--       -->
+  <div id="gym-container" class="gym-wrap">
+
+    <!-- 헤더 -->
     <div class="gym-header">
       <div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:1px;">[ 중앙대학교 체육관 ]</div>
-        <div style="font-size:15px;font-weight:700;color:#6ee7b7;">🏋️ 체육관</div>
+        <div class="gym-location-tag">[ 중앙대학교 체육관 ]</div>
+        <div class="gym-title">⚡ 체육관</div>
       </div>
-      <button onclick="leaveGym()" style="background:rgba(110,231,183,0.15);border:1px solid #6ee7b7;border-radius:8px;padding:4px 12px;font-size:12px;color:#6ee7b7;cursor:pointer;font-family:inherit;">← 맵으로</button>
+      <button class="gym-back-btn" onclick="leaveGym()">← 맵으로</button>
     </div>
 
-
     <!-- 스탯 -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">최대 HP</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="gym-maxhp-val">60</div>
+    <div class="gym-stat-row">
+      <div class="gym-stat-card">
+        <div class="gym-stat-label">최대 HP</div>
+        <div class="gym-stat-val" id="gym-maxhp-val">60</div>
       </div>
-      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">최대 SP</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="gym-maxsp-val">40</div>
+      <div class="gym-stat-card">
+        <div class="gym-stat-label">최대 SP</div>
+        <div class="gym-stat-val" id="gym-maxsp-val">40</div>
       </div>
-      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">데이터 조각</div>
-        <div style="font-size:16px;font-weight:600;color:#ef9f27;" id="gym-data-val">0</div>
+      <div class="gym-stat-card">
+        <div class="gym-stat-label">데이터 조각</div>
+        <div class="gym-stat-val" style="color:#facc15;" id="gym-data-val">0</div>
       </div>
-      <div style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#5dcaa5;margin-bottom:4px;">남은 훈련</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="gym-remain-val">3회</div>
+      <div class="gym-stat-card">
+        <div class="gym-stat-label">남은 훈련</div>
+        <div class="gym-stat-val" id="gym-remain-val">3회</div>
       </div>
     </div>
 
     <!-- 종목 선택 패널 -->
     <div id="gym-select-panel">
-      <div style="font-size:12px;font-weight:600;color:#5dcaa5;border-bottom:2px solid #065f46;padding-bottom:4px;margin-bottom:8px;">🏅 훈련 종목 선택 — 순서 기억 미니게임</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="startGymGame('run')" style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#6ee7b7';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#065f46';this.style.transform='none'">
-          <div style="font-size:26px;">🏃</div>
-          <div style="font-size:13px;font-weight:600;margin-top:4px;">달리기</div>
-          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">성공 시 최대 HP +5</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개</div>
+      <div class="gym-section-title">🏅 훈련 종목 선택 — 순서 기억 미니게임</div>
+      <div class="gym-mode-grid">
+        <button class="gym-mode-btn" onclick="startGymGame('run')">
+          <div class="gym-mode-icon">🏃</div>
+          <div class="gym-mode-name">달리기</div>
+          <div class="gym-mode-effect">성공 시 최대 HP +5</div>
+          <div class="gym-mode-cost">💎 4개</div>
         </button>
-        <button onclick="startGymGame('weight')" style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#6ee7b7';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#065f46';this.style.transform='none'">
-          <div style="font-size:26px;">🏋️</div>
-          <div style="font-size:13px;font-weight:600;margin-top:4px;">웨이트</div>
-          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">성공 시 최대 HP +10</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 8개</div>
+        <button class="gym-mode-btn" onclick="startGymGame('weight')">
+          <div class="gym-mode-icon">🏋️</div>
+          <div class="gym-mode-name">웨이트</div>
+          <div class="gym-mode-effect">성공 시 최대 HP +10</div>
+          <div class="gym-mode-cost">💎 8개</div>
         </button>
-        <button onclick="startGymGame('yoga')" style="background:#022c22;border:1.5px solid #065f46;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#6ee7b7';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#065f46';this.style.transform='none'">
-          <div style="font-size:26px;">🧘</div>
-          <div style="font-size:13px;font-weight:600;margin-top:4px;">요가</div>
-          <div style="font-size:10px;color:#5dcaa5;margin-top:2px;">성공 시 최대 SP +5</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 4개</div>
+        <button class="gym-mode-btn" onclick="startGymGame('yoga')">
+          <div class="gym-mode-icon">🧘</div>
+          <div class="gym-mode-name">요가</div>
+          <div class="gym-mode-effect">성공 시 최대 SP +5</div>
+          <div class="gym-mode-cost">💎 4개</div>
         </button>
-        <button onclick="doGymRest()" style="background:#022c22;border:1.5px solid #1e3a5f;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;text-align:center;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#1e3a5f';this.style.transform='none'">
-          <div style="font-size:26px;">💤</div>
-          <div style="font-size:13px;font-weight:600;margin-top:4px;">휴식</div>
-          <div style="font-size:10px;color:#a0c4ff;margin-top:2px;">HP/SP 완전 회복</div>
-          <div style="font-size:10px;color:#a0c4ff;margin-top:2px;">무료</div>
+        <button class="gym-mode-btn gym-rest-btn" onclick="doGymRest()">
+          <div class="gym-mode-icon">💤</div>
+          <div class="gym-mode-name">휴식</div>
+          <div class="gym-mode-effect">HP/SP 완전 회복</div>
+          <div class="gym-mode-cost">무료</div>
         </button>
       </div>
     </div>
 
     <!-- 미니게임 패널 -->
-    <div id="gym-game-panel" style="display:none;background:#022c22;border:1.5px solid #065f46;border-radius:12px;padding:16px;display:none;flex-direction:column;align-items:center;gap:14px;">
-      <div id="gym-game-title" style="font-size:13px;font-weight:600;color:#6ee7b7;text-align:center;">버튼 순서를 기억하세요!</div>
-      <div style="display:flex;gap:10px;">
-        <div id="gym-seq-0" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
-        <div id="gym-seq-1" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
-        <div id="gym-seq-2" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
-        <div id="gym-seq-3" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center;">❓</div>
+    <div id="gym-game-panel" class="gym-game-panel" style="display:none;">
+      <div id="gym-game-title" class="gym-game-title">버튼 순서를 기억하세요!</div>
+      <div class="gym-seq-row">
+        <div id="gym-seq-0" class="gym-seq-box">❓</div>
+        <div id="gym-seq-1" class="gym-seq-box">❓</div>
+        <div id="gym-seq-2" class="gym-seq-box">❓</div>
+        <div id="gym-seq-3" class="gym-seq-box">❓</div>
       </div>
-      <div id="gym-input-btns" style="display:none;gap:10px;">
-        <button onclick="gymInputBtn(0)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🔴</button>
-        <button onclick="gymInputBtn(1)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🔵</button>
-        <button onclick="gymInputBtn(2)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🟢</button>
-        <button onclick="gymInputBtn(3)" style="width:52px;height:52px;background:#011a14;border:2px solid #065f46;border-radius:10px;font-size:22px;cursor:pointer;">🟡</button>
+      <div id="gym-input-btns" class="gym-input-row" style="display:none;">
+        <button class="gym-input-btn" onclick="gymInputBtn(0)">🔴</button>
+        <button class="gym-input-btn" onclick="gymInputBtn(1)">🔵</button>
+        <button class="gym-input-btn" onclick="gymInputBtn(2)">🟢</button>
+        <button class="gym-input-btn" onclick="gymInputBtn(3)">🟡</button>
       </div>
-      <div id="gym-game-status" style="font-size:12px;color:#5dcaa5;"></div>
+      <div id="gym-game-status" class="gym-game-status"></div>
     </div>
 
-    <div id="gym-log" style="background:#011a14;border:1px solid #065f46;border-radius:8px;padding:10px 14px;font-size:12px;color:#5dcaa5;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.8;">
+    <div id="gym-log" class="gym-log">
       <span>[체육관] 훈련 종목을 선택하고 미니게임을 클리어하세요!</span>
     </div>
   </div>

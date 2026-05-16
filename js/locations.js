@@ -71,9 +71,6 @@ window.enterCafeteria = function() {
   document.getElementById('cafeteria-container').classList.add('visible');
   syncCafStats();
 
-  // 영업시간 표시
-  updateCafHours();
-
   // NPC 랜덤 멘트
   const el = document.getElementById('caf-npc-text');
   if (el) el.textContent = cafNpcTexts[Math.floor(Math.random() * cafNpcTexts.length)];
@@ -81,42 +78,6 @@ window.enterCafeteria = function() {
   // 남은 주문 횟수
   const remain = document.getElementById('caf-remain');
   if (remain) remain.textContent = remainDaily('cafeteria');
-}
-
-function updateCafHours() {
-  const now   = new Date();
-  const hour  = now.getHours();
-  const min   = now.getMinutes();
-  const total = hour * 60 + min;
-
-  const statusEl = document.getElementById('caf-hours-status');
-  const npcEl    = document.getElementById('caf-npc-text');
-  if (!statusEl) return;
-
-  // 11:00~13:30 점심
-  if (total >= 660 && total < 810) {
-    statusEl.textContent = '● 점심 운영중';
-    statusEl.style.color = '#16a34a';
-    if (npcEl) npcEl.textContent = '점심시간이에요~ 오늘 메뉴 맛있답니다! 😊';
-  }
-  // 13:30~17:00 브레이크타임
-  else if (total >= 810 && total < 1020) {
-    statusEl.textContent = '● 브레이크타임';
-    statusEl.style.color = '#d97706';
-    if (npcEl) npcEl.textContent = '지금은 브레이크타임이에요. 저녁 5시에 다시 오세요! ☕';
-  }
-  // 17:00~19:00 저녁
-  else if (total >= 1020 && total < 1140) {
-    statusEl.textContent = '● 저녁 운영중';
-    statusEl.style.color = '#2563eb';
-    if (npcEl) npcEl.textContent = '저녁시간이에요~ 든든하게 드세요! 🌙';
-  }
-  // 마감
-  else {
-    statusEl.textContent = '● 마감';
-    statusEl.style.color = '#dc2626';
-    if (npcEl) npcEl.textContent = '오늘 영업은 끝났어요. 내일 또 오세요! 😴';
-  }
 }
 
 window.leaveCafeteria = function() {
@@ -574,14 +535,37 @@ const GYM_COLORS    = ['🔴','🔵','🟢','🟡'];
 
 window.enterGym = function() {
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('gym-container').style.display = 'flex';
-  syncGymStats();
-  document.getElementById('gym-select-panel').style.display = 'block';
-  document.getElementById('gym-game-panel').style.display = 'none';
+
+  // map.js가 style.display='none' 인라인으로 설정하므로 setTimeout으로 덮어씀
+  setTimeout(() => {
+    const gymEl = document.getElementById('gym-container');
+    gymEl.style.display = 'flex';
+    gymEl.classList.add('visible');
+    syncGymStats();
+
+    // UI 초기화
+    document.getElementById('gym-select-panel').style.display = 'block';
+    document.getElementById('gym-game-panel').style.display = 'none';
+    document.getElementById('gym-input-btns').style.display = 'none';
+    document.getElementById('gym-game-status').textContent = '';
+    document.getElementById('gym-game-title').textContent = '버튼 순서를 기억하세요!';
+    document.getElementById('gym-log').innerHTML = '<span>[체육관] 훈련 종목을 선택하고 미니게임을 클리어하세요!</span>';
+
+    // 시퀀스 박스 초기화
+    for (let i = 0; i < 4; i++) {
+      const el = document.getElementById('gym-seq-' + i);
+      if (el) el.textContent = '❓';
+    }
+
+    // 상태 변수 초기화
+    gymSequence   = [];
+    gymPlayerSeq  = [];
+    gymShowingSeq = false;
+  }, 0);
 }
 
 window.leaveGym = function() {
-  document.getElementById('gym-container').style.display = 'none';
+  document.getElementById('gym-container').classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }
 
