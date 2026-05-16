@@ -152,13 +152,13 @@ window.buyRoomItem = function(itemId) {
   }
 
   // 다이아 확인
-  if (playerStats.diamond < item.price) {
-    addChatMessage('system', `💎가 부족해요! (필요: ${item.price}, 보유: ${playerStats.diamond})`);
+  if (playerStats.data < item.price) {
+    addChatMessage('system', `💎가 부족해요! (필요: ${item.price}, 보유: ${playerStats.data})`);
     return false;
   }
 
   // 구매 처리
-  playerStats.diamond -= item.price;
+  playerStats.data -= item.price;
   playerStats.ownedRoomItems.push(itemId);
   addChatMessage('system', `${item.emoji} ${item.name}을(를) 구매했어요!`);
   updateMapStats();
@@ -191,14 +191,14 @@ window.renderRoomShop = function() {
   const installed = playerStats.roomDecorations;
 
   let html = `<div class="room-shop">`;
-  html += `<div class="room-shop-header">🛒 방 꾸미기 상점 <span class="diamond-badge">💎 ${playerStats.diamond}</span></div>`;
+  html += `<div class="room-shop-header">🛒 방 꾸미기 상점 <span class="diamond-badge">💎 ${playerStats.data}</span></div>`;
   html += `<div class="room-shop-grid">`;
 
   for (const [id, item] of Object.entries(ROOM_ITEMS)) {
     const isOwned     = owned.includes(id);
     const isInstalled = Object.values(installed).includes(id) ||
                         (item.slot === 'background' && installed.background === item.theme);
-    const canBuy      = !isOwned && playerStats.diamond >= item.price;
+    const canBuy      = !isOwned && playerStats.data >= item.price;
 
     html += `
       <div class="shop-item ${isOwned ? 'owned' : ''} ${isInstalled ? 'installed' : ''}">

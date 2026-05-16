@@ -24,12 +24,36 @@ async function loadAllDataFromServer() {
         Object.assign(puangState, serverData.puangState);
         savePuangState(); // 로컬에도 백업
       }
+
       if (serverData.dailyUsage) {
         Object.assign(dailyUsage, serverData.dailyUsage);
         saveDailyUsage();
       }
+
+      // 이전에 diamond 값 저장했던 것 수정 (마이그레이션)
       if (serverData.playerStats) {
-        Object.assign(playerStats, serverData.playerStats);
+        Object.assign(playerStats, serverData.playerStats);  // 서버 데이터 복사
+
+        // 서버에 저장된 이름이 있다면 로컬에 다 복원해 줍니다.
+        if (serverData.playerStats.name) {
+          playerStats.name = serverData.playerStats.name;
+          localStorage.setItem('playerName', serverData.playerStats.name);
+        }
+
+        // 1. 만약 서버에 'data'가 있으면 그걸 쓰고, 없는데 옛날 'diamond'가 남아있다면 'data'로 구출
+        if (serverData.playerStats.data !== undefined) {
+          playerStats.data = serverData.playerStats.data;
+        } 
+        
+        else if (serverData.playerStats.diamond !== undefined) {
+          playerStats.data = serverData.playerStats.diamond; 
+        } 
+        
+        else {playerStats.data = 0;}  // 둘 다 없으면 0으로 초기화
+        
+        // 2. 전역 변수 객체에서 유령 diamond 필드를 완전히 삭제하여 청소합니다.
+        if (playerStats.diamond !== undefined) {delete playerStats.diamond;}
+        localStorage.setItem('playerStats', JSON.stringify(playerStats));
       }
       
       console.log("모든 데이터 서버 동기화 완료!");
@@ -76,34 +100,48 @@ async function saveAllDataToServer() {
   if (!GROQ_API_KEY) return;
 
   try {
-    await setDoc(doc(db, "gameData", GROQ_API_KEY), {
+    const dataToSave = {
       puangState: puangState,
       dailyUsage: dailyUsage,
-      playerStats: playerStats,
+      playerStats: {
+        name: playerStats.name || localStorage.getItem('playerName') || '탐험가', // 🌟 닉네임 저장
+        hp: playerStats.hp,
+        maxHp: playerStats.maxHp,
+        sp: playerStats.sp,
+        maxSp: playerStats.maxSp,
+        data: playerStats.data ?? 0,
+        ownedRoomItems: playerStats.ownedRoomItems || [],
+        roomDecorations: playerStats.roomDecorations || {}
+      },
       inventory: inventory,
       lastUpdated: new Date()
-    }, { merge: true });
+    };
+
+    // Firebase 저장과 동시에 localStorage도 항상 최신값으로 저장 (새로고침 시 구버전 값 읽는 것 방지)
+    localStorage.setItem('playerStats', JSON.stringify(dataToSave.playerStats));
+    localStorage.setItem('playerName', dataToSave.playerStats.name);
+    localStorage.setItem('dailyUsage', JSON.stringify(dataToSave.dailyUsage));
+    localStorage.setItem('puangState', JSON.stringify(dataToSave.puangState));
+
+    await setDoc(doc(db, "gameData", GROQ_API_KEY), dataToSave);
+    console.log("서버 데이터 구조 마이그레이션 및 닉네임 저장 완료!");
   } 
   
-  catch (e) {
-    console.error("서버 저장 실패:", e);
-  }
+  catch (e) {console.error("서버 저장 실패:", e)};
 }
 
 // ── 전역 게임 스탯 ──
 // 화면 간 공유되는 플레이어 수치 (HP, SP, 데이터 조각)
 // 식당/의무실/체육관/전투 등 여러 화면에서 playerStats.hp 형태로 접근
-const playerStats = {       // 초기값 (게임 시작 시)
+const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {
+  name: localStorage.getItem('playerName') || '', // 로컬스토리지에 있는 닉네임을 기본값으로 연동      // 초기값 (게임 시작 시)
   hp: 60, maxHp: 60,        // 현재 HP / 최대 HP
   sp: 40, maxSp: 40,        // 현재 SP / 최대 SP
   data: 0,                  // 보유 데이터 조각 수 💎 (게임 내 화폐)
   ownedRoomItems: [],       // 구매한 방 아이템 ID 배열
   roomDecorations: {        // 현재 설치된 아이템
     background: 'default',  // 배경 테마
-    wall:   null,           // 벽 슬롯
-    floor:  null,           // 바닥 카펫 슬롯
-    floor2: null,           // 바닥 왼쪽 슬롯
-    floor3: null,           // 바닥 오른쪽 슬롯
+    wall: null, floor: null, floor2: null, floor3: null, // 각 슬롯에 설치된 아이템 ID
   },
 };
 

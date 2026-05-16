@@ -119,7 +119,8 @@ window.orderFood = function(id) {
   const spGain = Math.min(item.sp, playerStats.maxSp - playerStats.sp);
   playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + item.hp);
   playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + item.sp);
-  syncCafStats(); updateMapStats();
+  syncCafStats(); 
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 
   // 남은 횟수 갱신
   const remain = document.getElementById('caf-remain');
@@ -154,8 +155,8 @@ const libNpcTexts = [
   '🤫 오탈자 주의! 정확하게 입력해야 정답이에요.',
 ];
 
-let libStudyCount  = 0;
-let libFocus       = 100;
+let libStudyCount  = parseInt(localStorage.getItem('libStudyCount')) || 0;
+let libFocus       = parseInt(localStorage.getItem('libFocus') ?? '100');
 let libBusy        = false;
 let libTypingWords = [];
 let libTypingIdx   = 0;
@@ -163,6 +164,15 @@ let libTypingCorrect = 0;
 let libTypingTimer = null;
 
 window.enterLibrary = function() {
+  const today = new Date().toDateString();  // 날짜가 바뀌었으면 lib 관련 변수도 초기화
+  if (localStorage.getItem('libDate') !== today) {
+    libStudyCount = 0;
+    libFocus = 100;
+    localStorage.setItem('libStudyCount', 0);
+    localStorage.setItem('libFocus', 100);
+    localStorage.setItem('libDate', today);
+  }
+
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('library-container').style.display = '';
   document.getElementById('library-container').classList.add('visible');
@@ -201,6 +211,7 @@ window.startStudy = function(subjectId) {
   // 휴식
   if (subjectId === 'rest') {
     libFocus = Math.min(100, libFocus + 40);
+    localStorage.setItem('libFocus', libFocus);
     syncLibStats();
     addLibLog('[😴 휴식] 집중력 회복! 현재: ' + libFocus + '%', 'lib-log-info');
     const npc = document.getElementById('lib-npc-text');
@@ -312,9 +323,13 @@ function finishLibTyping() {
   libFocus = Math.max(0, libFocus - 20);
   libBusy  = false;
 
+  // 새로고침해도 유지되도록 localStorage에 저장
+  localStorage.setItem('libStudyCount', libStudyCount);
+  localStorage.setItem('libFocus', libFocus);
+
   addLibLog('[✅ 완료] ' + libTypingCorrect + '/5 정답 → 💎 +' + reward, 'lib-log-reward');
   syncLibStats();
-  updateMapStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 
   const npc = document.getElementById('lib-npc-text');
   if (npc) npc.textContent = libTypingCorrect === 5
@@ -459,7 +474,7 @@ function proceedResearch(action) {
   const proj = LAB_PROJECTS[action];
   playerStats.data -= proj.cost;
   labBusy = true;
-  updateMapStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
   addLabLog('[START] ' + proj.name + ' 시작...', 'lab-log-info');
 
   const bar = document.getElementById('lab-bar-' + action);
@@ -499,26 +514,32 @@ window.doLabAction = function(action) {
     Object.assign(playerStats, save.playerStats);
     puangState.favorability = save.puangFav;
     savePuangState();
-    syncLabStats(); updateMapStats();
+    syncLabStats();
+    if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
     addLabLog('[LOAD] 불러오기 완료 (' + save.ts + ')', 'lab-log-save');
   }
   else if (action === 'upgrade-hp') {
     if (playerStats.data < 0) return;  // 이미 startResearch에서 차감됨
     playerStats.maxHp += 20;
-    syncLabStats(); updateMapStats();
+    syncLabStats();
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();  
   }
   else if (action === 'upgrade-sp') {
     if (playerStats.data < 0) return;
     playerStats.maxSp += 10;
-    syncLabStats(); updateMapStats();
+    syncLabStats(); 
+    if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
   else if (action === 'upgrade-atk') {
     if (typeof unionBonusDmg !== 'undefined') unionBonusDmg += 5;
-    syncLabStats(); updateMapStats();
+    playerStats.unionBonusDmg = unionBonusDmg;  // playerStats에 저장
+    syncLabStats(); 
+    if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
   else if (action === 'upgrade-regen') {
     playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 5;
-    syncLabStats(); updateMapStats();
+    syncLabStats(); 
+    if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
 }
 
@@ -608,6 +629,7 @@ window.startGymGame = function(mode) {
   gymPlayerSeq   = [];
   updateMapStats();
   syncGymStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 
   document.getElementById('gym-select-panel').style.display = 'none';
   document.getElementById('gym-game-panel').style.display = 'flex';
@@ -668,7 +690,9 @@ window.gymInputBtn = function(colorIdx) {
     if      (mode === 'run')    { playerStats.maxHp += 5;  addGymLog('[🏃 달리기] 성공! 최대 HP +5 → ' + playerStats.maxHp, '#5dcaa5'); }
     else if (mode === 'weight') { playerStats.maxHp += 10; addGymLog('[🏋️ 웨이트] 성공! 최대 HP +10 → ' + playerStats.maxHp, '#5dcaa5'); }
     else if (mode === 'yoga')   { playerStats.maxSp += 5;  addGymLog('[🧘 요가] 성공! 최대 SP +5 → ' + playerStats.maxSp, '#5dcaa5'); }
-    syncGymStats(); updateMapStats();
+    syncGymStats();
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+
     setTimeout(() => {
       document.getElementById('gym-select-panel').style.display = 'block';
       document.getElementById('gym-game-panel').style.display = 'none';
@@ -925,7 +949,8 @@ window.playFestival = function(game) {
   
   else if (game === 'dice') {  // 주사위: 0~10 랜덤 데이터 조각 획득
     const roll = Math.floor(Math.random() * 11);
-    playerStats.data += roll; updateMapStats();
+    playerStats.data += roll;
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
     addFestivalLog('[주사위] ' + roll + ' 나왔습니다! 💎 +' + roll, roll >= 7 ? '#5dcaa5' : '#ef9f27');
   } 
   
@@ -943,7 +968,8 @@ window.playFestival = function(game) {
 // 퀴즈 정답 체크 — 맞으면 💎 +5, 틀리면 정답 공개
 window.answerQuiz = function(idx) {
   if (idx === currentQuiz.ans) {
-    playerStats.data += 5; updateMapStats();
+    playerStats.data += 5;
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
     addFestivalLog('[퀴즈] 정답! 💎 +5', '#5dcaa5');
   } 
   
@@ -966,7 +992,8 @@ window.jankenPlay = function(choice) {
   } 
   
   else if (wins[choice] === cpu) {
-    playerStats.data += 8; updateMapStats();
+    playerStats.data += 8;
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
     result = '이겼습니다! 💎 +8';
     addFestivalLog('[가위바위보] 나: ' + choice + ' CPU: ' + cpu + ' → 승리! 💎 +8', '#5dcaa5');
   } 
@@ -982,7 +1009,8 @@ window.jankenPlay = function(choice) {
 // 777 → +30, 💎💎💎 → +20, 쓰리카인드 → +10, 페어 → +3(본전), 꽝 → -3
 async function spinSlot() {
   if (playerStats.data < 3) { addFestivalLog('[슬롯] 데이터 조각 부족 (필요: 3개)', '#f09595'); return; }
-  playerStats.data -= 3; updateMapStats();
+  playerStats.data -= 3;
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 
   const btn     = document.getElementById('slot-btn');
   btn.disabled  = true;
@@ -1017,7 +1045,8 @@ async function spinSlot() {
     msg = '꽝... 💎 -3';
   }
 
-  playerStats.data += reward; updateMapStats();
+  playerStats.data += reward;
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
   document.getElementById('slot-result').textContent = msg;
   addFestivalLog('[슬롯] ' + results.join(' ') + ' → ' + msg, reward > 0 ? '#5dcaa5' : '#f09595');
   btn.disabled = false;
@@ -1027,8 +1056,9 @@ async function spinSlot() {
 // 학생회관
 // ================================================================
 
-let unionBonusDmg   = 0;
-let unionBonusStudy = 0;
+// 영구 버프 적용
+let unionBonusDmg   = playerStats.unionBonusDmg   || 0;
+let unionBonusStudy = playerStats.unionBonusStudy || 0;
 
 const unionNpcTexts = [
   '안녕하세요! 학생회관에 오신 걸 환영합니다 😊<br>오늘도 열심히 활동하시는 모습이 멋지네요!',
@@ -1093,7 +1123,11 @@ window.buyUnion = function(id) {
   if      (id === 'puang_doll') { changeFavor(20);    addUnionLog('[✅ 승인] 푸앙이 인형 구매! 호감도 +20', 'union-log-ok'); }
   else if (id === 'hp_max')     { playerStats.maxHp += 30; addUnionLog('[✅ 승인] 생명력 결정 구매! 최대 HP +30 → ' + playerStats.maxHp, 'union-log-ok'); }
   else if (id === 'exp_boost')  { unionBonusStudy++;  addUnionLog('[✅ 승인] 집중력 교재 구매! 도서관 보상 +1', 'union-log-ok'); }
-  else if (id === 'battle_str') { unionBonusDmg += 3; addUnionLog('[✅ 승인] 전투 매뉴얼 구매! 전투 데미지 +3', 'union-log-ok'); }
+  else if (id === 'battle_str') { 
+    unionBonusDmg += 3; 
+    playerStats.unionBonusDmg = unionBonusDmg;      // playerStats에 저장
+    addUnionLog('[✅ 승인] 전투 매뉴얼 구매! 전투 데미지 +3', 'union-log-ok'); 
+  }
 
   stampItem(id);
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
@@ -1101,7 +1135,7 @@ window.buyUnion = function(id) {
   const npc = document.getElementById('union-npc-text');
   if (npc) npc.innerHTML = item.name + ' 구매 완료! 도장 찍어드렸어요 😊';
 
-  updateMapStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 }
 
 // 뽑기
@@ -1141,7 +1175,7 @@ window.doGacha = function() {
   if (pool) {
     const item = pool[Math.floor(Math.random() * pool.length)];
     item.effect();
-    updateMapStats();
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
     const cls = grade.includes('전설') ? 'union-log-legend' : grade.includes('희귀') ? 'union-log-rare' : 'union-log-ok';
     addUnionLog('[🎰 뽑기] ' + grade + ' — ' + item.icon + ' ' + item.name + ' 획득!', cls);
     const npc = document.getElementById('union-npc-text');
@@ -1224,5 +1258,5 @@ window.buyStore = function(id) {
   addStoreLog('[✅] ' + item.name + ' 구매 완료! · 💎 -' + item.cost + '개', 'store-log-ok');
 
   document.getElementById('store-data-val').textContent = playerStats.data;
-  updateMapStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 }

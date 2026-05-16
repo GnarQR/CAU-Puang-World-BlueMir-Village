@@ -92,7 +92,7 @@ window.goToNameStep = function() {
 }
 
 // ── 닉네임 제출 ──
-window.submitName = function() {  // Firebase에 저장 후 오버레이 페이드아웃
+window.submitName = async function() {  // Firebase에 저장 후 오버레이 페이드아웃
   const nameInput = document.getElementById('name-input');
   const name = nameInput.value.trim();
   
@@ -101,7 +101,18 @@ window.submitName = function() {  // Firebase에 저장 후 오버레이 페이�
     return;
   }
 
+  // 닉네임 저장 (로컬 + 서버)
   localStorage.setItem('playerName', name);
+
+  // 서버 저장 (비동기)
+  if (typeof playerStats !== 'undefined') {
+    playerStats.name = name;
+    localStorage.setItem('playerStats', JSON.stringify(playerStats));
+  }
+
+  if (typeof saveAllDataToServer === 'function') {
+    await saveAllDataToServer(); 
+  }
 
   const overlay = document.getElementById('intro-overlay');
   overlay.style.transition = 'opacity 0.6s ease';
