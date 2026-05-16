@@ -7,6 +7,7 @@
 // 인트로 화면에서 플레이어가 입력한 키를 저장
 // sendChat(), giveItem() 등 LLM 호출 시 사용
 let GROQ_API_KEY = '';
+let serverDataLoaded = false; // 서버 데이터 로드 완료 전 저장 방
 
 // Firebase 초기화 및 DB 참조
 // 데이터 동기화 핵심 함수 
@@ -56,12 +57,15 @@ async function loadAllDataFromServer() {
         localStorage.setItem('playerStats', JSON.stringify(playerStats));
       }
       
+      serverDataLoaded = true; // 데이터 로드 완료 표시
       console.log("모든 데이터 서버 동기화 완료!");
       if (typeof updateMapStats === 'function') updateMapStats();
+      else serverDataLoaded = true; // 신규 유저 (서버에 데이터 없음)
     }
   } 
   
   catch (e) {
+    serverDataLoaded = true; // 데이터 로드 실패해도 저장은 허용
     console.error("데이터 로드 실패:", e);
   }
 }
@@ -98,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {window.updateMapStats();});
 // 2. 서버에 통합 데이터 저장하기 (디바운싱 권장: 너무 자주 호출 방지)
 async function saveAllDataToServer() {
   if (!GROQ_API_KEY) return;
+  if (!serverDataLoaded) return; // 서버 데이터 로드 전에 저장 방지 (Firebase 값 덮어쓰기 방지)
 
   try {
     const dataToSave = {
