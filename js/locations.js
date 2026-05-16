@@ -761,13 +761,17 @@ const craftRecipes = {
 // 공대 실험실 입장
 window.enterLab2 = function() {
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('lab2-container').style.display = 'flex';
+  const lab2El = document.getElementById('lab2-container');
+  lab2El.style.display = 'flex';
+  lab2El.classList.add('visible');
   syncLab2Stats();
   resetLab2();
 }
 
 window.leaveLab2 = function() {
-  document.getElementById('lab2-container').style.display = 'none';
+  const lab2El2 = document.getElementById('lab2-container');
+  lab2El2.style.display = 'none';
+  lab2El2.classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }
 
@@ -805,7 +809,7 @@ function resetLab2() {
   updateLab2Slots();
   ['fire','water','leaf','crystal','gear','star'].forEach(id => {
     const btn = document.getElementById('mat-' + id);
-    if (btn) { btn.style.borderColor = '#2e1a5e'; btn.style.background = '#0d0720'; btn.classList.remove('selected'); }
+    if (btn) { btn.style.borderColor = ''; btn.style.background = ''; btn.classList.remove('selected'); }
   });
 }
 
@@ -814,7 +818,7 @@ function updateLab2Slots() {
     const el = document.getElementById('lab2-slot-' + i);
     if (!el) continue;
     el.textContent = lab2Selected[i] ? LAB2_EMOJI[lab2Selected[i]] : '?';
-    el.style.borderColor = lab2Selected[i] ? '#c4a0ff' : '#2e1a5e';
+    el.style.borderColor = lab2Selected[i] ? '#0284c7' : '';
   }
   const btn = document.getElementById('lab2-craft-btn');
   if (btn) { btn.disabled = lab2Selected.length < 3; btn.style.opacity = lab2Selected.length < 3 ? '0.4' : '1'; }
@@ -824,10 +828,10 @@ window.selectMaterial = function(matId) {
   const btn = document.getElementById('mat-' + matId);
   if (lab2Selected.includes(matId)) {
     lab2Selected = lab2Selected.filter(m => m !== matId);
-    if (btn) { btn.style.borderColor = '#2e1a5e'; btn.style.background = '#0d0720'; btn.classList.remove('selected'); }
+    if (btn) { btn.style.borderColor = ''; btn.style.background = ''; btn.classList.remove('selected'); }
   } else if (lab2Selected.length < 3) {
     lab2Selected.push(matId);
-    if (btn) { btn.style.borderColor = '#c4a0ff'; btn.style.background = '#1a0a3a'; btn.classList.add('selected'); }
+    if (btn) { btn.classList.add('selected'); }
   }
   updateLab2Slots();
 }

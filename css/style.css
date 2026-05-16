@@ -2052,21 +2052,26 @@ h1 {
 #lab-container {
     display: none;
     width: 100%;
-    max-width: 680px;
+    max-width: 960px;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
+    background: #020802;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #1a3a1a;
+    box-shadow: 0 0 30px rgba(77,255,136,0.06), 0 4px 20px rgba(0,0,0,0.6);
 }
-
 #lab-container.visible { display: flex; }
 
 .lab-header {
-    background: #070d07;
-    border: 1px solid #1a3a1a;
-    border-radius: 10px;
-    padding: 10px 16px;
+    background: linear-gradient(135deg, #030f03, #071207);
+    border: 1.5px solid #2a5a2a;
+    border-radius: 12px;
+    padding: 14px 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 0 15px rgba(77,255,136,0.08), inset 0 1px 0 rgba(77,255,136,0.05);
 }
 
 .lab-location-tag {
@@ -2078,11 +2083,12 @@ h1 {
 }
 
 .lab-title {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 700;
     color: #4dff88;
     font-family: 'Courier New', monospace;
-    text-shadow: 0 0 8px rgba(77,255,136,0.4);
+    text-shadow: 0 0 12px rgba(77,255,136,0.6), 0 0 24px rgba(77,255,136,0.3);
+    letter-spacing: 1px;
 }
 
 .lab-back-btn {
@@ -2107,10 +2113,11 @@ h1 {
 }
 
 .lab-monitor {
-    background: #050c05;
-    border: 1px solid #1a3a1a;
-    border-radius: 8px;
+    background: #030a03;
+    border: 1.5px solid #1a3a1a;
+    border-radius: 10px;
     overflow: hidden;
+    box-shadow: 0 0 10px rgba(77,255,136,0.05), inset 0 0 20px rgba(0,0,0,0.3);
 }
 
 .lab-monitor-title {
@@ -2124,13 +2131,13 @@ h1 {
 }
 
 .lab-monitor-body {
-    padding: 8px 10px;
-    font-size: 10px;
+    padding: 10px 12px;
+    font-size: 11px;
     color: #4dff88;
     font-family: 'Courier New', monospace;
-    line-height: 1.9;
-    min-height: 72px;
-    max-height: 72px;
+    line-height: 2;
+    min-height: 80px;
+    max-height: 80px;
     overflow-y: auto;
 }
 
@@ -2740,4 +2747,346 @@ h1 {
 }
 @media (min-width: 769px) {
     .gym-mode-grid { grid-template-columns: repeat(4,1fr); }
+}
+
+/* ================================================================
+   공대 실험실 — 밝은 연구실 스타일
+   ================================================================ */
+.lab2-wrap {
+    display: none;
+    width: 100%;
+    max-width: 960px;
+    flex-direction: column;
+    gap: 14px;
+    background: #f0f9ff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(14,165,233,0.1);
+}
+.lab2-wrap.visible { display: flex; }
+
+.lab2-header {
+    background: linear-gradient(135deg, #0369a1, #0284c7);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(3,105,161,0.3);
+}
+.lab2-location-tag {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+}
+.lab2-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 1px;
+}
+.lab2-back-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.lab2-back-btn:hover { background: rgba(255,255,255,0.35); }
+
+.lab2-stat-row {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 10px;
+}
+.lab2-stat-card {
+    background: #fff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(14,165,233,0.08);
+}
+.lab2-stat-label { font-size: 11px; color: #0369a1; font-weight: 600; margin-bottom: 4px; }
+.lab2-stat-val   { font-size: 18px; font-weight: 700; color: #0c4a6e; }
+
+.lab2-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0369a1;
+    border-bottom: 2px solid #bae6fd;
+    padding-bottom: 6px;
+}
+.lab2-mat-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 10px;
+}
+.lab2-mat-btn {
+    background: #fff;
+    border: 2px solid #bae6fd;
+    border-radius: 12px;
+    padding: 14px 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 24px;
+    text-align: center;
+    line-height: 1.6;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    color: #0c4a6e;
+}
+.lab2-mat-btn:hover {
+    border-color: #0284c7;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(14,165,233,0.2);
+}
+.lab2-mat-btn.selected {
+    border-color: #0284c7;
+    background: #e0f2fe;
+    box-shadow: 0 0 0 3px rgba(2,132,199,0.2);
+}
+.lab2-mat-name { font-size: 11px; color: #0369a1; font-weight: 600; }
+
+.lab2-slot-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+.lab2-slot {
+    width: 48px;
+    height: 48px;
+    background: #f0f9ff;
+    border: 2px dashed #7dd3fc;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #7dd3fc;
+    flex-shrink: 0;
+    font-weight: 700;
+    transition: border-color 0.2s;
+}
+.lab2-slot-plus { font-size: 18px; color: #7dd3fc; font-weight: 700; }
+.lab2-craft-btn {
+    margin-left: auto;
+    background: #0284c7;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s, transform 0.15s;
+}
+.lab2-craft-btn:hover:not(:disabled) { background: #0369a1; transform: translateY(-2px); }
+.lab2-craft-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.lab2-recipe-box {
+    background: #fff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+.lab2-recipe-title { font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 8px; }
+.lab2-recipe-list  { font-size: 12px; color: #0c4a6e; line-height: 2.2; }
+
+.lab2-inventory {
+    background: #fff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+.lab2-inv-label { font-size: 11px; color: #0369a1; font-weight: 600; margin-bottom: 4px; }
+.lab2-inv-val   { font-size: 13px; color: #0c4a6e; line-height: 1.8; }
+
+.lab2-log {
+    background: #fff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #0369a1;
+    min-height: 60px;
+    max-height: 80px;
+    overflow-y: auto;
+    line-height: 1.9;
+}
+
+@media (max-width: 480px) {
+    .lab2-mat-grid { grid-template-columns: repeat(2,1fr); }
+    .lab2-stat-row { grid-template-columns: repeat(3,1fr); }
+}
+@media (min-width: 769px) {
+    .lab2-mat-grid { grid-template-columns: repeat(3,1fr); }
+}
+
+/* ================================================================
+   학생회관 — 공식 사무실 스타일
+   ================================================================ */
+#union-container {
+    display: none;
+    width: 100%;
+    max-width: 960px;
+    flex-direction: column;
+    gap: 14px;
+    background: #f8faff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(30,64,175,0.08);
+}
+#union-container.visible { display: flex; }
+
+.union-header {
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(30,58,138,0.3);
+}
+.union-header-left {}
+.union-stamp-badge {
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+}
+.union-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 1px;
+}
+.union-back-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.union-back-btn:hover { background: rgba(255,255,255,0.3); }
+
+.union-npc-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(30,64,175,0.06);
+}
+.union-npc-avatar { font-size: 36px; flex-shrink: 0; }
+.union-npc-bubble { flex: 1; }
+.union-npc-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+.union-npc-text { font-size: 13px; color: #1e293b; line-height: 1.6; }
+
+.union-board {
+    background: #fff;
+    border: 1.5px solid #bfdbfe;
+    border-left: 4px solid #1d4ed8;
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+.union-board-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e0e7ff;
+    padding-bottom: 6px;
+}
+.union-board-content { font-size: 12px; color: #334155; line-height: 2.2; }
+.union-board-pin { margin-right: 4px; }
+
+.union-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e3a8a;
+    border-bottom: 2px solid #bfdbfe;
+    padding-bottom: 6px;
+}
+.union-item-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.union-item-card {
+    background: #fff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.union-item-card:hover {
+    border-color: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(30,64,175,0.12);
+}
+.union-item-top { display: flex; align-items: center; gap: 10px; }
+.union-item-icon { font-size: 28px; flex-shrink: 0; }
+.union-item-name { font-size: 13px; font-weight: 700; color: #1e293b; }
+.union-item-effect { font-size: 11px; color: #475569; margin-top: 2px; }
+.union-item-bottom { display: flex; justify-content: space-between; align-items: center; }
+.union-item-cost { font-size: 13px; font-weight: 700; color: #1d4ed8; }
+.union-item-stamp { font-size: 16px; }
+
+.union-receipt {
+    background: #fff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: #334155;
+    min-height: 60px;
+    max-height: 90px;
+    overflow-y: auto;
+    line-height: 1.9;
+}
+.union-receipt-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e0e7ff;
+    padding-bottom: 4px;
+}
+.union-log-ok     { color: #065f46; font-weight: 600; }
+.union-log-err    { color: #991b1b; }
+.union-log-info   { color: #334155; }
+.union-log-rare   { color: #7c3aed; font-weight: 700; }
+.union-log-legend { color: #d97706; font-weight: 700; }
+
+@media (max-width: 480px) {
+    .union-item-grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 769px) {
+    .union-item-grid { grid-template-columns: repeat(2,1fr); }
 }

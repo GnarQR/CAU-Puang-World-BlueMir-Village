@@ -897,56 +897,61 @@
   <!--          -->
   <!-- 공대 실험실 -->
   <!--          -->
-  <div id="lab2-container" style="display:none; flex-direction:column; gap:12px; width:100%; max-width:680px;">
-    <div style="background:#1a0a3a;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+  <!--          -->
+  <!-- 공대 실험실 -->
+  <!--          -->
+  <div id="lab2-container" class="lab2-wrap">
+
+    <!-- 헤더 -->
+    <div class="lab2-header">
       <div>
-        <div style="font-size:10px;color:rgba(160,196,255,0.6);letter-spacing:1px;">[ 중앙대학교 공과대학 실험실 ]</div>
-        <div style="font-size:15px;font-weight:700;color:#a0c4ff;">⚗️ 공대 실험실</div>
+        <div class="lab2-location-tag">[ 중앙대학교 공과대학 실험실 ]</div>
+        <div class="lab2-title">⚗️ 공대 실험실</div>
       </div>
-      <button onclick="leaveLab2()" style="background:rgba(160,196,255,0.15);border:1px solid #a0c4ff;border-radius:8px;padding:4px 12px;font-size:12px;color:#a0c4ff;cursor:pointer;font-family:inherit;">← 맵으로</button>
+      <button class="lab2-back-btn" onclick="leaveLab2()">← 맵으로</button>
     </div>
 
     <!-- 스탯 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-      <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">💎 데이터 조각</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="lab2-data-val">0</div>
+    <div class="lab2-stat-row">
+      <div class="lab2-stat-card">
+        <div class="lab2-stat-label">💎 데이터 조각</div>
+        <div class="lab2-stat-val" id="lab2-data-val">0</div>
       </div>
-      <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">🎒 보유 아이템</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="lab2-inv-count">0개</div>
+      <div class="lab2-stat-card">
+        <div class="lab2-stat-label">🎒 보유 아이템</div>
+        <div class="lab2-stat-val" id="lab2-inv-count">0개</div>
       </div>
-      <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">🔬 남은 제조</div>
-        <div style="font-size:16px;font-weight:600;color:#e0e0e0;" id="lab2-remain-val">3회</div>
+      <div class="lab2-stat-card">
+        <div class="lab2-stat-label">🔬 남은 제조</div>
+        <div class="lab2-stat-val" id="lab2-remain-val">3회</div>
       </div>
     </div>
 
     <!-- 재료 선택 -->
-    <div style="font-size:12px;font-weight:600;color:#a0c4ff;border-bottom:2px solid #2e1a5e;padding-bottom:4px;">🧪 재료 선택 (3가지 선택 후 조합)</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-      <button id="mat-fire"    onclick="selectMaterial('fire')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">🔥<br><span style="font-size:10px;color:#8060b0;">불꽃 결정</span></button>
-      <button id="mat-water"   onclick="selectMaterial('water')"   style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">💧<br><span style="font-size:10px;color:#8060b0;">정화 물방울</span></button>
-      <button id="mat-leaf"    onclick="selectMaterial('leaf')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">🌿<br><span style="font-size:10px;color:#8060b0;">치유 잎사귀</span></button>
-      <button id="mat-crystal" onclick="selectMaterial('crystal')" style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">💎<br><span style="font-size:10px;color:#8060b0;">이면 결정</span></button>
-      <button id="mat-gear"    onclick="selectMaterial('gear')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">⚙️<br><span style="font-size:10px;color:#8060b0;">마법 톱니</span></button>
-      <button id="mat-star"    onclick="selectMaterial('star')"    style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:22px;text-align:center;transition:border-color 0.2s,transform 0.15s;line-height:1.6;" onmouseover="this.style.borderColor='#a0c4ff';this.style.transform='translateY(-2px)'" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#2e1a5e';this.style.transform='none'}">⭐<br><span style="font-size:10px;color:#8060b0;">별빛 가루</span></button>
+    <div class="lab2-section-title">🧪 재료 선택 (3가지 선택 후 조합)</div>
+    <div class="lab2-mat-grid">
+      <button id="mat-fire"    class="lab2-mat-btn" onclick="selectMaterial('fire')">🔥<br><span class="lab2-mat-name">불꽃 결정</span></button>
+      <button id="mat-water"   class="lab2-mat-btn" onclick="selectMaterial('water')">💧<br><span class="lab2-mat-name">정화 물방울</span></button>
+      <button id="mat-leaf"    class="lab2-mat-btn" onclick="selectMaterial('leaf')">🌿<br><span class="lab2-mat-name">치유 잎사귀</span></button>
+      <button id="mat-crystal" class="lab2-mat-btn" onclick="selectMaterial('crystal')">💎<br><span class="lab2-mat-name">이면 결정</span></button>
+      <button id="mat-gear"    class="lab2-mat-btn" onclick="selectMaterial('gear')">⚙️<br><span class="lab2-mat-name">마법 톱니</span></button>
+      <button id="mat-star"    class="lab2-mat-btn" onclick="selectMaterial('star')">⭐<br><span class="lab2-mat-name">별빛 가루</span></button>
     </div>
 
     <!-- 슬롯 + 조합 버튼 -->
-    <div style="display:flex;align-items:center;gap:8px;background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:12px 14px;">
-      <div id="lab2-slot-0" style="width:44px;height:44px;background:#1a0a3a;border:1.5px dashed #2e1a5e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#8060b0;flex-shrink:0;">?</div>
-      <span style="font-size:16px;color:#8060b0;">+</span>
-      <div id="lab2-slot-1" style="width:44px;height:44px;background:#1a0a3a;border:1.5px dashed #2e1a5e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#8060b0;flex-shrink:0;">?</div>
-      <span style="font-size:16px;color:#8060b0;">+</span>
-      <div id="lab2-slot-2" style="width:44px;height:44px;background:#1a0a3a;border:1.5px dashed #2e1a5e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#8060b0;flex-shrink:0;">?</div>
-      <button id="lab2-craft-btn" onclick="craftByRecipe()" disabled style="margin-left:auto;background:#c4a0ff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;color:#1a0a3a;cursor:pointer;opacity:0.4;">조합!</button>
+    <div class="lab2-slot-row">
+      <div id="lab2-slot-0" class="lab2-slot">?</div>
+      <span class="lab2-slot-plus">+</span>
+      <div id="lab2-slot-1" class="lab2-slot">?</div>
+      <span class="lab2-slot-plus">+</span>
+      <div id="lab2-slot-2" class="lab2-slot">?</div>
+      <button id="lab2-craft-btn" class="lab2-craft-btn" onclick="craftByRecipe()" disabled>🔬 조합!</button>
     </div>
 
     <!-- 레시피 힌트 -->
-    <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px 14px;">
-      <div style="font-size:11px;font-weight:600;color:#8060b0;margin-bottom:6px;">📋 레시피 힌트</div>
-      <div style="font-size:11px;color:#6040a0;line-height:2;font-family:'Courier New',monospace;">
+    <div class="lab2-recipe-box">
+      <div class="lab2-recipe-title">📋 레시피 힌트</div>
+      <div class="lab2-recipe-list">
         🔥+💧+🌿 = 재생 포션 (전투 중 매 턴 HP +5)<br>
         🔥+⚙️+💎 = 집중력 포션 (데미지 +50%)<br>
         💧+🌿+⭐ = 행운의 시약 (도서관 보상 2배)<br>
@@ -955,12 +960,12 @@
     </div>
 
     <!-- 인벤토리 -->
-    <div style="background:#0d0720;border:1.5px solid #2e1a5e;border-radius:10px;padding:10px 14px;">
-      <div style="font-size:10px;color:#8060b0;margin-bottom:4px;">🎒 보유 아이템</div>
-      <div id="inventory-display" style="font-size:12px;color:#e0e0e0;line-height:1.8;">없음</div>
+    <div class="lab2-inventory">
+      <div class="lab2-inv-label">🎒 보유 아이템</div>
+      <div id="inventory-display" class="lab2-inv-val">없음</div>
     </div>
 
-    <div id="lab2-log" style="background:#080510;border:1px solid #2e1a5e;border-radius:8px;padding:10px 14px;font-size:12px;color:#5dcaa5;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.8;">
+    <div id="lab2-log" class="lab2-log">
       <span>[실험실] 재료 3가지를 선택하고 조합하세요!</span>
     </div>
   </div>
