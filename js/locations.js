@@ -683,13 +683,17 @@ window.gymInputBtn = function(colorIdx) {
 // 의무실 입장
 window.enterClinic = function() {
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('clinic-container').style.display = 'flex';
+  const clinicEl = document.getElementById('clinic-container');
+  clinicEl.style.display = 'flex';
+  clinicEl.classList.add('visible');
   syncClinicStats();
 }
 
 // 의무실 퇴장
 window.leaveClinic = function() {
-  document.getElementById('clinic-container').style.display = 'none';
+  const clinicEl2 = document.getElementById('clinic-container');
+  clinicEl2.style.display = 'none';
+  clinicEl2.classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }
 
@@ -761,17 +765,13 @@ const craftRecipes = {
 // 공대 실험실 입장
 window.enterLab2 = function() {
   document.getElementById('game-container').style.display = 'none';
-  const lab2El = document.getElementById('lab2-container');
-  lab2El.style.display = 'flex';
-  lab2El.classList.add('visible');
+  document.getElementById('lab2-container').style.display = 'flex';
   syncLab2Stats();
   resetLab2();
 }
 
 window.leaveLab2 = function() {
-  const lab2El2 = document.getElementById('lab2-container');
-  lab2El2.style.display = 'none';
-  lab2El2.classList.remove('visible');
+  document.getElementById('lab2-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
 
@@ -809,7 +809,7 @@ function resetLab2() {
   updateLab2Slots();
   ['fire','water','leaf','crystal','gear','star'].forEach(id => {
     const btn = document.getElementById('mat-' + id);
-    if (btn) { btn.style.borderColor = ''; btn.style.background = ''; btn.classList.remove('selected'); }
+    if (btn) { btn.style.borderColor = '#2e1a5e'; btn.style.background = '#0d0720'; btn.classList.remove('selected'); }
   });
 }
 
@@ -818,7 +818,7 @@ function updateLab2Slots() {
     const el = document.getElementById('lab2-slot-' + i);
     if (!el) continue;
     el.textContent = lab2Selected[i] ? LAB2_EMOJI[lab2Selected[i]] : '?';
-    el.style.borderColor = lab2Selected[i] ? '#0284c7' : '';
+    el.style.borderColor = lab2Selected[i] ? '#c4a0ff' : '#2e1a5e';
   }
   const btn = document.getElementById('lab2-craft-btn');
   if (btn) { btn.disabled = lab2Selected.length < 3; btn.style.opacity = lab2Selected.length < 3 ? '0.4' : '1'; }
@@ -828,10 +828,10 @@ window.selectMaterial = function(matId) {
   const btn = document.getElementById('mat-' + matId);
   if (lab2Selected.includes(matId)) {
     lab2Selected = lab2Selected.filter(m => m !== matId);
-    if (btn) { btn.style.borderColor = ''; btn.style.background = ''; btn.classList.remove('selected'); }
+    if (btn) { btn.style.borderColor = '#2e1a5e'; btn.style.background = '#0d0720'; btn.classList.remove('selected'); }
   } else if (lab2Selected.length < 3) {
     lab2Selected.push(matId);
-    if (btn) { btn.classList.add('selected'); }
+    if (btn) { btn.style.borderColor = '#c4a0ff'; btn.style.background = '#1a0a3a'; btn.classList.add('selected'); }
   }
   updateLab2Slots();
 }
@@ -876,7 +876,9 @@ let currentQuiz = null;
 // 축제 입장
 window.enterFestival = function() {
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('festival-container').style.display = 'flex';
+  const festEl = document.getElementById('festival-container');
+  festEl.style.display = 'flex';
+  festEl.classList.add('visible');
   ['quiz-panel', 'janken-panel', 'slot-panel'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
@@ -884,7 +886,9 @@ window.enterFestival = function() {
 
 // 축제 퇴장
 window.leaveFestival = function() {
-  document.getElementById('festival-container').style.display = 'none';
+  const festEl2 = document.getElementById('festival-container');
+  festEl2.style.display = 'none';
+  festEl2.classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
 }
 

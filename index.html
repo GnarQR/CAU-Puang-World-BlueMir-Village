@@ -805,89 +805,72 @@
   <!--       -->
   <!-- 의무실 -->
   <!--       -->
-  <div id="clinic-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
-    <div
-      style="background:#16213e; border:1px solid #e24b4a; border-radius:12px; padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <div style="font-size:11px;color:#f09595;letter-spacing:1px;">LOCATION</div>
-        <div style="font-size:15px;font-weight:500;color:#f09595;">🏥 중앙대 의무실</div>
+  <!--       -->
+  <!-- 의무실 -->
+  <!--       -->
+  <div id="clinic-container" class="clinic-wrap">
+
+    <!-- 헤더 -->
+    <div class="clinic-header">
+      <div class="clinic-header-left">
+        <div class="clinic-emergency-badge">🚨 EMERGENCY</div>
+        <div class="clinic-title">🏥 중앙대 의무실</div>
       </div>
-      <button onclick="leaveClinic()"
-        style="background:rgba(242,149,149,0.15);border:1px solid #f09595;border-radius:8px;padding:4px 12px;font-size:12px;color:#f09595;cursor:pointer;font-family:inherit;">←
-        맵으로</button>
+      <button class="clinic-back-btn" onclick="leaveClinic()">← 맵으로</button>
     </div>
 
-    <div style="display:flex;gap:8px;">
-      <div style="flex:1;background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;">
-        <div style="font-size:10px;color:#f09595;margin-bottom:4px;">HP</div>
-        <div style="font-size:15px;font-weight:600;color:#e0e0e0;" id="clinic-hp-val">80 / 100</div>
-        <div style="height:5px;background:#2a0a0a;border-radius:3px;margin-top:4px;">
-          <div id="clinic-hp-bar"
-            style="height:100%;border-radius:3px;background:#1d9e75;width:80%;transition:width 0.5s;"></div>
+    <!-- 스탯 -->
+    <div class="clinic-stat-row">
+      <div class="clinic-stat-card">
+        <div class="clinic-stat-label">❤️ HP</div>
+        <div class="clinic-stat-val" id="clinic-hp-val">60 / 60</div>
+        <div class="clinic-bar-bg">
+          <div id="clinic-hp-bar" class="clinic-bar-fill clinic-hp-fill" style="width:100%;"></div>
         </div>
       </div>
-
-      <div style="flex:1;background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;">
-        <div style="font-size:10px;color:#f09595;margin-bottom:4px;">SP</div>
-        <div style="font-size:15px;font-weight:600;color:#e0e0e0;" id="clinic-sp-val">45 / 60</div>
-        <div style="height:5px;background:#2a0a0a;border-radius:3px;margin-top:4px;">
-          <div id="clinic-sp-bar"
-            style="height:100%;border-radius:3px;background:#a0c4ff;width:75%;transition:width 0.5s;"></div>
+      <div class="clinic-stat-card">
+        <div class="clinic-stat-label">💧 SP</div>
+        <div class="clinic-stat-val" id="clinic-sp-val">40 / 40</div>
+        <div class="clinic-bar-bg">
+          <div id="clinic-sp-bar" class="clinic-bar-fill clinic-sp-fill" style="width:100%;"></div>
         </div>
       </div>
-
-      <div
-        style="flex:1;background:#16213e;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;text-align:center;">
-        <div style="font-size:10px;color:#f09595;margin-bottom:4px;">데이터 조각</div>
-        <div style="font-size:18px;font-weight:600;color:#ef9f27;" id="clinic-data-val">12</div>
+      <div class="clinic-stat-card" style="text-align:center;">
+        <div class="clinic-stat-label">💎 데이터 조각</div>
+        <div class="clinic-stat-val" id="clinic-data-val" style="color:#dc2626;">0</div>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <button onclick="clinicTreat('hp')"
-        style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,background 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#f09595';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#3b0d0d';this.style.transform='none'">
-        <div style="font-size:26px;">💉</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">HP 완전 회복</div>
-        <div style="font-size:10px;color:#f09595;margin-top:2px;">HP 100% 회복</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 데이터 조각 15개</div>
+    <!-- 처치 버튼 -->
+    <div class="clinic-treat-grid">
+      <button class="clinic-treat-btn" onclick="clinicTreat('hp')">
+        <div class="clinic-treat-icon">💉</div>
+        <div class="clinic-treat-name">HP 완전 회복</div>
+        <div class="clinic-treat-effect">HP 100% 회복</div>
+        <div class="clinic-treat-cost">💎 15개</div>
       </button>
-
-      <button onclick="clinicTreat('sp')"
-        style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,background 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#f09595';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#3b0d0d';this.style.transform='none'">
-        <div style="font-size:26px;">💊</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">SP 완전 회복</div>
-        <div style="font-size:10px;color:#f09595;margin-top:2px;">SP 100% 회복</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 데이터 조각 10개</div>
+      <button class="clinic-treat-btn" onclick="clinicTreat('sp')">
+        <div class="clinic-treat-icon">💊</div>
+        <div class="clinic-treat-name">SP 완전 회복</div>
+        <div class="clinic-treat-effect">SP 100% 회복</div>
+        <div class="clinic-treat-cost">💎 10개</div>
       </button>
-
-      <button onclick="clinicTreat('full')"
-        style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,background 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#f09595';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#3b0d0d';this.style.transform='none'">
-        <div style="font-size:26px;">🏥</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">전체 완전 회복</div>
-        <div style="font-size:10px;color:#f09595;margin-top:2px;">HP + SP 전부 회복</div>
-        <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 데이터 조각 20개</div>
+      <button class="clinic-treat-btn" onclick="clinicTreat('full')">
+        <div class="clinic-treat-icon">🏥</div>
+        <div class="clinic-treat-name">전체 완전 회복</div>
+        <div class="clinic-treat-effect">HP + SP 전부 회복</div>
+        <div class="clinic-treat-cost">💎 20개</div>
       </button>
-
-      <button onclick="clinicTreat('free')"
-        style="background:#16213e;border:1px solid #3b0d0d;border-radius:12px;padding:16px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,background 0.2s,transform 0.15s;"
-        onmouseover="this.style.borderColor='#f09595';this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.borderColor='#3b0d0d';this.style.transform='none'">
-        <div style="font-size:26px;">🩹</div>
-        <div style="font-size:13px;font-weight:500;margin-top:4px;">무료 응급처치</div>
-        <div style="font-size:10px;color:#f09595;margin-top:2px;">HP +15 · 하루 1회</div>
-        <div style="font-size:10px;color:#6c8ebf;margin-top:2px;">무료 (1일 1회)</div>
+      <button class="clinic-treat-btn clinic-free-btn" onclick="clinicTreat('free')">
+        <div class="clinic-treat-icon">🩹</div>
+        <div class="clinic-treat-name">무료 응급처치</div>
+        <div class="clinic-treat-effect">HP +15 · 하루 1회</div>
+        <div class="clinic-treat-cost clinic-free-cost">무료 (1일 1회)</div>
       </button>
     </div>
 
-    <div id="clinic-log"
-      style="background:#0d1117;border:1px solid #3b0d0d;border-radius:10px;padding:10px 14px;font-size:12px;color:#f09595;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
-      <span style="color:#4a7a4a;">[의무실] 어서오세요. 몸 상태를 확인해드립니다.</span>
+    <div id="clinic-log" class="clinic-log">
+      <span>[의무실] 어서오세요. 몸 상태를 확인해드립니다.</span>
     </div>
   </div>
 
@@ -973,114 +956,79 @@
   <!--          -->
   <!-- 중앙 축제 -->
   <!--          -->
-  <div id="festival-container" style="display:none; width:100%; max-width:680px; flex-direction:column; gap:12px;">
-    <div
-      style="background:#16213e;border:1px solid #ef9f27;border-radius:12px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-size:11px;color:#ef9f27;letter-spacing:1px;">LOCATION</div>
-        <div style="font-size:15px;font-weight:500;color:#ef9f27;">🎪 중앙대 축제</div>
-      </div>
+  <!--         -->
+  <!-- 중앙 축제 -->
+  <!--         -->
+  <div id="festival-container" class="fest-wrap">
 
-      <button onclick="leaveFestival()"
-        style="background:rgba(239,159,39,0.15);border:1px solid #ef9f27;border-radius:8px;padding:4px 12px;font-size:12px;color:#ef9f27;cursor:pointer;font-family:inherit;">←
-        맵으로</button>
+    <!-- 헤더 -->
+    <div class="fest-header">
+      <div>
+        <div class="fest-location-tag">[ 중앙대학교 중앙 축제 ]</div>
+        <div class="fest-title">🎪 중앙대 축제</div>
+      </div>
+      <button class="fest-back-btn" onclick="leaveFestival()">← 맵으로</button>
     </div>
 
-    <div
-      style="background:#16213e;border:1px solid #2a2010;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:11px;color:#ef9f27;letter-spacing:1px;">🎮 미니게임 선택</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="playFestival('quiz')"
-          style="background:#1a1408;border:1px solid #2a2010;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#ef9f27';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#2a2010';this.style.transform='none'">
-          <div style="font-size:26px;">❓</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">중앙대 퀴즈</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">맞히면 💎 +5</div>
-          <div style="font-size:10px;color:#6c8ebf;margin-top:2px;">무료</div>
-        </button>
-
-        <button onclick="playFestival('dice')"
-          style="background:#1a1408;border:1px solid #2a2010;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#ef9f27';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#2a2010';this.style.transform='none'">
-          <div style="font-size:26px;">🎲</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">행운의 주사위</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">💎 0~10 랜덤 획득</div>
-          <div style="font-size:10px;color:#6c8ebf;margin-top:2px;">무료</div>
-        </button>
-
-        <button onclick="playFestival('janken')"
-          style="background:#1a1408;border:1px solid #2a2010;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#ef9f27';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#2a2010';this.style.transform='none'">
-          <div style="font-size:26px;">✊</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">가위바위보</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">이기면 💎 +8</div>
-          <div style="font-size:10px;color:#6c8ebf;margin-top:2px;">무료</div>
-        </button>
-
-        <button onclick="playFestival('slot')"
-          style="background:#1a1408;border:1px solid #2a2010;border-radius:12px;padding:14px;cursor:pointer;font-family:inherit;text-align:left;color:#e0e0e0;transition:border-color 0.2s,transform 0.15s;"
-          onmouseover="this.style.borderColor='#ef9f27';this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.borderColor='#2a2010';this.style.transform='none'">
-          <div style="font-size:26px;">🎰</div>
-          <div style="font-size:13px;font-weight:500;margin-top:4px;">슬롯머신</div>
-          <div style="font-size:10px;color:#ef9f27;margin-top:2px;">777 → 💎 +30!</div>
-          <div style="font-size:10px;color:#6c8ebf;">💎 3개 베팅</div>
-        </button>
-      </div>
+    <!-- 미니게임 선택 -->
+    <div class="fest-section-title">🎮 미니게임 선택</div>
+    <div class="fest-game-grid">
+      <button class="fest-game-btn" onclick="playFestival('quiz')">
+        <div class="fest-game-icon">❓</div>
+        <div class="fest-game-name">중앙대 퀴즈</div>
+        <div class="fest-game-reward">맞히면 💎 +5</div>
+        <div class="fest-game-cost">무료</div>
+      </button>
+      <button class="fest-game-btn" onclick="playFestival('dice')">
+        <div class="fest-game-icon">🎲</div>
+        <div class="fest-game-name">행운의 주사위</div>
+        <div class="fest-game-reward">💎 0~10 랜덤</div>
+        <div class="fest-game-cost">무료</div>
+      </button>
+      <button class="fest-game-btn" onclick="playFestival('janken')">
+        <div class="fest-game-icon">✊</div>
+        <div class="fest-game-name">가위바위보</div>
+        <div class="fest-game-reward">이기면 💎 +8</div>
+        <div class="fest-game-cost">무료</div>
+      </button>
+      <button class="fest-game-btn fest-slot-btn" onclick="playFestival('slot')">
+        <div class="fest-game-icon">🎰</div>
+        <div class="fest-game-name">슬롯머신</div>
+        <div class="fest-game-reward">777 → 💎 +30!</div>
+        <div class="fest-game-cost">💎 3개 베팅</div>
+      </button>
     </div>
 
     <!-- 퀴즈 패널 -->
-    <div id="quiz-panel"
-      style="display:none;background:#16213e;border:1px solid #2a2010;border-radius:12px;padding:14px;flex-direction:column;gap:10px;">
-      <div id="quiz-question" style="font-size:14px;color:#e0e0e0;line-height:1.6;"></div>
-      <div id="quiz-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    <div id="quiz-panel" class="fest-panel" style="display:none;">
+      <div id="quiz-question" class="fest-quiz-q"></div>
+      <div id="quiz-choices" class="fest-quiz-choices"></div>
     </div>
 
     <!-- 가위바위보 패널 -->
-    <div id="janken-panel"
-      style="display:none;background:#16213e;border:1px solid #2a2010;border-radius:12px;padding:14px;flex-direction:column;gap:10px;align-items:center;">
-      <div style="font-size:13px;color:#ef9f27;">선택하세요!</div>
-      <div style="display:flex;gap:12px;">
-        <button onclick="jankenPlay('✊')"
-          style="font-size:36px;background:none;border:2px solid #2a2010;border-radius:12px;padding:10px 16px;cursor:pointer;transition:border-color 0.2s;"
-          onmouseover="this.style.borderColor='#ef9f27'" onmouseout="this.style.borderColor='#2a2010'">✊</button>
-        <button onclick="jankenPlay('✌️')"
-          style="font-size:36px;background:none;border:2px solid #2a2010;border-radius:12px;padding:10px 16px;cursor:pointer;transition:border-color 0.2s;"
-          onmouseover="this.style.borderColor='#ef9f27'" onmouseout="this.style.borderColor='#2a2010'">✌️</button>
-        <button onclick="jankenPlay('🖐️')"
-          style="font-size:36px;background:none;border:2px solid #2a2010;border-radius:12px;padding:10px 16px;cursor:pointer;transition:border-color 0.2s;"
-          onmouseover="this.style.borderColor='#ef9f27'" onmouseout="this.style.borderColor='#2a2010'">🖐️</button>
+    <div id="janken-panel" class="fest-panel fest-janken-panel" style="display:none;">
+      <div class="fest-janken-title">선택하세요!</div>
+      <div class="fest-janken-btns">
+        <button class="fest-janken-btn" onclick="jankenPlay('✊')">✊</button>
+        <button class="fest-janken-btn" onclick="jankenPlay('✌️')">✌️</button>
+        <button class="fest-janken-btn" onclick="jankenPlay('🖐️')">🖐️</button>
       </div>
-      <div id="janken-result" style="font-size:13px;color:#e0e0e0;min-height:20px;"></div>
+      <div id="janken-result" class="fest-result"></div>
     </div>
 
     <!-- 슬롯 패널 -->
-    <div id="slot-panel"
-      style="display:none;background:#16213e;border:1px solid #2a2010;border-radius:12px;padding:14px;flex-direction:column;gap:10px;align-items:center;">
-      <div style="display:flex;gap:8px;">
-        <div id="slot-1"
-          style="width:60px;height:60px;background:#0d1117;border:2px solid #2a2010;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;">
-          🎲</div>
-        <div id="slot-2"
-          style="width:60px;height:60px;background:#0d1117;border:2px solid #2a2010;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;">
-          🎲</div>
-        <div id="slot-3"
-          style="width:60px;height:60px;background:#0d1117;border:2px solid #2a2010;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;">
-          🎲</div>
+    <div id="slot-panel" class="fest-panel fest-slot-panel" style="display:none;">
+      <div class="fest-slot-reels">
+        <div id="slot-1" class="fest-slot-reel">🎲</div>
+        <div id="slot-2" class="fest-slot-reel">🎲</div>
+        <div id="slot-3" class="fest-slot-reel">🎲</div>
       </div>
-
-      <button onclick="spinSlot()" id="slot-btn"
-        style="background:rgba(239,159,39,0.2);border:1px solid #ef9f27;border-radius:10px;padding:8px 24px;font-size:13px;color:#ef9f27;cursor:pointer;font-family:inherit;">당기기
-        (💎 3개)</button>
-      <div id="slot-result" style="font-size:13px;color:#e0e0e0;min-height:20px;"></div>
+      <button onclick="spinSlot()" id="slot-btn" class="fest-slot-spin-btn">당기기 (💎 3개)</button>
+      <div id="slot-result" class="fest-result"></div>
     </div>
 
-    <div id="festival-log"
-      style="background:#0d1117;border:1px solid #2a2010;border-radius:10px;padding:10px 14px;font-size:12px;color:#ef9f27;font-family:'Courier New',monospace;min-height:60px;max-height:80px;overflow-y:auto;line-height:1.7;">
-      <span style="color:#4a7a4a;">[축제] 어서오세요! 미니게임을 즐겨보세요.</span>
+    <div id="festival-log" class="fest-log">
+      <span>[축제] 어서오세요! 미니게임을 즐겨보세요.</span>
     </div>
   </div>
 
