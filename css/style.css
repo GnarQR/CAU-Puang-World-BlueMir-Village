@@ -1416,9 +1416,35 @@ h1 {
 #cafeteria-container {
     display: none;
     width: 100%;
-    max-width: 680px;
+    max-width: 960px;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
+    /* 배경 이미지 */
+    background-color: #fef3e2;
+    background-image: url('images/cafeteria.png');
+    background-size: cover;
+    background-position: center top;
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 반투명 베이지 오버레이 — UI 가독성 확보 */
+#cafeteria-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(254, 243, 226, 0.88);
+    border-radius: 16px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 오버레이 위에 컨텐츠 올리기 */
+#cafeteria-container > * {
+    position: relative;
+    z-index: 1;
 }
 
 #cafeteria-container.visible { display: flex; }
@@ -1458,6 +1484,98 @@ h1 {
 }
 
 .caf-back-btn:hover { background: rgba(255,255,255,0.3); }
+
+/* 영업시간 배너 */
+.caf-hours-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #fff;
+    border: 1.5px solid #fed7aa;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+.caf-hours-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.caf-hours-label {
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: 600;
+}
+.caf-hours-time {
+    font-size: 11px;
+    color: #374151;
+    font-weight: 700;
+}
+.caf-hours-divider {
+    color: #d1d5db;
+    font-size: 16px;
+}
+.caf-hours-status {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: #16a34a;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    border-radius: 20px;
+    padding: 3px 10px;
+    white-space: nowrap;
+}
+
+/* ── 반응형 ── */
+
+/* 데스크탑 — NPC + 게이지 가로 배치 */
+@media (min-width: 769px) {
+    .caf-npc-wrap {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .caf-menu-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .caf-menu-emoji { font-size: 32px; }
+    .caf-menu-name  { font-size: 13px; }
+}
+
+/* 태블릿 */
+@media (min-width: 481px) and (max-width: 768px) {
+    .caf-menu-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .caf-menu-item { padding: 14px 10px; }
+    .caf-menu-emoji { font-size: 28px; }
+}
+
+/* 모바일 */
+@media (max-width: 480px) {
+    .caf-menu-grid {
+        grid-template-columns: 1fr;
+    }
+    .caf-npc-wrap {
+        flex-wrap: wrap;
+    }
+    .caf-stat-mini {
+        flex-direction: row;
+        gap: 8px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .caf-hours-bar {
+        gap: 6px;
+        padding: 6px 10px;
+    }
+    .caf-hours-divider { display: none; }
+    .caf-hours-status { margin-left: 0; width: 100%; text-align: center; }
+    .caf-bar-bg { height: 14px; }
+}
 
 /* NPC */
 .caf-npc-wrap {
