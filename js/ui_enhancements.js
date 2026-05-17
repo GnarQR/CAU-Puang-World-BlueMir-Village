@@ -1228,3 +1228,542 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(fetchWeather, 10 * 60 * 1000); // 10분마다 갱신
 });
 
+
+
+// ================================================================
+// 16. 몬스터 도감
+// ================================================================
+
+window.registerMonsterCompendium = function(monster) {
+  if (!monster) return;
+  const comp = JSON.parse(localStorage.getItem('monsterCompendium') || '{}');
+  if (!comp[monster.id]) {
+    comp[monster.id] = { id: monster.id, name: monster.name, weakness: monster.weakness, count: 0, image: monster.image };
+  }
+  comp[monster.id].count++;
+  localStorage.setItem('monsterCompendium', JSON.stringify(comp));
+  if (comp[monster.id].count === 1) {
+    if (typeof showToast === 'function') showToast('📖 도감 등록! ' + monster.name, 'info', 2500);
+  }
+  checkCompendiumReward(comp);
+};
+
+function checkCompendiumReward(comp) {
+  const allMonsters = typeof window.MONSTERS !== 'undefined' ? Object.keys(window.MONSTERS) : [];
+  const allBosses   = typeof window.BOSSES   !== 'undefined' ? Object.keys(window.BOSSES)   : [];
+  const total = allMonsters.length + allBosses.length;
+  const done  = Object.keys(comp).length;
+  const key   = 'compendiumRewarded_' + done;
+  if (!localStorage.getItem(key) && done >= Math.ceil(total * 0.5)) {
+    localStorage.setItem(key, '1');
+    playerStats.data += 20;
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+    if (typeof showToast === 'function') showToast('📖 도감 50% 완성! 💎 +20', 'warning', 4000);
+  }
+}
+
+window.openCompendium = function() {
+  let ov = document.getElementById('compendium-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'compendium-overlay';
+    ov.className = 'compendium-overlay';
+    ov.innerHTML = `
+      <div class="compendium-panel">
+        <div class="compendium-header">
+          <span class="compendium-title">📖 몬스터 도감</span>
+          <button class="compendium-close" onclick="closeCompendium()">✕</button>
+        </div>
+        <div class="compendium-body" id="compendium-body"></div>
+      </div>`;
+    ov.addEventListener('click', e => { if (e.target === ov) closeCompendium(); });
+    document.body.appendChild(ov);
+  }
+  renderCompendium();
+  ov.classList.add('comp-open');
+};
+window.closeCompendium = function() {
+  const o = document.getElementById('compendium-overlay');
+  if (o) o.classList.remove('comp-open');
+};
+
+function renderCompendium() {
+  const el   = document.getElementById('compendium-body');
+  if (!el) return;
+  const comp = JSON.parse(localStorage.getItem('monsterCompendium') || '{}');
+  const allM = typeof window.MONSTERS !== 'undefined' ? Object.values(window.MONSTERS) : [];
+  const allB = typeof window.BOSSES   !== 'undefined' ? Object.values(window.BOSSES)   : [];
+  const all  = [...allM, ...allB];
+  const done = Object.keys(comp).length;
+
+  el.innerHTML = `<div class="comp-progress">발견 ${done} / ${all.length}종 — ${Math.round(done/Math.max(1,all.length)*100)}%</div>
+    <div class="comp-progress-bar"><div class="comp-progress-fill" style="width:${Math.round(done/Math.max(1,all.length)*100)}%"></div></div>
+    <div class="comp-grid">` +
+    all.map(m => {
+      const found = comp[m.id];
+      return `<div class="comp-card ${found ? '' : 'comp-unknown'}">
+        <div class="comp-img">${found ? '👹' : '❓'}</div>
+        <div class="comp-name">${found ? m.name : '???'}</div>
+        <div class="comp-info">${found ? '약점: ' + m.weakness + '<br>포획: ' + found.count + '회' : '미발견'}</div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+
+// ================================================================
+// 17. 이벤트 캘린더
+// ================================================================
+
+const WEEK_EVENTS = {
+  0: { name: '☀️ 일요일 휴식 보너스',   effect: () => { playerStats.sp = playerStats.maxSp; }, desc: '모든 장소 SP 완전 회복!' },
+  1: { name: '💪 월요일 체육의 날',      effect: null, desc: '체육관 비용 -1 💎', bonusKey: 'gym_discount' },
+  2: { name: '📚 화요일 도서관의 날',    effect: null, desc: '도서관 보상 2×', bonusKey: 'lib_double' },
+  3: { name: '⚔️ 수요일 전투의 날',      effect: null, desc: '전투 보상 +5 💎', bonusKey: 'battle_bonus' },
+  4: { name: '🍽️ 목요일 맛있는 날',     effect: null, desc: '식당 HP/SP 회복량 +10', bonusKey: 'caf_bonus' },
+  5: { name: '🎪 금요일 축제의 날',      effect: null, desc: '축제 미니게임 보상 2×', bonusKey: 'fest_double' },
+  6: { name: '💎 토요일 데이터의 날',    effect: null, desc: '모든 💎 획득 +2', bonusKey: 'data_bonus' },
+};
+
+// 중앙대 기념일 (월/일 기준)
+const CAU_SPECIAL_DAYS = [
+  { month: 4,  day: 10, name: '🎂 중앙대 개교기념일', desc: '모든 보상 1.5×! 💎 +10 지급', reward: 10 },
+  { month: 5,  day: 5,  name: '🧒 어린이날',          desc: '도서관 무료 이용 + SP 완전 회복', reward: 5  },
+  { month: 12, day: 25, name: '🎄 크리스마스',         desc: '전체 회복 + 💎 +15 지급',       reward: 15 },
+];
+
+window.getTodayEvent = function() {
+  const now  = new Date();
+  const day  = now.getDay();
+  const mon  = now.getMonth() + 1;
+  const date = now.getDate();
+  const special = CAU_SPECIAL_DAYS.find(d => d.month === mon && d.day === date);
+  return { weekEvent: WEEK_EVENTS[day], special };
+};
+
+// 요일 보너스 플래그 전역 노출
+window._calendarBonusKey = function() {
+  const { weekEvent } = window.getTodayEvent();
+  return weekEvent?.bonusKey || null;
+};
+
+window.openCalendar = function() {
+  let ov = document.getElementById('calendar-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'calendar-overlay';
+    ov.className = 'calendar-overlay';
+    ov.innerHTML = `
+      <div class="calendar-panel">
+        <div class="calendar-header">
+          <span class="calendar-title">📅 이벤트 캘린더</span>
+          <button class="calendar-close" onclick="closeCalendar()">✕</button>
+        </div>
+        <div class="calendar-body" id="calendar-body"></div>
+      </div>`;
+    ov.addEventListener('click', e => { if (e.target === ov) closeCalendar(); });
+    document.body.appendChild(ov);
+  }
+  renderCalendar();
+  ov.classList.add('cal-open');
+};
+window.closeCalendar = function() {
+  const o = document.getElementById('calendar-overlay');
+  if (o) o.classList.remove('cal-open');
+};
+
+function renderCalendar() {
+  const el = document.getElementById('calendar-body');
+  if (!el) return;
+  const { weekEvent, special } = window.getTodayEvent();
+  const days = ['일','월','화','수','목','금','토'];
+
+  el.innerHTML = `
+    <div class="cal-today-section">
+      <div class="cal-section-label">오늘 이벤트</div>
+      <div class="cal-today-card">
+        <div class="cal-today-name">${weekEvent.name}</div>
+        <div class="cal-today-desc">${weekEvent.desc}</div>
+        ${special ? `<div class="cal-special-badge">🎉 ${special.name} — ${special.desc}</div>` : ''}
+      </div>
+    </div>
+    <div class="cal-section-label" style="margin-top:12px;">이번 주 일정</div>
+    <div class="cal-week-grid">
+      ${Object.entries(WEEK_EVENTS).map(([d, ev]) => {
+        const isToday = parseInt(d) === new Date().getDay();
+        return `<div class="cal-day-card ${isToday ? 'cal-today' : ''}">
+          <div class="cal-day-label">${days[d]}</div>
+          <div class="cal-day-event">${ev.name}</div>
+          <div class="cal-day-desc">${ev.desc}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // 기념일 보상 지급 (하루 1회)
+  if (special) {
+    const rewardKey = 'specialReward_' + new Date().toDateString();
+    if (!localStorage.getItem(rewardKey)) {
+      localStorage.setItem(rewardKey, '1');
+      playerStats.data += special.reward;
+      if (typeof window.syncAndSave === 'function') window.syncAndSave();
+      if (typeof showToast === 'function') showToast('🎉 ' + special.name + ' 💎 +' + special.reward, 'warning', 5000);
+    }
+  }
+}
+
+// 요일 보너스를 locations.js 계열에서 읽을 수 있도록 전역 노출
+document.addEventListener('DOMContentLoaded', () => {
+  const { weekEvent } = window.getTodayEvent();
+  if (weekEvent) {
+    window._todayBonusKey = weekEvent.bonusKey;
+    if (weekEvent.effect) {
+      setTimeout(() => {
+        weekEvent.effect();
+        if (typeof window.updateMapStats === 'function') window.updateMapStats();
+        if (typeof showToast === 'function') showToast('📅 ' + weekEvent.name + ' — ' + weekEvent.desc, 'info', 4000);
+      }, 2000);
+    } else {
+      setTimeout(() => {
+        if (typeof showToast === 'function') showToast('📅 ' + weekEvent.name + ' — ' + weekEvent.desc, 'info', 3500);
+      }, 2000);
+    }
+  }
+});
+
+
+// ================================================================
+// 18. Firebase 리더보드
+// ================================================================
+
+window.openLeaderboard = function() {
+  let ov = document.getElementById('leaderboard-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'leaderboard-overlay';
+    ov.className = 'leaderboard-overlay';
+    ov.innerHTML = `
+      <div class="leaderboard-panel">
+        <div class="leaderboard-header">
+          <span class="leaderboard-title">🏆 리더보드</span>
+          <button class="leaderboard-close" onclick="closeLeaderboard()">✕</button>
+        </div>
+        <div class="lb-tabs">
+          <button class="lb-tab active" onclick="switchLbTab('data')">💎 데이터</button>
+          <button class="lb-tab" onclick="switchLbTab('favor')">🐉 호감도</button>
+          <button class="lb-tab" onclick="switchLbTab('battle')">⚔️ 전투</button>
+        </div>
+        <div class="leaderboard-body" id="leaderboard-body">
+          <div class="lb-loading">불러오는 중...</div>
+        </div>
+      </div>`;
+    ov.addEventListener('click', e => { if (e.target === ov) closeLeaderboard(); });
+    document.body.appendChild(ov);
+  }
+  ov.classList.add('lb-open');
+  loadLeaderboard('data');
+};
+window.closeLeaderboard = function() {
+  const o = document.getElementById('leaderboard-overlay');
+  if (o) o.classList.remove('lb-open');
+};
+
+let _lbCurrentTab = 'data';
+window.switchLbTab = function(tab) {
+  _lbCurrentTab = tab;
+  document.querySelectorAll('.lb-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.lb-tab[onclick*="${tab}"]`)?.classList.add('active');
+  loadLeaderboard(tab);
+};
+
+async function loadLeaderboard(tab) {
+  const el = document.getElementById('leaderboard-body');
+  if (!el) return;
+  el.innerHTML = '<div class="lb-loading">🔄 불러오는 중...</div>';
+
+  try {
+    if (typeof db === 'undefined') throw new Error('Firebase 미연결');
+    const fieldMap = { data: 'playerStats.data', favor: 'puangState.favorability', battle: 'playerStats._battleWins' };
+    const field = fieldMap[tab];
+
+    const snap = await db.collection('gameData').orderBy(field, 'desc').limit(10).get();
+    if (snap.empty) { el.innerHTML = '<div class="lb-loading">데이터가 없어요.</div>'; return; }
+
+    const rows = [];
+    snap.forEach((doc, i) => {
+      const d = doc.data();
+      const name = d.playerStats?.name || '탐험가';
+      let val;
+      if (tab === 'data')   val = (d.playerStats?.data || 0) + ' 💎';
+      if (tab === 'favor')  val = (d.puangState?.favorability || 0) + ' / 100';
+      if (tab === 'battle') val = (d.playerStats?._battleWins || 0) + ' 승';
+      rows.push({ name, val });
+    });
+
+    const myKey  = GROQ_API_KEY;
+    const mySnap = myKey ? await db.collection('gameData').doc(myKey).get() : null;
+    const myData = mySnap?.data();
+    let myVal;
+    if (myData) {
+      if (tab === 'data')   myVal = (myData.playerStats?.data || 0) + ' 💎';
+      if (tab === 'favor')  myVal = (myData.puangState?.favorability || 0) + ' / 100';
+      if (tab === 'battle') myVal = (myData.playerStats?._battleWins || 0) + ' 승';
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    el.innerHTML = `<div class="lb-list">` +
+      rows.map((r, i) => `
+        <div class="lb-row ${i < 3 ? 'lb-top' : ''}">
+          <span class="lb-rank">${medals[i] || (i + 1)}</span>
+          <span class="lb-name">${r.name}</span>
+          <span class="lb-val">${r.val}</span>
+        </div>`).join('') +
+      (myVal ? `<div class="lb-myrank">내 기록: ${myVal}</div>` : '') +
+      `</div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="lb-loading">리더보드를 불러올 수 없어요.<br><small>${e.message}</small></div>`;
+  }
+}
+
+
+// ================================================================
+// 19. 키보드 단축키
+// ================================================================
+
+document.addEventListener('keydown', e => {
+  // 입력 중일 때는 무시
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  const key = e.key.toLowerCase();
+
+  // 전역 단축키
+  if (key === 'i') { e.preventDefault(); typeof window.openInventory === 'function' && window.openInventory(); return; }
+  if (key === 'p') { e.preventDefault(); typeof window.openProfile   === 'function' && window.openProfile();   return; }
+  if (key === 'm') { e.preventDefault(); typeof window.goToMap       === 'function' && window.goToMap();       return; }
+  if (key === 'd') { e.preventDefault(); typeof window.openCompendium=== 'function' && window.openCompendium();return; }
+  if (key === 'l') { e.preventDefault(); typeof window.openLeaderboard==='function' && window.openLeaderboard();return;}
+  if (key === 'c') { e.preventDefault(); typeof window.openCalendar  === 'function' && window.openCalendar();  return; }
+
+  // ESC — 모든 팝업 닫기
+  if (key === 'escape') {
+    ['inventory-overlay','profile-overlay','stats-overlay','compendium-overlay',
+     'calendar-overlay','leaderboard-overlay'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('inv-open','profile-open','stats-open','comp-open','cal-open','lb-open');
+    });
+    return;
+  }
+
+  // 전투 중 숫자 단축키
+  const battleCont = document.getElementById('battle-container');
+  if (battleCont && (battleCont.classList.contains('visible') || battleCont.style.display !== 'none')) {
+    const cmdMap = { '1':'attack', '2':'rag', '3':'hyper', '4':'special', '5':'run' };
+    if (cmdMap[e.key]) {
+      e.preventDefault();
+      if (typeof window.doCmd === 'function') window.doCmd(cmdMap[e.key]);
+    }
+  }
+});
+
+// 키보드 힌트 토스트 (최초 1회)
+document.addEventListener('DOMContentLoaded', () => {
+  if (!localStorage.getItem('keyHintShown')) {
+    setTimeout(() => {
+      if (typeof showToast === 'function') showToast('⌨️ 단축키: I=인벤 P=프로필 D=도감 L=리더보드 C=캘린더 ESC=닫기', 'info', 5000);
+      localStorage.setItem('keyHintShown', '1');
+    }, 3000);
+  }
+});
+
+
+// ================================================================
+// 20. 공유 카드 생성 (Canvas API)
+// ================================================================
+
+window.generateShareCard = function() {
+  const canvas = document.createElement('canvas');
+  canvas.width  = 480;
+  canvas.height = 280;
+  const ctx = canvas.getContext('2d');
+
+  // 배경 그라디언트
+  const grad = ctx.createLinearGradient(0, 0, 480, 280);
+  grad.addColorStop(0, '#0d1117');
+  grad.addColorStop(1, '#16213e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 480, 280);
+
+  // 테두리
+  ctx.strokeStyle = '#0f3460';
+  ctx.lineWidth   = 2;
+  ctx.strokeRect(4, 4, 472, 272);
+
+  // 타이틀
+  ctx.fillStyle = '#6c8ebf';
+  ctx.font      = 'bold 11px monospace';
+  ctx.fillText('CAU 푸앙 월드 · 탐험 기록', 20, 30);
+
+  // 닉네임 + 칭호
+  const name  = playerStats.name || localStorage.getItem('playerName') || '탐험가';
+  const title = typeof getActiveTitle === 'function' ? getActiveTitle().name : '탐험가';
+  ctx.fillStyle = '#e0e0e0';
+  ctx.font      = 'bold 22px sans-serif';
+  ctx.fillText(name, 20, 65);
+  ctx.fillStyle = '#6c8ebf';
+  ctx.font      = '13px monospace';
+  ctx.fillText('[' + title + ']', 20, 88);
+
+  // 구분선
+  ctx.strokeStyle = '#0f3460';
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(20, 100); ctx.lineTo(460, 100); ctx.stroke();
+
+  // 스탯 그리드
+  const stats = [
+    ['❤️ HP', playerStats.hp + '/' + playerStats.maxHp],
+    ['💙 SP', playerStats.sp + '/' + playerStats.maxSp],
+    ['💎 데이터', (playerStats.data || 0) + '개'],
+    ['⚔️ 전투승리', (playerStats._battleWins || 0) + '회'],
+    ['🗺️ 탐험수', (playerStats._explorationCount || 0) + '회'],
+    ['🐉 호감도', (puangState.favorability) + '/100'],
+  ];
+  ctx.font = '13px monospace';
+  stats.forEach(([label, val], i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x   = 20 + col * 230;
+    const y   = 128 + row * 38;
+    ctx.fillStyle = '#6c8ebf'; ctx.fillText(label, x, y);
+    ctx.fillStyle = '#e0e0e0'; ctx.fillText(val,   x, y + 16);
+  });
+
+  // 날짜
+  ctx.fillStyle = '#4a6090';
+  ctx.font      = '10px monospace';
+  ctx.fillText(new Date().toLocaleDateString('ko-KR') + ' 기록', 20, 262);
+  ctx.fillText('🌐 CAU 블루미르 빌리지', 300, 262);
+
+  // 다운로드
+  const a  = document.createElement('a');
+  a.download = 'cau_puang_' + name + '.png';
+  a.href     = canvas.toDataURL('image/png');
+  a.click();
+  if (typeof showToast === 'function') showToast('📤 탐험 카드 저장 완료!', 'success', 2500);
+};
+
+
+// ================================================================
+// 21. 닉네임 · 아바타 편집 (프로필 팝업 확장)
+// ================================================================
+
+const AVATAR_OPTIONS = ['🧑‍💻','👨‍🎓','👩‍🎓','🧙','🦸','🧝','🤖','👾','🐉','🦊'];
+
+window.openProfileEdit = function() {
+  const current = playerStats.name || localStorage.getItem('playerName') || '';
+  const curAvatar = localStorage.getItem('playerAvatar') || '🧑‍💻';
+  let html = `
+    <div class="edit-profile-modal">
+      <div class="edit-title">✍️ 프로필 편집</div>
+      <input id="edit-name-input" class="edit-name-input" value="${current}" placeholder="닉네임 입력" maxlength="12">
+      <div class="edit-avatar-label">아바타 선택</div>
+      <div class="edit-avatar-grid">
+        ${AVATAR_OPTIONS.map(a => `<button class="edit-avatar-btn ${a === curAvatar ? 'selected' : ''}" onclick="selectAvatar('${a}')">${a}</button>`).join('')}
+      </div>
+      <div class="edit-btns">
+        <button class="edit-save-btn" onclick="saveProfileEdit()">저장</button>
+        <button class="edit-cancel-btn" onclick="closeProfileEdit()">취소</button>
+      </div>
+    </div>`;
+
+  let ov = document.getElementById('profile-edit-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'profile-edit-overlay';
+    ov.className = 'profile-edit-overlay';
+    ov.addEventListener('click', e => { if (e.target === ov) closeProfileEdit(); });
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = html;
+  ov.classList.add('edit-open');
+};
+
+window.selectAvatar = function(emoji) {
+  document.querySelectorAll('.edit-avatar-btn').forEach(b => b.classList.remove('selected'));
+  const btn = [...document.querySelectorAll('.edit-avatar-btn')].find(b => b.textContent === emoji);
+  if (btn) btn.classList.add('selected');
+  localStorage.setItem('playerAvatar', emoji);
+  const profileAvatar = document.getElementById('profile-avatar-emoji');
+  if (profileAvatar) profileAvatar.textContent = emoji;
+};
+
+window.saveProfileEdit = function() {
+  const input = document.getElementById('edit-name-input');
+  const name  = input ? input.value.trim() : '';
+  if (!name) { if (typeof showToast === 'function') showToast('닉네임을 입력해주세요!', 'warning', 2000); return; }
+
+  playerStats.name = name;
+  localStorage.setItem('playerName', name);
+  const avatar = localStorage.getItem('playerAvatar') || '🧑‍💻';
+  const nameEl = document.getElementById('profile-name');
+  if (nameEl) nameEl.textContent = name;
+  const avatarEl = document.getElementById('profile-avatar-display');
+  if (avatarEl) avatarEl.textContent = avatar;
+
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  closeProfileEdit();
+  if (typeof showToast === 'function') showToast('✅ 프로필 저장 완료!', 'success', 2000);
+};
+
+window.closeProfileEdit = function() {
+  const o = document.getElementById('profile-edit-overlay');
+  if (o) o.classList.remove('edit-open');
+};
+
+
+// ================================================================
+// 22. PWA — manifest + Service Worker 자동 등록
+// ================================================================
+
+// manifest.json 동적 생성
+function injectManifest() {
+  if (document.querySelector('link[rel="manifest"]')) return;
+  const manifest = {
+    name: 'CAU 푸앙 월드',
+    short_name: '푸앙 월드',
+    description: '중앙대학교 캠퍼스 RPG 게임',
+    start_url: './',
+    display: 'standalone',
+    background_color: '#0d1117',
+    theme_color: '#16213e',
+    icons: [
+      { src: 'images/puang/puang_title.png', sizes: '192x192', type: 'image/png' },
+      { src: 'images/puang/puang_title.png', sizes: '512x512', type: 'image/png' },
+    ],
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel   = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+}
+
+// Service Worker 등록 (오프라인 캐시)
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const swCode = `
+const CACHE = 'cau-puang-v1';
+const ASSETS = ['/', './index.html', './js/state.js', './js/locations.js', './js/ui_enhancements.js', './css/style.css'];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.filter(Boolean))));
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+});`;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  injectManifest();
+  setTimeout(registerSW, 1000);
+});
+

@@ -21,6 +21,16 @@ const ROOM_ITEMS = {
 
   // 특수 가구 (furniture 슬롯) — 기본 배치됨
   // 추후 추가용: 'item_tank', 'item_doll' 등
+
+  // ★ wall2 슬롯 아이템
+  'item_tank':   { id: 'item_tank',   slot: 'wall2',  sprite: 'none', name: '청룡 어항',       emoji: '🐠', price: 14, desc: '벽 오른쪽 어항 장식' },
+  'item_doll':   { id: 'item_doll',   slot: 'wall2',  sprite: 'none', name: '푸앙이 인형',     emoji: '🧸', price: 11, desc: '벽 오른쪽 인형 장식' },
+  'item_trophy': { id: 'item_trophy', slot: 'wall2',  sprite: 'none', name: '이면세계 트로피', emoji: '🏆', price: 18, desc: '전투 승리 기념 트로피' },
+
+  // ★ 코스튬 스킨 아이템 (푸앙이 캐릭터 변경)
+  'skin_cat':    { id: 'skin_cat',    slot: 'costume', sprite: 'none', name: '고양이 코스튬',   emoji: '🐱', price: 20, desc: '푸앙이 → 고양이로 변신!' },
+  'skin_dragon': { id: 'skin_dragon', slot: 'costume', sprite: 'none', name: '청룡 코스튬',     emoji: '🐲', price: 25, desc: '푸앙이 → 청룡으로 변신!' },
+  'skin_robot':  { id: 'skin_robot',  slot: 'costume', sprite: 'none', name: '이면세계 로봇',   emoji: '🤖', price: 22, desc: '이면세계 로봇 코스튬' },
 };
 
 // ── 방 배치 설정 ──
@@ -97,9 +107,17 @@ window.applyRoomDecorations = function() {
 
   // 2) 각 슬롯 렌더링
   renderSlot('wall',   decos.wall,   { right: '28%', top: '8%',     zIndex: 5 });
+  renderSlot('wall2',  decos.wall2,  { right: '8%',  top: '6%',     zIndex: 5 }); // ★ wall2 슬롯
   renderSlot('floor',  decos.floor,  { left:  '30%', bottom: '22%', zIndex: 8 });
   renderSlot('floor2', decos.floor2, { left:  '16%', bottom: '20%', zIndex: 9 });
   renderSlot('floor3', decos.floor3, { right: '10%', bottom: '20%', zIndex: 9 });
+
+  // ★ 코스튬 슬롯: 푸앙이 캐릭터 이모지 변경
+  const charEl = document.getElementById('room-puang-char');
+  if (charEl) {
+    const skinEmojis = { skin_cat:'🐱', skin_dragon:'🐲', skin_robot:'🤖' };
+    charEl.textContent = skinEmojis[decos.costume] || '🦎';
+  }
 }
 
 function renderSlot(slotId, itemId, pos) {
@@ -177,6 +195,8 @@ window.installRoomItem = function(itemId) {
 
   if (item.slot === 'background') {
     playerStats.roomDecorations.background = item.theme;
+  } else if (item.slot === 'costume') {
+    playerStats.roomDecorations.costume = itemId; // ★ 코스튬 저장
   } else {
     playerStats.roomDecorations[item.slot] = itemId;
   }

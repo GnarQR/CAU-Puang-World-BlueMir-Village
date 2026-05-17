@@ -125,9 +125,13 @@
       <div class="stat-right-group">
         <div class="stat-reset-timer" id="stat-reset-timer">--:--:--</div>
         <button class="stat-collapse-btn" id="stat-collapse-btn" onclick="toggleStatBar()" title="스탯 숨기기">▲</button>
-        <button class="inv-map-btn" onclick="openProfile()" title="프로필">👤</button>
+        <button class="inv-map-btn" onclick="openProfile()" title="프로필 [P]">👤</button>
         <button class="inv-map-btn" onclick="openStatsViewer()" title="통계">📊</button>
-        <button class="inv-map-btn" onclick="openInventory()" title="인벤토리">🎒</button>
+        <button class="inv-map-btn" onclick="openCalendar()" title="이벤트 캘린더 [C]">📅</button>
+        <button class="inv-map-btn" onclick="openCompendium()" title="몬스터 도감 [D]">📖</button>
+        <button class="inv-map-btn" onclick="openLeaderboard()" title="리더보드 [L]">🏆</button>
+        <button class="inv-map-btn" onclick="openInventory()" title="인벤토리 [I]">🎒</button>
+        <button class="inv-map-btn" onclick="generateShareCard()" title="탐험 카드 공유">📤</button>
         <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="테마 전환">🌙</button>
       </div>
     </div>
@@ -324,11 +328,17 @@
         <img id="player-img" src="images/player/player_male_battle.png"
           style="width:auto; height:160px; object-fit:contain;"> <!-- 크기 조절 -->
         <div class="fighter-name">플레이어</div>
-        <!-- 지금은 고정 값인데 나중에는 값 저장해서 반영하도록 구현하기 (플레이어는 HP 유지, 몬스터는 초기화) -->
         <div class="hp-bar-wrap">
           <div class="hp-bar-label"><span>HP</span><span id="battle-player-hp-text">80 / 100</span></div>
           <div class="hp-bar-bg2">
             <div class="hp-bar-fill2" id="battle-player-hp-bar" style="width:80%; background:#1d9e75;"></div>
+          </div>
+        </div>
+        <!-- ★ SP 바 -->
+        <div class="hp-bar-wrap" style="margin-top:4px;">
+          <div class="hp-bar-label"><span style="color:#378add;">SP</span><span id="battle-player-sp-text">40 / 40</span></div>
+          <div class="hp-bar-bg2">
+            <div class="hp-bar-fill2" id="battle-player-sp-bar" style="width:100%; background:#378add;"></div>
           </div>
         </div>
       </div>
@@ -343,19 +353,23 @@
       <div class="cmd-grid">
         <button class="cmd-btn attack" onclick="doCmd('attack')">
           <span class="cmd-name">벡터 캐논</span>
-          <span class="cmd-desc">물리 공격 · 데미지 d20</span>
+          <span class="cmd-desc">물리 공격 · 데미지 d20 [1]</span>
         </button>
         <button class="cmd-btn" onclick="doCmd('rag')">
           <span class="cmd-name">RAG 리커버리</span>
-          <span class="cmd-desc">HP 회복 · 회복량 d10</span>
+          <span class="cmd-desc">HP 회복 · 회복량 d10 [2]</span>
         </button>
         <button class="cmd-btn attack" onclick="doCmd('hyper')">
           <span class="cmd-name">하이퍼 프롬프트</span>
-          <span class="cmd-desc">버프 · 다음 턴 데미지 2배</span>
+          <span class="cmd-desc">버프 · 다음 턴 데미지 2배 [3]</span>
+        </button>
+        <button class="cmd-btn special" onclick="doCmd('special')">
+          <span class="cmd-name">⚡ 데이터 서지</span>
+          <span class="cmd-desc">SP 15 소모 · 강력 공격+회복 [4]</span>
         </button>
         <button class="cmd-btn" onclick="doCmd('run')">
           <span class="cmd-name">이면 세계 탈출</span>
-          <span class="cmd-desc">전투 종료 · 50% 확률</span>
+          <span class="cmd-desc">전투 종료 · 50% 확률 [5]</span>
         </button>
       </div>
       <div class="dice-display" id="dice-display">🎲</div>
@@ -1653,9 +1667,40 @@
   <script src="js/ui_enhancements.js"></script>
 
   <!-- 토스트 컨테이너 -->
-  <div id="toast-container" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
+  <!-- ★ 청룡호 (호감도 100 해금) -->
+  <div id="bluedragonlake-container" style="display:none; flex-direction:column; align-items:center; min-height:100vh; background:linear-gradient(180deg,#0a1628 0%,#0d2a3a 50%,#0a1a2e 100%); padding:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:600px; margin-bottom:16px;">
+      <div>
+        <div style="font-size:11px;color:#5dcaa5;letter-spacing:2px;">[ 청룡호 · 호감도 MAX ]</div>
+        <div style="font-size:20px;font-weight:700;color:#e0e0e0;">🏞️ 청룡호</div>
+      </div>
+      <button onclick="leaveBluedragonLake()" style="background:transparent;border:1px solid #0f3460;border-radius:8px;padding:6px 14px;color:#6c8ebf;cursor:pointer;font-family:inherit;">← 맵으로</button>
+    </div>
+    <!-- 호수 씬 -->
+    <div style="width:100%;max-width:600px;background:linear-gradient(180deg,#0d2a4a,#0a3a5a);border-radius:16px;border:1px solid #0f3460;padding:24px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="font-size:60px;margin-bottom:8px;filter:drop-shadow(0 0 20px #5dcaa5);">🏞️</div>
+      <div style="font-size:14px;color:#5dcaa5;margin-bottom:4px;">잔잔한 청룡호 수면 위로 달빛이 내려앉는다...</div>
+      <div style="font-size:12px;color:#6c8ebf;">푸앙이가 옆에서 조용히 앉아 있다.</div>
+      <!-- 파티클 효과 -->
+      <div id="lake-particles" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+    </div>
+    <!-- 특별 대화 패널 -->
+    <div style="width:100%;max-width:600px;background:rgba(13,17,23,0.9);border:1px solid #0f3460;border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:12px;color:#6c8ebf;margin-bottom:10px;">🐉 푸앙이와 특별 대화</div>
+      <div id="lake-chat-log" style="height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:10px;font-size:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input id="lake-chat-input" placeholder="푸앙이에게 말 걸기..." style="flex:1;background:#0d1a2e;border:1px solid #0f3460;border-radius:8px;padding:8px 12px;color:#e0e0e0;font-family:inherit;font-size:12px;" onkeydown="if(e&&e.key==='Enter')sendLakeChat()">
+        <button onclick="sendLakeChat()" style="background:#1d9e75;border:none;border-radius:8px;padding:8px 16px;color:#fff;cursor:pointer;font-family:inherit;font-size:12px;">전송</button>
+      </div>
+    </div>
+    <!-- 산책 보상 -->
+    <div style="width:100%;max-width:600px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="lakeWalk()" style="flex:1;background:#0d1a2e;border:1px solid #5dcaa5;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;color:#5dcaa5;font-size:12px;font-weight:600;">🚶 함께 산책하기<br><span style="font-size:10px;color:#4a8a4a;">호감도 +3 · 💎 +5</span></button>
+      <button onclick="lakeMeditate()" style="flex:1;background:#0d1a2e;border:1px solid #378add;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;color:#a0c4ff;font-size:12px;font-weight:600;">🧘 명상하기<br><span style="font-size:10px;color:#3a6a8a;">HP+SP 완전 회복</span></button>
+    </div>
+  </div>
 
-  <!-- 장소 전환 오버레이 -->
+  <div id="toast-container" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
   <div id="place-transition-overlay" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:8000;transition:opacity 0.3s ease;"></div>
 
 </body>

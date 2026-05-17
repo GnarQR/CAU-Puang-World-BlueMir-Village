@@ -63,12 +63,65 @@ function updateRoomUI() {
 }
 
 // ── 호감도 변경 ──
-// amount만큼 호감도를 올리거나 내림 (0~100 범위 클램프)
-// changeFavor(+8), changeFavor(-15) 형태로 호출 -> 나중에 수치 변경 가능
 function changeFavor(amount) {
+  const prev = puangState.favorability;
   puangState.favorability = Math.max(0, Math.min(100, puangState.favorability + amount));
   savePuangState();
   updateRoomUI();
+
+  // ★ 호감도 구간 돌파 이벤트 대사
+  const milestones = [20, 40, 60, 80, 100];
+  for (const ms of milestones) {
+    if (prev < ms && puangState.favorability >= ms) {
+      _triggerFavorMilestone(ms);
+      break;
+    }
+  }
+
+  // ★ 청룡호 잠금 해제 (호감도 100 달성)
+  if (puangState.favorability >= 100 && !localStorage.getItem('lakeUnlocked')) {
+    _unlockBluedragonLake();
+  }
+}
+
+// 호감도 구간 돌파 이벤트 대사 (Groq 없이도 동작하는 고정 대사)
+const MILESTONE_LINES = {
+  20:  '어, 이름 기억하고 있어 푸앙... 앞으로 자주 와줘 푸앙!',
+  40:  '요즘 네가 자꾸 생각나 푸앙. 이상하다 푸앙?',
+  60:  '넌 특별한 것 같아 푸앙~ 비밀인데 알려주는 거야 푸앙!',
+  80:  '사실... 네가 제일 좋아 푸앙! 말하기 부끄러웠어 푸앙...',
+  100: '호감도 MAX 달성 푸앙!! 청룡호로 같이 가자 푸앙! 🏞️',
+};
+
+function _triggerFavorMilestone(level) {
+  const line = MILESTONE_LINES[level];
+  if (!line) return;
+  setTimeout(() => {
+    addChatMsg('puang', `[${level}♥ 달성!] ${line}`, level === 100 ? 0 : 5);
+    if (typeof showToast === 'function') showToast('💕 호감도 ' + level + ' 달성!', 'success', 3000);
+    if (typeof window.sfx === 'object') window.sfx.levelup();
+  }, 200);
+}
+
+// 청룡호 잠금 해제 연출
+function _unlockBluedragonLake() {
+  localStorage.setItem('lakeUnlocked', 'true');
+  // placeInfo 잠금 해제
+  if (typeof placeInfo !== 'undefined' && placeInfo.bluedragonlake) {
+    placeInfo.bluedragonlake.locked = false;
+  }
+  // 맵 버튼 locked 클래스 제거
+  const lakeBtn = document.querySelector('.map-spot.locked[onclick*="bluedragonlake"]');
+  if (lakeBtn) lakeBtn.classList.remove('locked');
+
+  // 연출
+  setTimeout(() => {
+    addChatMsg('puang', '✨ 청룡호가 열렸어 푸앙!! 같이 산책가자 푸앙~~ 🏞️', 0);
+    if (typeof showToast === 'function') {
+      showToast('🔓 청룡호 잠금 해제! 맵에서 방문하세요', 'warning', 5000);
+    }
+    if (typeof window.sfx === 'object') window.sfx.levelup();
+  }, 500);
 }
 
 // ── 채팅 로그에 메시지 추가 ──

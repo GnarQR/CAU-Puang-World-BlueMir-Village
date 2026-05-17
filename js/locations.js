@@ -2586,3 +2586,159 @@ window.enterStore = function() {
 };
 
 
+
+
+// ================================================================
+// ★ 청룡호 (호감도 100 해금 콘텐츠)
+// ================================================================
+
+window.enterBluedragonLake = function() {
+  if (!localStorage.getItem('lakeUnlocked') && puangState.favorability < 100) {
+    if (typeof showToast === 'function') showToast('🔒 푸앙이 호감도 100 달성 시 입장 가능합니다.', 'warning', 3000);
+    return;
+  }
+  const containers = [
+    'game-container','battle-container','cafeteria-container','library-container',
+    'lab-container','explore-container','puang-room','gym-container','clinic-container',
+    'lab2-container','festival-container','union-container','mountain-container','store-container'
+  ];
+  containers.forEach(id => { const el = document.getElementById(id); if (el) { el.style.display = 'none'; el.classList.remove('visible'); } });
+
+  const lakeCont = document.getElementById('bluedragonlake-container');
+  if (lakeCont) lakeCont.style.display = 'flex';
+  _initLake();
+};
+
+window.leaveBluedragonLake = function() {
+  const el = document.getElementById('bluedragonlake-container');
+  if (el) el.style.display = 'none';
+  document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.updateMapStats === 'function') window.updateMapStats();
+};
+
+// placeInfo 연동
+if (typeof placeInfo !== 'undefined') {
+  placeInfo.bluedragonlake.locked = !localStorage.getItem('lakeUnlocked');
+}
+
+function _initLake() {
+  const log = document.getElementById('lake-chat-log');
+  if (log && log.children.length === 0) {
+    const intro = document.createElement('div');
+    intro.style.cssText = 'color:#5dcaa5;padding:6px 10px;background:rgba(29,158,117,0.1);border-radius:8px;';
+    intro.textContent = '🐉 푸앙: 드디어 왔어 푸앙! 여기 청룡호야 푸앙~ 예쁘지 푸앙?';
+    log.appendChild(intro);
+  }
+  _spawnLakeParticles();
+}
+
+function _spawnLakeParticles() {
+  const container = document.getElementById('lake-particles');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.style.cssText = `position:absolute;font-size:${10+Math.random()*10}px;opacity:${0.3+Math.random()*0.4};left:${Math.random()*100}%;top:${Math.random()*100}%;animation:snowFall ${3+Math.random()*4}s linear ${Math.random()*3}s infinite;pointer-events:none;`;
+    p.textContent = ['✨','💫','🌟','⭐'][Math.floor(Math.random()*4)];
+    container.appendChild(p);
+  }
+}
+
+window.lakeWalk = function() {
+  if (!useDaily('dormitory')) { addLakeMsg('system', '오늘은 이미 산책했어요! 내일 또 와줘 푸앙~'); return; }
+  playerStats.data += 5;
+  if (typeof changeFavor === 'function') changeFavor(3);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  if (typeof showToast === 'function') showToast('🚶 산책 완료! 호감도 +3 💎 +5', 'success', 2500);
+  addLakeMsg('puang', '같이 걸으니까 좋다 푸앙~ 달빛이 예쁘지 않아 푸앙?');
+};
+
+window.lakeMeditate = function() {
+  playerStats.hp = playerStats.maxHp;
+  playerStats.sp = playerStats.maxSp;
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  if (typeof window.updateMapStats === 'function') window.updateMapStats();
+  if (typeof showToast === 'function') showToast('🧘 명상 완료! HP + SP 완전 회복!', 'success', 2500);
+  addLakeMsg('puang', '숨 들이쉬고... 내쉬고... 기분 어때 푸앙? 나는 좋아 푸앙~');
+};
+
+window.sendLakeChat = function() {
+  const input = document.getElementById('lake-chat-input');
+  const text  = input ? input.value.trim() : '';
+  if (!text) return;
+  addLakeMsg('player', text);
+  input.value = '';
+  addLakeMsg('puang', '...');
+
+  if (!GROQ_API_KEY) { const log = document.getElementById('lake-chat-log'); if (log && log.lastChild) log.lastChild.textContent = '미안 푸앙, 지금 말 못 해 푸앙...'; return; }
+
+  fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_API_KEY },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 150,
+      response_format: { type: 'json_object' },
+      messages: [{
+        role: 'system',
+        content: `You must respond only in Korean Hangul. 너는 중앙대학교 마스코트 푸앙이야. 청룡호에서 둘이 특별한 시간을 보내고 있어. 호감도 MAX 달성한 특별한 상황이야. 문장 끝에 반드시 "푸앙"을 붙여. 반말. 귀엽고 감성적으로. {"dialog": "대사 1~2문장"}`
+      }, { role: 'user', content: text }]
+    })
+  }).then(r => r.json()).then(d => {
+    const parsed = JSON.parse(d.choices[0].message.content);
+    const log = document.getElementById('lake-chat-log');
+    if (log && log.lastChild) { log.lastChild.textContent = ''; log.lastChild.remove(); }
+    addLakeMsg('puang', parsed.dialog);
+  }).catch(() => {
+    const log = document.getElementById('lake-chat-log');
+    if (log && log.lastChild) log.lastChild.textContent = '잠깐 멍했어 푸앙... 다시 말해줘 푸앙';
+  });
+};
+
+function addLakeMsg(who, text) {
+  const log = document.getElementById('lake-chat-log');
+  if (!log) return;
+  const div = document.createElement('div');
+  if (who === 'puang') {
+    div.style.cssText = 'color:#5dcaa5;padding:5px 10px;background:rgba(29,158,117,0.1);border-radius:8px;align-self:flex-start;max-width:85%;';
+    div.textContent = '🐉 ' + text;
+  } else if (who === 'player') {
+    div.style.cssText = 'color:#a0c4ff;padding:5px 10px;background:rgba(55,138,221,0.1);border-radius:8px;align-self:flex-end;max-width:85%;text-align:right;';
+    div.textContent = text;
+  } else {
+    div.style.cssText = 'color:#6c8ebf;font-size:10px;text-align:center;';
+    div.textContent = text;
+  }
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+// enterPlace 후킹 — 청룡호 진입
+const _origEnterPlace_lake = window.enterPlace;
+if (_origEnterPlace_lake) {
+  window.enterPlace = function(placeId) {
+    if (placeId === 'bluedragonlake') {
+      window.enterBluedragonLake();
+      return;
+    }
+    _origEnterPlace_lake(placeId);
+  };
+}
+
+// ================================================================
+// ★ 요일 보너스 — locations 연동
+// ================================================================
+
+// 도서관 공부 보상에 화요일 2× 적용
+const _origFinishStudyReward = window.startStudy;
+if (_origFinishStudyReward) {
+  const _origSS = window.startStudy;
+  window.startStudy = function(subjectId) {
+    window._libStudyIsDouble = (window._todayBonusKey === 'lib_double');
+    _origSS(subjectId);
+  };
+}
+
+// 전투 보상에 수요일 +5 적용 (battle.js initBattle 후크)
+// _todayBonusKey === 'battle_bonus' → 이미 ui4.js에서 노출됨
+// battle.js win 로직에서 window._todayBonusKey 체크

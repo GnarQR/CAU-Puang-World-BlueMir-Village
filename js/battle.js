@@ -9,6 +9,8 @@
 // initBattle() 호출 시 초기화됨 (나중에는 플레이어 현재 HP / SP 상태 연동되도록)
 let battlePlayerHp    = 80;     // 현재 플레이어 HP
 let battlePlayerMaxHp = 100;    // 플레이어 최대 HP
+let battlePlayerSp    = 40;     // ★ 현재 플레이어 SP
+let battlePlayerMaxSp = 40;     // ★ 플레이어 최대 SP
 let battleOrigin      = 'map';  // 전투 시작 시 위치 (205관, 청룡산 등), 'map' | 'mountain'
 let currentMonster    = null;   // 현재 전투 중인 몬스터 데이터 (MONSTERS 또는 BOSSES에서 가져옴)
 let enemyHp           = 60;     // 현재 적 HP  (나중에는 몬스터에 따라 값 변경)
@@ -299,8 +301,10 @@ window.initBattle = function(origin = 'map', bossId = null) {
   // 1. 전역 변수 설정
   battleOrigin = origin;
   battleBusy = false;
-  battlePlayerHp = playerStats.hp;
+  battlePlayerHp    = playerStats.hp;
   battlePlayerMaxHp = playerStats.maxHp;
+  battlePlayerSp    = playerStats.sp;    // ★ SP 초기화
+  battlePlayerMaxSp = playerStats.maxSp; // ★ 최대 SP 초기화
   battleTurn = 1;
   buffActive = false;
 
@@ -477,10 +481,19 @@ window.initBossBattle = function(boss) {
 function updateBattleBars() {
   const ep = Math.max(0, Math.round(enemyHp        / enemyMaxHp        * 100));
   const pp = Math.max(0, Math.round(battlePlayerHp / battlePlayerMaxHp * 100));
+  const sp = Math.max(0, Math.round(battlePlayerSp / Math.max(1, battlePlayerMaxSp) * 100));
   document.getElementById('enemy-hp-bar').style.width          = ep + '%';
   document.getElementById('battle-player-hp-bar').style.width  = pp + '%';
   document.getElementById('enemy-hp-text').textContent         = Math.max(0, enemyHp)        + ' / ' + enemyMaxHp;
   document.getElementById('battle-player-hp-text').textContent = Math.max(0, battlePlayerHp) + ' / ' + battlePlayerMaxHp;
+  // ★ SP 바
+  const spBar  = document.getElementById('battle-player-sp-bar');
+  const spText = document.getElementById('battle-player-sp-text');
+  if (spBar)  spBar.style.width   = sp + '%';
+  if (spText) spText.textContent  = Math.max(0, battlePlayerSp) + ' / ' + battlePlayerMaxSp;
+  // ★ SP 부족 시 special 버튼 비활성
+  const spBtn = document.querySelector('.cmd-btn.special');
+  if (spBtn) spBtn.disabled = battlePlayerSp < 15;
 }
 
 // 커맨드 처리 중에는 버튼을 막아서 중복 입력 방지
@@ -744,6 +757,8 @@ window.doCmd = async function(cmd) {
       // 과식 패널티 해제
       if (typeof window.clearCafOvereatPenalty === 'function') window.clearCafOvereatPenalty();
 
+      // ★ 도감 등록
+      if (typeof window.registerMonsterCompendium === 'function') window.registerMonsterCompendium(currentMonster);
       addBattleLog('[SYSTEM] ' + (currentMonster ? currentMonster.name : '적') + '을(를) 물리쳤다! 데이터 조각 x' + reward + ' 획득', 'log-success');
       document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀합니다.';
       document.getElementById('dice-display').textContent = '🎉';
@@ -786,7 +801,67 @@ window.doCmd = async function(cmd) {
     document.getElementById('dice-display').textContent = '⚡';
   }
 
-  // ── 도망 ──
+  // ── ★ 데이터 서지 (SP 스킬) ──
+  else if (cmd === 'special') {
+    const spCost = 15;
+    if (battlePlayerSp < spCost) {
+      addBattleLog('[SP 부족] 데이터 서지 사용 불가! (SP ' + spCost + ' 필요, 현재: ' + battlePlayerSp + ')', 'log-damage');
+      battleBusy = false;
+      if (typeof setBattleButtons === 'function') setBattleButtons(false);
+      return;
+    }
+    battlePlayerSp -= spCost;
+    playerStats.sp = battlePlayerSp;
+    updateBattleBars();
+
+    document.getElementById('dice-result').textContent = 'd12 굴리는 중...';
+    const roll = await animateDice(12);
+    addBattleLog('[데이터 서지] SP ' + spCost + ' 소모! 강력한 에너지를 방출!', 'log-success');
+    await sleepMs(300);
+
+    // 효과: 광역 폭발 데미지 + 자신 소량 회복
+    let dmg   = roll + 8;  // 기본 대미지 높음
+    const heal = Math.floor(roll / 3);
+
+    // 패시브 데미지 버프 적용
+    if (typeof window.hasLibEffect === 'function' && window.hasLibEffect('battle_dmg')) dmg += 5;
+    if ((playerStats.unionBonusDmg || 0) > 0) dmg += playerStats.unionBonusDmg;
+    if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('fatigue')) dmg = Math.floor(dmg * 0.7);
+
+    enemyHp -= dmg;
+    battlePlayerHp = Math.min(battlePlayerMaxHp, battlePlayerHp + heal);
+    localStorage.setItem('battlePlayerHp', battlePlayerHp);
+    playerStats.hp = battlePlayerHp;
+    updateBattleBars();
+
+    document.getElementById('enemy-img').classList.add('shake-enemy');
+    setTimeout(() => document.getElementById('enemy-img').classList.remove('shake-enemy'), 300);
+
+    addBattleLog('[결과] 데이터 서지 폭발! ' + dmg + ' 데미지 + HP ' + heal + ' 회복!', 'log-success');
+    document.getElementById('dice-result').textContent = '서지! ' + dmg + ' 데미지 / HP +' + heal;
+
+    if (enemyHp <= 0) {
+      let reward = currentMonster ? currentMonster.reward : 5;
+      if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('curse')) reward = Math.floor(reward * 0.5);
+      reward += (playerStats._battleBonusReward || 0);
+      if (typeof window.hasFestDoubleBuff === 'function' && window.hasFestDoubleBuff()) reward *= 2;
+      playerStats._battleWins = (playerStats._battleWins || 0) + 1;
+      if (typeof window.clearCafOvereatPenalty === 'function') window.clearCafOvereatPenalty();
+      // ★ 도감 등록
+      if (typeof window.registerMonsterCompendium === 'function') window.registerMonsterCompendium(currentMonster);
+      addBattleLog('[SYSTEM] 데이터 서지로 격파! 데이터 조각 x' + reward + ' 획득', 'log-success');
+      document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀';
+      document.getElementById('dice-display').textContent = '🎉';
+      playerStats.data += reward;
+      updateMapStats();
+      if (typeof window.checkAchievements === 'function') window.checkAchievements();
+      if (typeof showToast === 'function') showToast('⚡ 서지로 승리! 💎 +' + reward, 'success', 3000);
+      await sleepMs(3000);
+      returnToGame();
+      battleBusy = false;
+      return;
+    }
+  }
   else if (cmd === 'run') {
     document.getElementById('dice-result').textContent = 'd2 굴리는 중...';
     const roll = await animateDice(2, true); // 도망은 황금 주사위 효과 없음
