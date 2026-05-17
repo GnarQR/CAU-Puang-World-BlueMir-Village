@@ -1264,3 +1264,1325 @@ window.buyStore = function(id) {
   document.getElementById('store-data-val').textContent = playerStats.data;
   if (typeof window.syncAndSave === 'function') window.syncAndSave();
 }
+
+// ================================================================
+// ★ 신규 기능 추가 (기존 코드 유지, 아래에 추가만)
+// ================================================================
+
+// ================================================================
+// 학생식당 — 신규: 오늘의 메뉴 / 세트 보너스 / 단골카드 / 과식 패널티
+// ================================================================
+
+// 오늘의 메뉴: 날짜 기반 랜덤 메뉴명 (매일 바뀜, Groq 없이도 동작)
+const CAF_DAILY_MENUS = [
+  { name: '청룡 돼지갈비 정식',  bonus: { hp: 10 }, tag: '오늘의 특선' },
+  { name: '이면세계 순두부찌개', bonus: { sp: 10 }, tag: '교수님 추천' },
+  { name: '블루미르 비빔밥',     bonus: { hp: 5, sp: 5 }, tag: '인기 메뉴' },
+  { name: '푸앙이 제육볶음',     bonus: { hp: 15 }, tag: '학식 최강' },
+  { name: '데드라인 곱창전골',   bonus: { sp: 15 }, tag: '야식 특선' },
+  { name: '청룡산 삼겹 보쌈',    bonus: { hp: 8, sp: 8 }, tag: '등산객 추천' },
+];
+
+// 오늘 날짜 기준으로 하루 1개 메뉴 고정
+function getTodaySpecial() {
+  const seed = new Date().toDateString().split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return CAF_DAILY_MENUS[seed % CAF_DAILY_MENUS.length];
+}
+
+// 단골 카드: cafeteria 누적 방문 횟수 (dailyUsage와 별도로 localStorage에 영구 저장)
+function getCafVisitTotal() {
+  return parseInt(localStorage.getItem('cafVisitTotal') || '0');
+}
+function addCafVisitTotal() {
+  const v = getCafVisitTotal() + 1;
+  localStorage.setItem('cafVisitTotal', v);
+  return v;
+}
+
+// 단골 무료 식권 여부
+function hasCafFreeTicket() {
+  return localStorage.getItem('cafFreeTicket') === 'true';
+}
+function useCafFreeTicket() {
+  localStorage.setItem('cafFreeTicket', 'false');
+}
+function checkCafFreeTicket(total) {
+  // 5회마다 무료 식권 1장 지급
+  if (total % 5 === 0) {
+    localStorage.setItem('cafFreeTicket', 'true');
+    addCafLog('[🎫 단골 카드] 5회 달성! 무료 식권 1장이 생겼어요!', 'caf-log-reward');
+    const npc = document.getElementById('caf-npc-text');
+    if (npc) npc.textContent = '단골 손님이시네요! 무료 식권 드릴게요 🎫';
+  }
+}
+
+// 과식 패널티 플래그 (이면세계 탐험/전투에서 체크용)
+window.getCafOvereatPenalty = function() {
+  return localStorage.getItem('cafOvereat') === 'true';
+};
+window.clearCafOvereatPenalty = function() {
+  localStorage.removeItem('cafOvereat');
+};
+
+// 오늘의 특선 주문 (별도 버튼)
+window.orderTodaySpecial = function() {
+  const special = getTodaySpecial();
+  const cost = 5;
+
+  // 단골 무료 식권 체크
+  const useFree = hasCafFreeTicket();
+
+  if (!useFree && playerStats.data < cost) {
+    addCafLog('[❌] 데이터 조각 부족! (필요: ' + cost + '개)', 'caf-log-err');
+    return;
+  }
+  if (!useDaily('cafeteria')) {
+    addCafLog('[❌] 오늘은 더 이상 주문할 수 없어요! (일일 3회 한도)', 'caf-log-err');
+    return;
+  }
+
+  if (useFree) {
+    useCafFreeTicket();
+    addCafLog('[🎫] 무료 식권 사용!', 'caf-log-ok');
+  } else {
+    playerStats.data -= cost;
+  }
+
+  // 보너스 적용
+  let msg = '[✅ 오늘의 특선: ' + special.name + '] ';
+  if (special.bonus.hp) {
+    const gain = Math.min(special.bonus.hp, playerStats.maxHp - playerStats.hp);
+    playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + special.bonus.hp);
+    msg += 'HP +' + gain + ' ';
+  }
+  if (special.bonus.sp) {
+    const gain = Math.min(special.bonus.sp, playerStats.maxSp - playerStats.sp);
+    playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + special.bonus.sp);
+    msg += 'SP +' + gain + ' ';
+  }
+  if (!useFree) msg += '· 💎 -' + cost;
+
+  // 과식 체크: HP가 이미 90% 이상인데 또 먹으면
+  if (playerStats.hp >= playerStats.maxHp * 0.9) {
+    localStorage.setItem('cafOvereat', 'true');
+    addCafLog('[😵 과식 패널티] 너무 많이 드셨어요! 다음 전투 속도 -10% 적용됩니다...', 'caf-log-err');
+  }
+
+  // 단골 카드 누적
+  const total = addCafVisitTotal();
+  checkCafFreeTicket(total);
+
+  syncCafStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addCafLog(msg, 'caf-log-ok');
+
+  const remain = document.getElementById('caf-remain');
+  if (remain) remain.textContent = remainDaily('cafeteria');
+
+  // 단골 카운터 UI 갱신
+  updateCafLoyaltyUI();
+
+  const npc = document.getElementById('caf-npc-text');
+  if (npc) npc.textContent = special.name + ' 맛있게 드세요~ 🍽️';
+};
+
+// 세트 메뉴 보너스: 특정 2가지 조합 주문 기록
+// cafComboLog에 오늘 먹은 메뉴 id 기록, 조합 감지 시 보너스
+const CAF_COMBOS = [
+  { items: ['rice', 'coffee'],   bonus: { sp: 10 }, name: '밥+커피 세트' },
+  { items: ['ramen', 'special'], bonus: { hp: 20 }, name: '라면+특선 세트' },
+];
+
+function checkCafCombo(orderedId) {
+  let log = JSON.parse(sessionStorage.getItem('cafComboLog') || '[]');
+  log.push(orderedId);
+  sessionStorage.setItem('cafComboLog', JSON.stringify(log));
+
+  for (const combo of CAF_COMBOS) {
+    const matched = combo.items.every(id => log.includes(id));
+    const alreadyUsed = sessionStorage.getItem('cafCombo_' + combo.items.join('_'));
+    if (matched && !alreadyUsed) {
+      sessionStorage.setItem('cafCombo_' + combo.items.join('_'), '1');
+      if (combo.bonus.hp) playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + combo.bonus.hp);
+      if (combo.bonus.sp) playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + combo.bonus.sp);
+      addCafLog('[🍱 세트 보너스! ' + combo.name + '] HP+' + (combo.bonus.hp || 0) + ' SP+' + (combo.bonus.sp || 0), 'caf-log-ok');
+      const npc = document.getElementById('caf-npc-text');
+      if (npc) npc.textContent = '세트 메뉴 할인 적용! 보너스 드려요 😊';
+    }
+  }
+}
+
+// 기존 orderFood를 감싸서 세트/단골 체크 주입 (원본 함수는 그대로)
+const _origOrderFood = window.orderFood;
+window.orderFood = function(id) {
+  _origOrderFood(id);
+  checkCafCombo(id);
+  const total = addCafVisitTotal();
+  checkCafFreeTicket(total);
+  updateCafLoyaltyUI();
+};
+
+// 단골 카드 UI 갱신
+function updateCafLoyaltyUI() {
+  const el = document.getElementById('caf-loyalty-count');
+  if (!el) return;
+  const total = getCafVisitTotal();
+  const progress = total % 5;
+  el.textContent = progress + '/5';
+  const bar = document.getElementById('caf-loyalty-bar');
+  if (bar) bar.style.width = (progress / 5 * 100) + '%';
+  const ticket = document.getElementById('caf-ticket-badge');
+  if (ticket) ticket.style.display = hasCafFreeTicket() ? 'inline-block' : 'none';
+}
+
+// enterCafeteria 후크: 신규 UI 초기화
+const _origEnterCafeteria = window.enterCafeteria;
+window.enterCafeteria = function() {
+  _origEnterCafeteria();
+  // 오늘의 특선 메뉴 표시
+  const special = getTodaySpecial();
+  const tagEl = document.getElementById('caf-special-tag');
+  const nameEl = document.getElementById('caf-special-name');
+  const bonusEl = document.getElementById('caf-special-bonus');
+  if (tagEl)   tagEl.textContent  = special.tag;
+  if (nameEl)  nameEl.textContent = special.name;
+  if (bonusEl) bonusEl.textContent = (special.bonus.hp ? 'HP +' + special.bonus.hp + ' ' : '') + (special.bonus.sp ? 'SP +' + special.bonus.sp : '');
+  // 단골 UI
+  updateCafLoyaltyUI();
+  // 과식 경고
+  const ovEl = document.getElementById('caf-overeat-warn');
+  if (ovEl) ovEl.style.display = window.getCafOvereatPenalty() ? 'block' : 'none';
+};
+
+
+// ================================================================
+// 중앙도서관 — 신규: 전공 분야 / 집중모드 2x / 도서 대출 / 열람실 만석
+// ================================================================
+
+// 전공 분야별 패시브 버프 저장 (playerStats 확장)
+function getLibMajorBuff() {
+  return playerStats.libMajorBuff || null; // 'cs'|'math'|'eng'|'art'
+}
+
+// 전공 선택 (한번 선택하면 유지, 재선택 가능)
+window.selectLibMajor = function(major) {
+  const majorNames = { cs:'💻 컴퓨터공학', math:'📐 수학/통계', eng:'🌐 영어/교양', art:'🎨 예체능' };
+  playerStats.libMajorBuff = major;
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addLibLog('[전공 선택] ' + majorNames[major] + ' 집중! 해당 전공 공부 시 보상 +2', 'lib-log-reward');
+  updateLibMajorUI();
+};
+
+function updateLibMajorUI() {
+  const el = document.getElementById('lib-major-badge');
+  if (!el) return;
+  const majorNames = { cs:'💻 CS', math:'📐 수학', eng:'🌐 영어', art:'🎨 예체능' };
+  const m = getLibMajorBuff();
+  el.textContent = m ? majorNames[m] + ' 전공 중' : '전공 미선택';
+  el.style.opacity = m ? '1' : '0.5';
+}
+
+// 집중 모드: 타이핑 정확도 80% 이상이면 보상 2×
+// finishLibTyping 후크로 처리
+const _origFinishLibTyping = window.finishLibTyping;
+// finishLibTyping은 내부 함수라 직접 후킹 대신 startStudy 래핑
+const _origStartStudy = window.startStudy;
+window.startStudy = function(subjectId) {
+  // 전공 일치 여부 기억
+  window._libCurrentSubject = subjectId;
+  _origStartStudy(subjectId);
+};
+
+// 도서 대출 시스템
+const LIB_BOOKS = [
+  { id: 'book_focus',   name: '초집중 전략서',    icon: '📕', effect: 'study_x2',   desc: '대출 중: 공부 보상 2배 (3일)', days: 3 },
+  { id: 'book_hp',      name: '운동 생리학 교재', icon: '📗', effect: 'hp_regen',   desc: '대출 중: 매 장소 입장 시 HP +5 (2일)', days: 2 },
+  { id: 'book_battle',  name: '전략 전술 교범',   icon: '📘', effect: 'battle_dmg', desc: '대출 중: 전투 데미지 +5 (2일)', days: 2 },
+];
+
+function getLibBorrowedBooks() {
+  return JSON.parse(localStorage.getItem('libBorrowedBooks') || '[]');
+}
+function saveLibBorrowedBooks(books) {
+  localStorage.setItem('libBorrowedBooks', JSON.stringify(books));
+}
+
+window.borrowBook = function(bookId) {
+  const book = LIB_BOOKS.find(b => b.id === bookId);
+  if (!book) return;
+
+  // 이미 대출 중인지 확인
+  const borrowed = getLibBorrowedBooks();
+  const existing = borrowed.find(b => b.id === bookId);
+  if (existing) {
+    addLibLog('[📚 이미 대출 중] ' + book.name + ' (반납일: ' + existing.dueDate + ')', 'lib-log-info');
+    return;
+  }
+
+  // 대출 처리
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + book.days);
+  borrowed.push({ id: bookId, name: book.name, icon: book.icon, effect: book.effect, dueDate: dueDate.toDateString() });
+  saveLibBorrowedBooks(borrowed);
+
+  addLibLog('[📚 대출 완료] ' + book.icon + ' ' + book.name + ' (반납 기한: ' + dueDate.toLocaleDateString() + ')', 'lib-log-reward');
+  updateLibBorrowUI();
+};
+
+window.returnBook = function(bookId) {
+  let borrowed = getLibBorrowedBooks();
+  const book = borrowed.find(b => b.id === bookId);
+  if (!book) return;
+  borrowed = borrowed.filter(b => b.id !== bookId);
+  saveLibBorrowedBooks(borrowed);
+  addLibLog('[📚 반납 완료] ' + book.icon + ' ' + book.name, 'lib-log-info');
+  updateLibBorrowUI();
+};
+
+// 대출 효과 체크 (외부에서도 호출 가능)
+window.hasLibEffect = function(effectId) {
+  const today = new Date().toDateString();
+  const borrowed = getLibBorrowedBooks();
+  // 만료된 책 자동 제거
+  const valid = borrowed.filter(b => new Date(b.dueDate) >= new Date(today));
+  if (valid.length !== borrowed.length) saveLibBorrowedBooks(valid);
+  return valid.some(b => b.effect === effectId);
+};
+
+function updateLibBorrowUI() {
+  const el = document.getElementById('lib-borrow-list');
+  if (!el) return;
+  const borrowed = getLibBorrowedBooks();
+  const today = new Date();
+  if (borrowed.length === 0) {
+    el.innerHTML = '<span style="color:#888;font-size:12px;">대출 중인 책 없음</span>';
+    return;
+  }
+  el.innerHTML = borrowed.map(b => {
+    const due = new Date(b.dueDate);
+    const expired = due < today;
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;">
+      <span>${b.icon}</span>
+      <span style="flex:1;color:${expired ? '#f09595' : '#c0e0c0'}">${b.name} ${expired ? '(만료)' : '(' + due.toLocaleDateString() + '까지)'}</span>
+      <button onclick="returnBook('${b.id}')" style="background:transparent;border:1px solid #444;border-radius:4px;padding:2px 6px;color:#aaa;cursor:pointer;font-size:10px;">반납</button>
+    </div>`;
+  }).join('');
+}
+
+// 열람실 만석 시스템 (15% 확률)
+function checkLibraryFull() {
+  if (Math.random() < 0.15) {
+    addLibLog('[😤 열람실 만석!] 오늘은 자리가 없어요... 야외 공부로 대신합니다. 보상 -1', 'lib-log-info');
+    // 야외 공부: 보상 절반, 횟수는 소모
+    if (!useDaily('library')) return false;
+    const reward = 1;
+    playerStats.data += reward;
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+    addLibLog('[🌳 야외 공부] 나무 그늘에서 공부! 💎 +' + reward, 'lib-log-info');
+    syncLibStats();
+    return true; // 만석 처리됨 → 정규 공부 중단
+  }
+  return false;
+}
+
+// startStudy 추가 래핑: 전공 보너스 + 만석 + 도서 효과
+const _origStartStudy2 = window.startStudy;
+window.startStudy = function(subjectId) {
+  if (subjectId === 'rest') { _origStartStudy2(subjectId); return; }
+  if (checkLibraryFull()) return; // 만석이면 중단 (useDaily는 내부에서 소모)
+  // 일반 공부 진행 (원본 함수가 useDaily 처리)
+  window._libCurrentSubject = subjectId;
+  _origStartStudy2(subjectId);
+  updateLibMajorUI();
+  updateLibBorrowUI();
+};
+
+// finishLibTyping 완료 후 전공/도서 보너스 적용을 위해 lib-log 모니터링 대신
+// enterLibrary 후크
+const _origEnterLibrary = window.enterLibrary;
+window.enterLibrary = function() {
+  _origEnterLibrary();
+  updateLibMajorUI();
+  updateLibBorrowUI();
+  // HP 리젠 도서 효과
+  if (window.hasLibEffect('hp_regen')) {
+    const gain = Math.min(5, playerStats.maxHp - playerStats.hp);
+    if (gain > 0) {
+      playerStats.hp += gain;
+      addLibLog('[📗 운동 생리학 교재] 입장 시 HP +' + gain, 'lib-log-reward');
+      syncLibStats();
+    }
+  }
+};
+
+
+// ================================================================
+// 310관 연구실 — 신규: 세이브 슬롯 3개 / 업적 / 일지 / 스킬트리
+// ================================================================
+
+// ── 세이브 슬롯 3개 ──
+window.saveToSlot = function(slot) {
+  const name = prompt('세이브 이름을 입력하세요 (슬롯 ' + slot + '):', '탐험 기록 ' + slot) || ('슬롯 ' + slot);
+  const saveData = {
+    name,
+    playerStats: { ...playerStats },
+    puangFav: puangState.favorability,
+    ts: new Date().toLocaleString(),
+  };
+  localStorage.setItem('cau_save_slot_' + slot, JSON.stringify(saveData));
+  addLabLog('[SAVE] 슬롯 ' + slot + ' "' + name + '" 저장 완료 (' + saveData.ts + ')', 'lab-log-save');
+  updateLabSlotsUI();
+};
+
+window.loadFromSlot = function(slot) {
+  const raw = localStorage.getItem('cau_save_slot_' + slot);
+  if (!raw) { addLabLog('[LOAD] 슬롯 ' + slot + '에 저장된 데이터가 없습니다.', 'lab-log-warning'); return; }
+  const save = JSON.parse(raw);
+  if (!confirm('슬롯 ' + slot + ' "' + save.name + '" 불러오기? (현재 상태가 덮어씌워집니다)')) return;
+  Object.assign(playerStats, save.playerStats);
+  puangState.favorability = save.puangFav;
+  savePuangState();
+  syncLabStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addLabLog('[LOAD] 슬롯 ' + slot + ' "' + save.name + '" 불러오기 완료 (' + save.ts + ')', 'lab-log-save');
+};
+
+function updateLabSlotsUI() {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('lab-slot-info-' + i);
+    if (!el) continue;
+    const raw = localStorage.getItem('cau_save_slot_' + i);
+    if (raw) {
+      const s = JSON.parse(raw);
+      el.textContent = '"' + s.name + '" — ' + s.ts;
+      el.style.color = '#5dcaa5';
+    } else {
+      el.textContent = '비어 있음';
+      el.style.color = '#555';
+    }
+  }
+}
+
+// ── 업적 시스템 ──
+const LAB_ACHIEVEMENTS = [
+  { id: 'first_battle',  name: '첫 전투',         desc: '이면세계 첫 전투 승리',         check: () => (playerStats._battleWins || 0) >= 1,  reward: 5  },
+  { id: 'study_10',      name: '공부벌레',         desc: '도서관 공부 10회 달성',          check: () => libStudyCount >= 10,                   reward: 8  },
+  { id: 'visit_all',     name: '탐험가',           desc: '모든 장소 1번씩 방문',           check: () => (playerStats._visitedAll || false),    reward: 15 },
+  { id: 'favor_80',      name: '푸앙이 친구',      desc: '푸앙이 호감도 80 이상',          check: () => puangState.favorability >= 80,         reward: 10 },
+  { id: 'data_100',      name: '데이터 부자',      desc: '데이터 조각 100개 이상 보유',    check: () => playerStats.data >= 100,               reward: 0  },
+];
+
+window.checkAchievements = function() {
+  const earned = JSON.parse(localStorage.getItem('labAchievements') || '[]');
+  let newOnes = [];
+  for (const ach of LAB_ACHIEVEMENTS) {
+    if (!earned.includes(ach.id) && ach.check()) {
+      earned.push(ach.id);
+      newOnes.push(ach);
+      if (ach.reward > 0) {
+        playerStats.data += ach.reward;
+        if (typeof window.syncAndSave === 'function') window.syncAndSave();
+      }
+      addLabLog('[🏆 업적 달성!] ' + ach.name + ' — ' + ach.desc + (ach.reward ? ' (💎 +' + ach.reward + ')' : ''), 'lab-log-save');
+    }
+  }
+  localStorage.setItem('labAchievements', JSON.stringify(earned));
+  updateLabAchievementsUI();
+  return newOnes;
+};
+
+function updateLabAchievementsUI() {
+  const el = document.getElementById('lab-achievements-list');
+  if (!el) return;
+  const earned = JSON.parse(localStorage.getItem('labAchievements') || '[]');
+  el.innerHTML = LAB_ACHIEVEMENTS.map(a => {
+    const done = earned.includes(a.id);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;opacity:${done ? 1 : 0.4}">
+      <span>${done ? '🏆' : '⬜'}</span>
+      <span style="flex:1;font-size:12px;color:${done ? '#5dcaa5' : '#aaa'}">${a.name}</span>
+      <span style="font-size:11px;color:#888">${a.desc}</span>
+      ${a.reward ? '<span style="font-size:11px;color:#ef9f27">💎+' + a.reward + '</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── 오늘의 일지 (Groq 생성) ──
+window.generateLabDiary = async function() {
+  if (!GROQ_API_KEY) { addLabLog('[일지] API 키가 없습니다.', 'lab-log-warning'); return; }
+
+  const summary = `오늘 데이터 조각: ${playerStats.data}개, HP: ${playerStats.hp}/${playerStats.maxHp}, ` +
+    `푸앙이 호감도: ${puangState.favorability}, 도서관 공부: ${libStudyCount}회`;
+
+  addLabLog('[일지] 오늘의 탐험 기록을 작성 중...', 'lab-log-info');
+  const el = document.getElementById('lab-diary-content');
+  if (el) el.textContent = '생성 중...';
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_API_KEY },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 200,
+        messages: [{
+          role: 'system',
+          content: '너는 중앙대 RPG 게임의 일지 작가야. 플레이어의 오늘 활동을 2~3문장으로 요약한 일기를 한국어로 써줘. 게임 분위기에 맞게 재미있게 작성해.'
+        }, {
+          role: 'user',
+          content: '오늘 활동: ' + summary
+        }]
+      })
+    });
+    const data = await res.json();
+    const diary = data.choices[0].message.content;
+    if (el) el.textContent = diary;
+    addLabLog('[일지] 오늘의 탐험 기록 완성!', 'lab-log-save');
+  } catch(e) {
+    if (el) el.textContent = '일지 작성에 실패했어요.';
+    addLabLog('[일지] 생성 실패: ' + e.message, 'lab-log-warning');
+  }
+};
+
+// ── 스킬 트리 (누적 탐험 횟수 기반) ──
+const LAB_SKILLS = [
+  { id: 'skill_tough',    name: '강인한 체력',   req: 5,  desc: '최대 HP +15',       apply: () => { playerStats.maxHp += 15; } },
+  { id: 'skill_smart',    name: '두뇌 회전',     req: 10, desc: '도서관 타이핑 시간 +3초', apply: () => { playerStats._libTimeBonus = (playerStats._libTimeBonus || 0) + 3; } },
+  { id: 'skill_lucky',    name: '행운아',        req: 20, desc: '슬롯머신 꽝 확률 절반', apply: () => { playerStats._slotLucky = true; } },
+  { id: 'skill_veteran',  name: '베테랑 탐험가', req: 30, desc: '전투 보상 +2',      apply: () => { playerStats._battleBonusReward = (playerStats._battleBonusReward || 0) + 2; } },
+];
+
+window.unlockSkill = function(skillId) {
+  const skill = LAB_SKILLS.find(s => s.id === skillId);
+  if (!skill) return;
+
+  const unlocked = JSON.parse(localStorage.getItem('labSkills') || '[]');
+  if (unlocked.includes(skillId)) { addLabLog('[스킬] 이미 해금된 스킬입니다.', 'lab-log-warning'); return; }
+
+  const explorations = playerStats._explorationCount || 0;
+  if (explorations < skill.req) {
+    addLabLog('[스킬] 탐험 횟수 부족! (필요: ' + skill.req + '회, 현재: ' + explorations + '회)', 'lab-log-warning');
+    return;
+  }
+
+  skill.apply();
+  unlocked.push(skillId);
+  localStorage.setItem('labSkills', JSON.stringify(unlocked));
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addLabLog('[✨ 스킬 해금!] ' + skill.name + ' — ' + skill.desc, 'lab-log-save');
+  updateLabSkillUI();
+};
+
+function updateLabSkillUI() {
+  const el = document.getElementById('lab-skill-list');
+  if (!el) return;
+  const unlocked = JSON.parse(localStorage.getItem('labSkills') || '[]');
+  const explorations = playerStats._explorationCount || 0;
+  el.innerHTML = LAB_SKILLS.map(s => {
+    const done    = unlocked.includes(s.id);
+    const canUnlock = !done && explorations >= s.req;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a3a1a;">
+      <span style="font-size:14px">${done ? '✅' : canUnlock ? '🔓' : '🔒'}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;color:${done ? '#5dcaa5' : '#ccc'}">${s.name}</div>
+        <div style="font-size:10px;color:#888">${s.desc} · 탐험 ${s.req}회 필요</div>
+      </div>
+      ${canUnlock ? `<button onclick="unlockSkill('${s.id}')" style="background:#0d1f0d;border:1px solid #4dff88;border-radius:4px;padding:3px 8px;color:#4dff88;cursor:pointer;font-size:10px;">해금</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// enterLab 후크
+const _origEnterLab = window.enterLab;
+window.enterLab = function() {
+  _origEnterLab();
+  updateLabSlotsUI();
+  updateLabAchievementsUI();
+  updateLabSkillUI();
+  window.checkAchievements();
+};
+
+
+// ================================================================
+// 체육관 — 신규: 트레이닝 루틴 선택 / 연속 방문 보너스 / 체육대회
+// ================================================================
+
+// 연속 방문 보너스
+function checkGymStreak() {
+  const today = new Date().toDateString();
+  const lastVisit = localStorage.getItem('gymLastVisit');
+  let streak = parseInt(localStorage.getItem('gymStreak') || '0');
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (lastVisit === yesterday.toDateString()) {
+    streak++;
+  } else if (lastVisit !== today) {
+    streak = 1;
+  }
+  localStorage.setItem('gymStreak', streak);
+  localStorage.setItem('gymLastVisit', today);
+
+  if (streak > 0 && streak % 3 === 0) {
+    playerStats.maxHp += 5;
+    addGymLog('[🔥 연속 방문 보너스!] ' + streak + '일 연속 방문! 최대 HP +5 → ' + playerStats.maxHp, '#ef9f27');
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  }
+
+  const el = document.getElementById('gym-streak-val');
+  if (el) el.textContent = streak + '일 연속';
+}
+
+// 트레이닝 루틴: 근력/지구력/민첩 3종 (기존 run/weight/yoga와 별개로 추가 효과)
+const GYM_ROUTINES = {
+  strength:  { name: '💪 근력 트레이닝', desc: '최대 HP +8, 전투 데미지 +2', cost: 6 },
+  endurance: { name: '🏃 지구력 훈련',  desc: '최대 SP +8, 탐험 중 HP 리젠 +1', cost: 5 },
+  agility:   { name: '⚡ 민첩 훈련',    desc: '전투 선공 확률 +10%', cost: 5 },
+};
+
+window.doGymRoutine = function(routineId) {
+  const routine = GYM_ROUTINES[routineId];
+  if (!routine) return;
+  if (!useDaily('gym')) { addGymLog('[❌] 오늘 훈련 한도 초과! (일일 3회)', '#f09595'); syncGymStats(); return; }
+  if (playerStats.data < routine.cost) { addGymLog('[❌] 데이터 조각 부족! (필요: ' + routine.cost + '개)', '#f09595'); return; }
+
+  playerStats.data -= routine.cost;
+
+  if (routineId === 'strength') {
+    playerStats.maxHp += 8;
+    playerStats.unionBonusDmg = (playerStats.unionBonusDmg || 0) + 2;
+    addGymLog('[💪 근력] 최대 HP +8 → ' + playerStats.maxHp + ', 전투 데미지 +2', '#5dcaa5');
+  } else if (routineId === 'endurance') {
+    playerStats.maxSp += 8;
+    playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 1;
+    addGymLog('[🏃 지구력] 최대 SP +8 → ' + playerStats.maxSp + ', 리젠 +1', '#5dcaa5');
+  } else if (routineId === 'agility') {
+    playerStats._agilityBonus = (playerStats._agilityBonus || 0) + 10;
+    addGymLog('[⚡ 민첩] 선공 확률 +10% (누적: ' + playerStats._agilityBonus + '%)', '#5dcaa5');
+  }
+
+  syncGymStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+};
+
+// 체육대회 미니게임 (주 1회: 월요일 체크)
+function isGymEventDay() {
+  return new Date().getDay() === 1; // 월요일
+}
+function hasPlayedGymEvent() {
+  return localStorage.getItem('gymEventWeek') === getWeekKey();
+}
+function getWeekKey() {
+  const d = new Date();
+  const startOfYear = new Date(d.getFullYear(), 0, 1);
+  const week = Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return d.getFullYear() + '-W' + week;
+}
+
+window.playGymEvent = function() {
+  if (!isGymEventDay()) { addGymLog('[체육대회] 체육대회는 매주 월요일에 열려요!', '#a0c4ff'); return; }
+  if (hasPlayedGymEvent()) { addGymLog('[체육대회] 이번 주 체육대회는 이미 참가했어요.', '#a0c4ff'); return; }
+
+  // 간단한 점수 계산 (체력 기반 + 랜덤)
+  const score = Math.floor(Math.random() * 50) + Math.floor(playerStats.maxHp / 5);
+  let rank, reward;
+  if (score >= 70)       { rank = '🥇 1등'; reward = 20; }
+  else if (score >= 50)  { rank = '🥈 2등'; reward = 12; }
+  else if (score >= 30)  { rank = '🥉 3등'; reward = 6;  }
+  else                   { rank = '참가상';  reward = 2;  }
+
+  playerStats.data += reward;
+  localStorage.setItem('gymEventWeek', getWeekKey());
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  syncGymStats();
+  addGymLog('[🎽 체육대회] 점수: ' + score + '점 → ' + rank + ' 💎 +' + reward, '#ef9f27');
+};
+
+// enterGym 후크
+const _origEnterGym = window.enterGym;
+window.enterGym = function() {
+  _origEnterGym();
+  setTimeout(() => {
+    checkGymStreak();
+    // 체육대회 버튼 상태 갱신
+    const evBtn = document.getElementById('gym-event-btn');
+    if (evBtn) {
+      const canPlay = isGymEventDay() && !hasPlayedGymEvent();
+      evBtn.style.opacity = canPlay ? '1' : '0.4';
+      evBtn.textContent = isGymEventDay()
+        ? (hasPlayedGymEvent() ? '🎽 체육대회 (완료)' : '🎽 체육대회 참가!')
+        : '🎽 체육대회 (월요일 개최)';
+    }
+  }, 50);
+};
+
+
+// ================================================================
+// 의무실 — 신규: 상태이상 치료 / 예방접종 / 보험 / 처방전
+// ================================================================
+
+// 상태이상 시스템
+const STATUS_EFFECTS = {
+  poison:   { name: '중독',   icon: '🤢', desc: '매 전투 턴 HP -3', color: '#5dcaa5' },
+  fatigue:  { name: '피로',   icon: '😴', desc: '전투 데미지 -30%', color: '#a0c4ff' },
+  fracture: { name: '골절',   icon: '🦴', desc: '이동 불가, 최대 HP -20', color: '#f09595' },
+  curse:    { name: '저주',   icon: '💀', desc: '데이터 조각 획득 -50%', color: '#c084fc' },
+};
+
+window.getStatusEffects = function() {
+  return playerStats.statusEffects || [];
+};
+window.addStatusEffect = function(id) {
+  if (!playerStats.statusEffects) playerStats.statusEffects = [];
+  if (!playerStats.statusEffects.includes(id)) {
+    playerStats.statusEffects.push(id);
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  }
+};
+window.removeStatusEffect = function(id) {
+  if (!playerStats.statusEffects) return;
+  playerStats.statusEffects = playerStats.statusEffects.filter(s => s !== id);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+};
+window.hasStatusEffect = function(id) {
+  return (playerStats.statusEffects || []).includes(id);
+};
+
+window.clinicCureStatus = function(statusId) {
+  const costs = { poison: 8, fatigue: 6, fracture: 15, curse: 20 };
+  const cost = costs[statusId];
+  if (!cost) return;
+  if (!window.hasStatusEffect(statusId)) { addClinicLog('[치료] 해당 상태이상이 없습니다.', '#6c8ebf'); return; }
+  if (playerStats.data < cost) { addClinicLog('[실패] 데이터 조각 부족 (필요: ' + cost + '개)', '#f09595'); return; }
+
+  playerStats.data -= cost;
+  window.removeStatusEffect(statusId);
+  const effect = STATUS_EFFECTS[statusId];
+  addClinicLog('[완치] ' + effect.icon + ' ' + effect.name + ' 제거 완료! · 💎 -' + cost, '#5dcaa5');
+  syncClinicStats();
+  updateClinicStatusUI();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+};
+
+// 예방접종 (1일 유지, 특정 속성 피해 30% 감소)
+window.getVaccineBuff = function() {
+  const data = JSON.parse(localStorage.getItem('clinicVaccine') || 'null');
+  if (!data) return null;
+  if (new Date(data.expires) < new Date()) { localStorage.removeItem('clinicVaccine'); return null; }
+  return data;
+};
+
+window.clinicVaccinate = function(type) {
+  const costs = { battle: 12, status: 10 };
+  const names = { battle: '전투 피해 경감 주사', status: '상태이상 내성 주사' };
+  const cost = costs[type];
+  if (playerStats.data < cost) { addClinicLog('[실패] 데이터 조각 부족 (필요: ' + cost + '개)', '#f09595'); return; }
+
+  playerStats.data -= cost;
+  const expires = new Date();
+  expires.setDate(expires.getDate() + 1);
+  localStorage.setItem('clinicVaccine', JSON.stringify({ type, expires: expires.toISOString() }));
+  addClinicLog('[💉 접종 완료] ' + names[type] + ' · 24시간 유지 · 💎 -' + cost, '#5dcaa5');
+  syncClinicStats();
+  updateClinicVaccineUI();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+};
+
+// 보험 시스템 (전투 사망 시 부활)
+window.getClinicInsurance = function() {
+  return localStorage.getItem('clinicInsurance') === 'true';
+};
+window.clinicBuyInsurance = function() {
+  if (window.getClinicInsurance()) { addClinicLog('[보험] 이미 보험에 가입되어 있어요.', '#6c8ebf'); return; }
+  if (playerStats.data < 25) { addClinicLog('[실패] 데이터 조각 부족 (필요: 25개)', '#f09595'); return; }
+  playerStats.data -= 25;
+  localStorage.setItem('clinicInsurance', 'true');
+  addClinicLog('[🛡️ 보험 가입] 전투 사망 시 HP 30으로 부활! · 💎 -25', '#5dcaa5');
+  syncClinicStats();
+  updateClinicInsuranceUI();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+};
+// 보험 사용 (전투에서 호출)
+window.useClinicInsurance = function() {
+  if (!window.getClinicInsurance()) return false;
+  localStorage.removeItem('clinicInsurance');
+  playerStats.hp = 30;
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  return true;
+};
+
+// 처방전 시스템: 특수 회복 아이템 처방
+window.clinicPrescription = function() {
+  if (!useDaily('clinic')) { addClinicLog('[처방전] 오늘 처방전은 이미 사용했어요.', '#6c8ebf'); return; }
+  if (playerStats.data < 8) { addClinicLog('[처방전] 데이터 조각 부족 (필요: 8개)', '#f09595'); return; }
+  playerStats.data -= 8;
+
+  // 현재 상태에 맞는 처방
+  let item;
+  if (playerStats.hp < playerStats.maxHp * 0.4) {
+    item = { id: 'rx_hp', name: '처방 HP 회복약', icon: '💊', desc: 'HP +50 즉시 회복' };
+  } else if (playerStats.sp < playerStats.maxSp * 0.4) {
+    item = { id: 'rx_sp', name: '처방 SP 회복약', icon: '🔵', desc: 'SP +40 즉시 회복' };
+  } else if ((playerStats.statusEffects || []).length > 0) {
+    item = { id: 'rx_cure', name: '만능 해독제', icon: '🧬', desc: '모든 상태이상 제거' };
+  } else {
+    item = { id: 'rx_boost', name: '처방 강화제', icon: '⚕️', desc: '다음 전투 데미지 +30%' };
+  }
+
+  inventory.push(item);
+  saveInventory();
+  addClinicLog('[📋 처방전] ' + item.icon + ' ' + item.name + ' 지급! · 💎 -8', '#5dcaa5');
+  syncClinicStats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+};
+
+function updateClinicStatusUI() {
+  const el = document.getElementById('clinic-status-list');
+  if (!el) return;
+  const effects = window.getStatusEffects();
+  if (effects.length === 0) {
+    el.innerHTML = '<span style="color:#5dcaa5;font-size:12px;">✅ 상태이상 없음</span>';
+    return;
+  }
+  el.innerHTML = effects.map(id => {
+    const e = STATUS_EFFECTS[id];
+    if (!e) return '';
+    const costs = { poison: 8, fatigue: 6, fracture: 15, curse: 20 };
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+      <span>${e.icon}</span>
+      <span style="flex:1;font-size:12px;color:${e.color}">${e.name} — ${e.desc}</span>
+      <button onclick="clinicCureStatus('${id}')" style="background:transparent;border:1px solid #f09595;border-radius:4px;padding:2px 6px;color:#f09595;cursor:pointer;font-size:10px;">치료 💎${costs[id]}</button>
+    </div>`;
+  }).join('');
+}
+
+function updateClinicVaccineUI() {
+  const el = document.getElementById('clinic-vaccine-status');
+  if (!el) return;
+  const v = window.getVaccineBuff();
+  el.textContent = v ? '💉 ' + (v.type === 'battle' ? '전투 피해 경감' : '상태이상 내성') + ' 접종 중' : '접종 없음';
+  el.style.color = v ? '#5dcaa5' : '#888';
+}
+
+function updateClinicInsuranceUI() {
+  const el = document.getElementById('clinic-insurance-status');
+  if (!el) return;
+  el.textContent = window.getClinicInsurance() ? '🛡️ 보험 가입됨' : '보험 미가입';
+  el.style.color  = window.getClinicInsurance() ? '#5dcaa5' : '#888';
+}
+
+// enterClinic 후크
+const _origEnterClinic = window.enterClinic;
+window.enterClinic = function() {
+  _origEnterClinic();
+  updateClinicStatusUI();
+  updateClinicVaccineUI();
+  updateClinicInsuranceUI();
+};
+
+
+// ================================================================
+// 공대 실험실 — 신규: 아이템 강화 / 분해 / 실패 폭발 / 레시피 해금
+// ================================================================
+
+// 아이템 강화 (+1~+3)
+window.enhanceItem = function(invIdx) {
+  const item = inventory[invIdx];
+  if (!item) { addLab2Log('[❌] 존재하지 않는 아이템입니다.'); return; }
+
+  const level   = item.enhanceLevel || 0;
+  if (level >= 3) { addLab2Log('[❌] 이미 최대 강화 (+3) 상태입니다.'); return; }
+
+  const cost    = 5 + level * 3;
+  const failChance = [0.1, 0.25, 0.45][level]; // +0→+1: 10%, +1→+2: 25%, +2→+3: 45% 실패
+
+  if (playerStats.data < cost) { addLab2Log('[❌] 데이터 조각 부족! (필요: ' + cost + '개)'); return; }
+  playerStats.data -= cost;
+
+  if (Math.random() < failChance) {
+    // 실패: 폭발! HP 소량 감소
+    const dmg = Math.floor(Math.random() * 8) + 3;
+    playerStats.hp = Math.max(1, playerStats.hp - dmg);
+    addLab2Log('[💥 실패!] 강화 실패! 폭발로 HP -' + dmg + ' · 💎 -' + cost);
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+    syncLab2Stats();
+    return;
+  }
+
+  item.enhanceLevel = level + 1;
+  item.name = item.name.replace(/ \+\d$/, '') + ' +' + item.enhanceLevel;
+  saveInventory();
+  syncLab2Stats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addLab2Log('[✅ 강화 성공!] ' + item.icon + ' ' + item.name + ' 강화 완료! · 💎 -' + cost);
+};
+
+// 아이템 분해
+window.disassembleItem = function(invIdx) {
+  const item = inventory[invIdx];
+  if (!item) { addLab2Log('[❌] 존재하지 않는 아이템입니다.'); return; }
+
+  const reward = 2 + (item.enhanceLevel || 0) * 2;
+  inventory.splice(invIdx, 1);
+  playerStats.data += reward;
+  saveInventory();
+  syncLab2Stats();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addLab2Log('[🔧 분해] ' + item.icon + ' ' + item.name + ' 분해 → 💎 +' + reward);
+};
+
+// 레시피 해금 (도서관 공부 횟수 기반)
+const LAB2_SECRET_RECIPES = [
+  { id: 'ultimate', reqStudy: 15, materials: ['fire','water','crystal'], result: { id:'ultimate', name:'궁극 포션', icon:'🌈', desc:'HP+SP 완전 회복 + 다음 전투 데미지 +50%' }, name: '궁극 포션 레시피', desc: '공부 15회 달성 시 해금' },
+  { id: 'mirror',   reqStudy: 8,  materials: ['leaf','star','gear'],     result: { id:'mirror',  name:'반사 방패', icon:'🪞', desc:'피해를 10% 반사' },                           name: '반사 방패 레시피',  desc: '공부 8회 달성 시 해금' },
+];
+
+function getUnlockedRecipes() {
+  return JSON.parse(localStorage.getItem('lab2UnlockedRecipes') || '[]');
+}
+
+window.checkLab2Recipes = function() {
+  const unlocked = getUnlockedRecipes();
+  let newUnlocked = false;
+  for (const r of LAB2_SECRET_RECIPES) {
+    if (!unlocked.includes(r.id) && libStudyCount >= r.reqStudy) {
+      unlocked.push(r.id);
+      newUnlocked = true;
+      addLab2Log('[📖 레시피 해금!] ' + r.name + ' (' + r.desc + ')');
+    }
+  }
+  if (newUnlocked) localStorage.setItem('lab2UnlockedRecipes', JSON.stringify(unlocked));
+  updateLab2RecipeUI();
+};
+
+function updateLab2RecipeUI() {
+  const el = document.getElementById('lab2-recipe-list');
+  if (!el) return;
+  const unlocked = getUnlockedRecipes();
+  const allRecipes = [...LAB2_RECIPES.map(r => ({ ...r, secret: false })), ...LAB2_SECRET_RECIPES.map(r => ({ ...r, secret: true }))];
+  el.innerHTML = allRecipes.map(r => {
+    const available = !r.secret || unlocked.includes(r.id);
+    const mats = r.materials.map(m => LAB2_EMOJI[m] || m).join('+');
+    return `<div style="padding:4px 0;font-size:11px;color:${available ? '#c0e0c0' : '#555'}">
+      ${available ? (r.result.icon + ' ' + r.result.name) : '???'} = ${available ? mats : '???'}
+      ${r.secret && !available ? ' (공부 ' + r.reqStudy + '회 필요)' : ''}
+    </div>`;
+  }).join('');
+}
+
+// enterLab2 후크
+const _origEnterLab2 = window.enterLab2;
+window.enterLab2 = function() {
+  _origEnterLab2();
+  window.checkLab2Recipes();
+  renderEnhancePanel();
+};
+
+function renderEnhancePanel() {
+  const el = document.getElementById('lab2-enhance-list');
+  if (!el) return;
+  if (inventory.length === 0) {
+    el.innerHTML = '<span style="color:#888;font-size:12px;">인벤토리가 비어 있어요</span>';
+    return;
+  }
+  el.innerHTML = inventory.map((item, i) => {
+    const level = item.enhanceLevel || 0;
+    const cost  = 5 + level * 3;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #1a1a2e;">
+      <span>${item.icon}</span>
+      <span style="flex:1;font-size:12px;color:#c0e0c0">${item.name}</span>
+      ${level < 3 ? `<button onclick="enhanceItem(${i})" style="background:#0d0720;border:1px solid #c4a0ff;border-radius:4px;padding:2px 6px;color:#c4a0ff;cursor:pointer;font-size:10px;">강화 💎${cost}</button>` : '<span style="font-size:10px;color:#ef9f27">MAX</span>'}
+      <button onclick="disassembleItem(${i})" style="background:#0d0720;border:1px solid #555;border-radius:4px;padding:2px 6px;color:#888;cursor:pointer;font-size:10px;">분해</button>
+    </div>`;
+  }).join('');
+}
+
+
+// ================================================================
+// 중앙 축제 — 신규: 야시장 부스 / 한정판 아이템 / 랜덤 이벤트
+// ================================================================
+
+// 야시장 부스 (SP 회복 야식 판매)
+const FEST_FOOD_STALL = [
+  { name: '떡볶이', sp: 20, cost: 3 },
+  { name: '순대',   hp: 15, sp: 10, cost: 4 },
+  { name: '닭꼬치', hp: 20, cost: 3 },
+];
+
+window.buyFestFood = function(idx) {
+  const food = FEST_FOOD_STALL[idx];
+  if (!food) return;
+  if (playerStats.data < food.cost) { addFestivalLog('[야시장] 데이터 조각 부족!', '#f09595'); return; }
+  playerStats.data -= food.cost;
+  if (food.hp) playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + food.hp);
+  if (food.sp) playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + food.sp);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addFestivalLog('[🍢 야시장] ' + food.name + ' 먹었다!' + (food.hp ? ' HP +' + food.hp : '') + (food.sp ? ' SP +' + food.sp : '') + ' · 💎 -' + food.cost, '#ef9f27');
+};
+
+// 한정판 코스튬 아이템 (1일 1회, 오늘의 한정 아이템)
+const FEST_DAILY_ITEMS = [
+  { name: '축제 왕관',     icon: '👑', cost: 15, roomItem: { id: 'fest_crown',  slot: 'wall',  emoji: '👑', desc: '왕관 장식' } },
+  { name: '불꽃 머리핀',   icon: '🎆', cost: 12, roomItem: { id: 'fest_firework', slot: 'wall', emoji: '🎆', desc: '불꽃 장식' } },
+  { name: '별빛 풍선',     icon: '🎈', cost: 10, roomItem: { id: 'fest_balloon', slot: 'floor3', emoji: '🎈', desc: '풍선 장식' } },
+];
+
+function getTodayFestItem() {
+  const seed = new Date().toDateString().split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return FEST_DAILY_ITEMS[seed % FEST_DAILY_ITEMS.length];
+}
+
+window.buyFestLimitedItem = function() {
+  const today = new Date().toDateString();
+  if (localStorage.getItem('festLimitedBought') === today) {
+    addFestivalLog('[한정 아이템] 오늘의 한정 아이템은 이미 구매했어요!', '#f09595');
+    return;
+  }
+  const item = getTodayFestItem();
+  if (playerStats.data < item.cost) { addFestivalLog('[한정 아이템] 데이터 조각 부족!', '#f09595'); return; }
+  playerStats.data -= item.cost;
+  // 방 꾸미기 아이템으로 추가
+  if (!playerStats.ownedRoomItems.includes(item.roomItem.id)) {
+    playerStats.ownedRoomItems.push(item.roomItem.id);
+  }
+  localStorage.setItem('festLimitedBought', today);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addFestivalLog('[🎁 한정 아이템] ' + item.icon + ' ' + item.name + ' 구매! 방 꾸미기에 추가됐어요! · 💎 -' + item.cost, '#5dcaa5');
+};
+
+// 랜덤 이벤트: 축제 입장 시 10% 확률로 연예인 등장 → 데이터 조각 2× 버프 (30분)
+function checkFestRandomEvent() {
+  if (Math.random() < 0.1) {
+    const eventExpires = Date.now() + 30 * 60 * 1000;
+    localStorage.setItem('festDoubleBuff', eventExpires.toString());
+    addFestivalLog('[🌟 스페셜 이벤트!] 연예인이 무대에 등장했다! 30분간 💎 획득 2배!', '#ef9f27');
+  }
+}
+
+window.hasFestDoubleBuff = function() {
+  const exp = parseInt(localStorage.getItem('festDoubleBuff') || '0');
+  return Date.now() < exp;
+};
+
+// enterFestival 후크
+const _origEnterFestival = window.enterFestival;
+window.enterFestival = function() {
+  _origEnterFestival();
+  checkFestRandomEvent();
+  // 오늘의 한정 아이템 UI
+  const special = getTodayFestItem();
+  const el = document.getElementById('fest-limited-name');
+  if (el) el.textContent = special.icon + ' ' + special.name + ' (💎 ' + special.cost + ')';
+  const boughtEl = document.getElementById('fest-limited-badge');
+  if (boughtEl) boughtEl.style.display = (localStorage.getItem('festLimitedBought') === new Date().toDateString()) ? 'inline' : 'none';
+  // 버프 상태 표시
+  const buffEl = document.getElementById('fest-buff-status');
+  if (buffEl) buffEl.textContent = window.hasFestDoubleBuff() ? '🌟 2× 보너스 활성!' : '';
+};
+
+// 축제 보상에 2× 버프 적용 (answerQuiz, jankenPlay, spinSlot 후크)
+const _origAnswerQuiz = window.answerQuiz;
+window.answerQuiz = function(idx) {
+  _origAnswerQuiz(idx);
+  if (idx === currentQuiz?.ans && window.hasFestDoubleBuff()) {
+    playerStats.data += 5; // 추가 5개 (총 10개)
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+    addFestivalLog('[🌟 2× 보너스] 추가 💎 +5!', '#ef9f27');
+  }
+};
+
+
+// ================================================================
+// 학생회관 — 신규: 부스 로테이션 / 한정 세일 / 동아리 가입 / 코스튬
+// ================================================================
+
+// 부스 로테이션: 매일 다른 동아리 부스 3종
+const UNION_BOOTHS = [
+  [
+    { name: '📸 사진학회',  item: 'photo_card',    effect: () => { playerStats.data += 3; }, desc: '데이터 조각 +3', cost: 5 },
+    { name: '🎵 밴드부',    item: 'band_buff',     effect: () => { puangState.favorability = Math.min(100, puangState.favorability + 5); savePuangState(); }, desc: '푸앙 호감도 +5', cost: 6 },
+    { name: '🏃 마라톤부',  item: 'marathon_buff', effect: () => { playerStats.maxHp += 5; }, desc: '최대 HP +5', cost: 8 },
+  ],
+  [
+    { name: '🎮 게임학회',  item: 'game_chip',    effect: () => { playerStats.data += 5; }, desc: '데이터 조각 +5', cost: 8 },
+    { name: '📚 독서클럽',  item: 'book_token',   effect: () => { playerStats.maxSp += 5; }, desc: '최대 SP +5', cost: 7 },
+    { name: '🍳 요리부',    item: 'cooking_buff', effect: () => { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 20); }, desc: 'HP +20', cost: 5 },
+  ],
+  [
+    { name: '🔬 과학탐구',  item: 'science_chip',  effect: () => { playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 2; }, desc: '전투 리젠 +2', cost: 10 },
+    { name: '🎭 연극부',    item: 'drama_token',   effect: () => { playerStats.unionBonusDmg = (playerStats.unionBonusDmg || 0) + 3; }, desc: '전투 데미지 +3', cost: 9 },
+    { name: '🌿 환경동아리', item: 'eco_badge',     effect: () => { playerStats.data += 4; }, desc: '데이터 조각 +4', cost: 6 },
+  ],
+];
+
+function getTodayBooths() {
+  const seed = new Date().toDateString().split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return UNION_BOOTHS[seed % UNION_BOOTHS.length];
+}
+
+window.buyUnionBooth = function(idx) {
+  const booths = getTodayBooths();
+  const booth  = booths[idx];
+  if (!booth) return;
+
+  const boughtKey = 'unionBooth_' + new Date().toDateString() + '_' + idx;
+  if (localStorage.getItem(boughtKey)) { addUnionLog('[부스] 오늘 이미 이 부스를 이용했어요.', 'union-log-info'); return; }
+  if (playerStats.data < booth.cost) { addUnionLog('[부스] 데이터 조각 부족! (필요: ' + booth.cost + '개)', 'union-log-err'); return; }
+
+  playerStats.data -= booth.cost;
+  booth.effect();
+  localStorage.setItem(boughtKey, '1');
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
+  addUnionLog('[✅ ' + booth.name + '] ' + booth.desc + ' · 💎 -' + booth.cost, 'union-log-ok');
+};
+
+// 한정 세일: 매주 월요일 특정 아이템 50% 할인
+function isUnionSaleDay() { return new Date().getDay() === 1; }
+
+window.buyUnionSale = function() {
+  if (!isUnionSaleDay()) { addUnionLog('[세일] 한정 세일은 매주 월요일에 진행돼요!', 'union-log-info'); return; }
+  const saleKey = 'unionSale_' + getWeekKey();
+  if (localStorage.getItem(saleKey)) { addUnionLog('[세일] 이번 주 세일 구매를 이미 완료했어요.', 'union-log-info'); return; }
+
+  const saleCost = 10; // 원가 20 → 50% 할인
+  if (playerStats.data < saleCost) { addUnionLog('[세일] 데이터 조각 부족! (필요: ' + saleCost + '개)', 'union-log-err'); return; }
+
+  playerStats.data -= saleCost;
+  playerStats.maxHp += 20;
+  localStorage.setItem(saleKey, '1');
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
+  addUnionLog('[🏷️ 한정 세일 50%!] 생명력 결정 구매! 최대 HP +20 · 💎 -' + saleCost + ' (원가 20)', 'union-log-ok');
+};
+
+// 동아리 가입 (한 번만 가입 가능)
+const UNION_CLUBS = {
+  cs_club:     { name: '컴퓨터학회', icon: '💻', cost: 15, buff: '공부 보상 +1, 전투 리젠 +2',   apply: () => { unionBonusStudy++; playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 2; } },
+  sports_club: { name: '스포츠부',   icon: '🏃', cost: 15, buff: '최대 HP +20, 체육관 비용 -1',  apply: () => { playerStats.maxHp += 20; playerStats._gymDiscount = (playerStats._gymDiscount || 0) + 1; } },
+  art_club:    { name: '예술부',     icon: '🎨', cost: 15, buff: '푸앙 호감도 +10, 축제 보상 +2', apply: () => { puangState.favorability = Math.min(100, puangState.favorability + 10); savePuangState(); playerStats._festBonus = (playerStats._festBonus || 0) + 2; } },
+};
+
+window.joinUnionClub = function(clubId) {
+  const club = UNION_CLUBS[clubId];
+  if (!club) return;
+
+  const joined = JSON.parse(localStorage.getItem('unionJoinedClubs') || '[]');
+  if (joined.includes(clubId)) { addUnionLog('[동아리] ' + club.icon + ' ' + club.name + '는 이미 가입되어 있어요.', 'union-log-info'); return; }
+  if (joined.length >= 1)      { addUnionLog('[동아리] 동아리는 1개만 가입할 수 있어요.', 'union-log-info'); return; }
+  if (playerStats.data < club.cost) { addUnionLog('[동아리] 데이터 조각 부족! (필요: ' + club.cost + '개)', 'union-log-err'); return; }
+
+  playerStats.data -= club.cost;
+  club.apply();
+  joined.push(clubId);
+  localStorage.setItem('unionJoinedClubs', JSON.stringify(joined));
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
+  addUnionLog('[🎓 동아리 가입!] ' + club.icon + ' ' + club.name + ' — ' + club.buff + ' · 💎 -' + club.cost, 'union-log-ok');
+  updateUnionClubUI();
+};
+
+function updateUnionClubUI() {
+  const el = document.getElementById('union-club-status');
+  if (!el) return;
+  const joined = JSON.parse(localStorage.getItem('unionJoinedClubs') || '[]');
+  el.textContent = joined.length > 0
+    ? '소속: ' + joined.map(id => UNION_CLUBS[id]?.icon + ' ' + UNION_CLUBS[id]?.name).join(', ')
+    : '동아리 미가입';
+  el.style.color = joined.length > 0 ? '#5dcaa5' : '#888';
+}
+
+// enterUnion 후크
+const _origEnterUnion = window.enterUnion;
+window.enterUnion = function() {
+  _origEnterUnion();
+  updateUnionClubUI();
+  // 부스 로테이션 UI
+  const booths = getTodayBooths();
+  for (let i = 0; i < 3; i++) {
+    const nameEl  = document.getElementById('union-booth-name-' + i);
+    const descEl  = document.getElementById('union-booth-desc-' + i);
+    const costEl  = document.getElementById('union-booth-cost-' + i);
+    if (nameEl) nameEl.textContent = booths[i].name;
+    if (descEl) descEl.textContent = booths[i].desc;
+    if (costEl) costEl.textContent = '💎 ' + booths[i].cost;
+  }
+  // 세일 배너
+  const saleEl = document.getElementById('union-sale-banner');
+  if (saleEl) {
+    saleEl.style.display = isUnionSaleDay() ? 'block' : 'none';
+  }
+};
+
+
+// ================================================================
+// 아이템 가게 — 신규: 재고 시스템 / 묶음 할인 / 찜 목록 / 신상품 알림
+// ================================================================
+
+// 재고 시스템: 아이템별 일일 한도
+const STORE_STOCK_LIMIT = { hp_potion: 5, sp_potion: 5, full_potion: 2, dmg_boost: 3, shield: 3 };
+
+function getStoreStock() {
+  const today = new Date().toDateString();
+  const raw   = JSON.parse(localStorage.getItem('storeStock') || '{}');
+  if (raw.date !== today) {
+    const fresh = { date: today };
+    Object.keys(STORE_STOCK_LIMIT).forEach(k => fresh[k] = STORE_STOCK_LIMIT[k]);
+    localStorage.setItem('storeStock', JSON.stringify(fresh));
+    return fresh;
+  }
+  return raw;
+}
+function saveStoreStock(stock) {
+  localStorage.setItem('storeStock', JSON.stringify(stock));
+}
+
+// 찜 목록
+function getStoreWishlist() { return JSON.parse(localStorage.getItem('storeWishlist') || '[]'); }
+function saveStoreWishlist(list) { localStorage.setItem('storeWishlist', JSON.stringify(list)); }
+
+window.toggleStoreWishlist = function(id) {
+  let list = getStoreWishlist();
+  if (list.includes(id)) {
+    list = list.filter(x => x !== id);
+    addStoreLog('[🤍 찜 해제] ' + STORE_ITEMS[id]?.name, 'store-log-info');
+  } else {
+    list.push(id);
+    addStoreLog('[❤️ 찜 추가] ' + STORE_ITEMS[id]?.name, 'store-log-ok');
+  }
+  saveStoreWishlist(list);
+  updateStoreWishlistUI();
+  updateStoreStockUI();
+};
+
+function updateStoreWishlistUI() {
+  const el = document.getElementById('store-wishlist');
+  if (!el) return;
+  const list = getStoreWishlist();
+  el.textContent = list.length > 0
+    ? '❤️ 찜: ' + list.map(id => STORE_ITEMS[id]?.name || id).join(', ')
+    : '찜한 아이템 없음';
+}
+
+function updateStoreStockUI() {
+  const stock = getStoreStock();
+  const wishlist = getStoreWishlist();
+  Object.keys(STORE_STOCK_LIMIT).forEach(id => {
+    const el = document.getElementById('store-stock-' + id);
+    if (el) {
+      el.textContent = '재고 ' + (stock[id] || 0) + '/' + STORE_STOCK_LIMIT[id];
+      el.style.color = stock[id] === 0 ? '#f09595' : '#888';
+    }
+    // 찜 버튼 상태
+    const wishBtn = document.getElementById('store-wish-' + id);
+    if (wishBtn) wishBtn.textContent = wishlist.includes(id) ? '❤️' : '🤍';
+  });
+}
+
+// 묶음 구매 카트
+let storeCart = [];
+
+window.addToCart = function(id) {
+  storeCart.push(id);
+  updateStoreCartUI();
+  addStoreLog('[🛒 카트] ' + STORE_ITEMS[id]?.name + ' 추가', 'store-log-info');
+};
+
+window.clearCart = function() {
+  storeCart = [];
+  updateStoreCartUI();
+};
+
+window.buyCart = function() {
+  if (storeCart.length === 0) { addStoreLog('[❌] 카트가 비어 있어요.', 'store-log-err'); return; }
+
+  const stock = getStoreStock();
+  // 재고 체크
+  const countMap = {};
+  for (const id of storeCart) countMap[id] = (countMap[id] || 0) + 1;
+  for (const [id, count] of Object.entries(countMap)) {
+    if ((stock[id] || 0) < count) { addStoreLog('[❌] ' + STORE_ITEMS[id]?.name + ' 재고 부족!', 'store-log-err'); return; }
+  }
+
+  // 총액 계산 (3개 이상 10% 할인)
+  let total = storeCart.reduce((sum, id) => sum + (STORE_ITEMS[id]?.cost || 0), 0);
+  const discount = storeCart.length >= 3;
+  if (discount) total = Math.floor(total * 0.9);
+
+  if (playerStats.data < total) { addStoreLog('[❌] 데이터 조각 부족! (필요: ' + total + '개)', 'store-log-err'); return; }
+
+  playerStats.data -= total;
+  // 아이템 효과 적용
+  for (const id of storeCart) {
+    const origBuy = _origBuyStore;
+    // 재고 차감
+    stock[id] = (stock[id] || 0) - 1;
+    // 효과 직접 적용
+    if      (id === 'hp_potion')   { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); }
+    else if (id === 'sp_potion')   { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); }
+    else if (id === 'full_potion') { playerStats.hp = playerStats.maxHp; playerStats.sp = playerStats.maxSp; }
+    else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost', name: STORE_ITEMS[id].name, icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
+    else if (id === 'shield')      { inventory.push({ id: 'shield',    name: STORE_ITEMS[id].name, icon: '🛡️', desc: '다음 전투 피해 -50%'  }); saveInventory(); }
+  }
+  saveStoreStock(stock);
+  storeCart = [];
+  updateStoreCartUI();
+  updateStoreStockUI();
+  document.getElementById('store-data-val').textContent = playerStats.data;
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  addStoreLog('[✅ 카트 구매 완료]' + (discount ? ' 3개 이상 10% 할인 적용!' : '') + ' · 💎 -' + total, 'store-log-ok');
+  const npc = document.getElementById('store-clerk-text');
+  if (npc) npc.textContent = '감사합니다~ 또 오세요! 🙏';
+};
+
+function updateStoreCartUI() {
+  const el = document.getElementById('store-cart-count');
+  if (el) el.textContent = storeCart.length + '개';
+  const totalEl = document.getElementById('store-cart-total');
+  if (totalEl) {
+    let total = storeCart.reduce((sum, id) => sum + (STORE_ITEMS[id]?.cost || 0), 0);
+    if (storeCart.length >= 3) total = Math.floor(total * 0.9);
+    totalEl.textContent = total + '💎' + (storeCart.length >= 3 ? ' (10%↓)' : '');
+  }
+}
+
+// 신상품 알림: 주 1회 새 아이템 입고
+function getStoreNewItem() {
+  const week = getWeekKey();
+  const weekNum = parseInt(week.split('-W')[1]) || 1;
+  const newItems = [
+    { name: '기억력 포션', icon: '🧠', cost: 10, desc: '도서관 정답률 +20% (5분)' },
+    { name: '투명 망토',   icon: '🫥', cost: 18, desc: '이면세계 몬스터 조우율 -30%' },
+    { name: '청룡 부적',   icon: '🧧', cost: 12, desc: '전투 사망 시 HP 15로 부활 1회' },
+  ];
+  return newItems[weekNum % newItems.length];
+}
+
+// buyStore 후크: 재고 차감 적용
+const _origBuyStore = window.buyStore;
+window.buyStore = function(id) {
+  const stock = getStoreStock();
+  if ((stock[id] || 0) <= 0) {
+    addStoreLog('[❌] ' + (STORE_ITEMS[id]?.name || id) + ' 재고가 없어요! 내일 다시 입고됩니다.', 'store-log-err');
+    return;
+  }
+  stock[id]--;
+  saveStoreStock(stock);
+  _origBuyStore(id);
+  updateStoreStockUI();
+};
+
+// enterStore 후크
+const _origEnterStore = window.enterStore;
+window.enterStore = function() {
+  _origEnterStore();
+  updateStoreStockUI();
+  updateStoreWishlistUI();
+  updateStoreCartUI();
+  // 신상품 표시
+  const newItem = getStoreNewItem();
+  const el = document.getElementById('store-new-item');
+  if (el) el.textContent = '🆕 이번 주 신상품: ' + newItem.icon + ' ' + newItem.name + ' (💎 ' + newItem.cost + ') — ' + newItem.desc;
+};
+
+

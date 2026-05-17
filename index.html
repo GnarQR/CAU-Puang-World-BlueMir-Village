@@ -493,6 +493,31 @@
       </div>
     </div>
 
+    <!-- ★ 신규: 오늘의 특선 메뉴 -->
+    <div style="background:#1a2a1a;border:1px solid #2a4a2a;border-radius:10px;padding:12px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#ef9f27;letter-spacing:1px;margin-bottom:6px;">⭐ 오늘의 특선</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="caf-special-tag" style="font-size:10px;background:#ef9f27;color:#1a1a1a;padding:2px 7px;border-radius:10px;font-weight:700;"></span>
+        <span id="caf-special-name" style="font-size:13px;color:#e0e0e0;font-weight:500;"></span>
+        <span id="caf-special-bonus" style="font-size:11px;color:#5dcaa5;"></span>
+        <button onclick="orderTodaySpecial()" style="margin-left:auto;background:#1e3a1e;border:1px solid #5dcaa5;border-radius:6px;padding:5px 12px;color:#5dcaa5;cursor:pointer;font-size:12px;font-family:inherit;">주문 💎5</button>
+      </div>
+    </div>
+
+    <!-- ★ 신규: 단골 카드 -->
+    <div style="background:#1a1a2a;border:1px solid #2a2a4a;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#a0c4ff;margin-bottom:6px;">🎫 단골 카드 <span id="caf-loyalty-count" style="color:#e0e0e0;">0/5</span> — 5회마다 무료 식권!</div>
+      <div style="background:#111;border-radius:4px;height:6px;overflow:hidden;">
+        <div id="caf-loyalty-bar" style="height:100%;background:#a0c4ff;width:0%;transition:width 0.4s;"></div>
+      </div>
+      <span id="caf-ticket-badge" style="display:none;font-size:11px;color:#ef9f27;margin-top:4px;display:none;">🎫 무료 식권 보유!</span>
+    </div>
+
+    <!-- ★ 신규: 과식 경고 -->
+    <div id="caf-overeat-warn" style="display:none;background:#2a1a1a;border:1px solid #f09595;border-radius:8px;padding:8px 12px;font-size:12px;color:#f09595;margin-top:6px;">
+      😵 과식 패널티 활성 — 다음 전투 속도 -10%
+    </div>
+
     <!-- 주문 로그 -->
     <div class="caf-log" id="caf-log">
       <span class="caf-log-ok">[식당] 어서오세요! 오늘도 맛있게 드세요 😊</span>
@@ -591,6 +616,25 @@
 
     <div id="gym-log" class="gym-log">
       <span>[체육관] 훈련 종목을 선택하고 미니게임을 클리어하세요!</span>
+    </div>
+
+    <!-- ★ 신규: 트레이닝 루틴 -->
+    <div style="margin-top:10px;">
+      <div style="font-size:11px;color:#a0c4ff;letter-spacing:1px;margin-bottom:8px;">💪 트레이닝 루틴 (즉시 적용, 훈련 한도 소모)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <button onclick="doGymRoutine('strength')" style="background:#0d1e0d;border:1px solid #2a4a2a;border-radius:8px;padding:8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:11px;line-height:1.5;">💪 근력<br><span style="color:#5dcaa5;font-size:10px;">최대HP+8, 데미지+2</span><br><span style="color:#ef9f27;font-size:10px;">💎 6</span></button>
+        <button onclick="doGymRoutine('endurance')" style="background:#0d1e0d;border:1px solid #2a4a2a;border-radius:8px;padding:8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:11px;line-height:1.5;">🏃 지구력<br><span style="color:#5dcaa5;font-size:10px;">최대SP+8, 리젠+1</span><br><span style="color:#ef9f27;font-size:10px;">💎 5</span></button>
+        <button onclick="doGymRoutine('agility')" style="background:#0d1e0d;border:1px solid #2a4a2a;border-radius:8px;padding:8px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:11px;line-height:1.5;">⚡ 민첩<br><span style="color:#5dcaa5;font-size:10px;">선공확률+10%</span><br><span style="color:#ef9f27;font-size:10px;">💎 5</span></button>
+      </div>
+    </div>
+
+    <!-- ★ 신규: 연속 방문 + 체육대회 -->
+    <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+      <div style="background:#0d1a2a;border:1px solid #1a3a5a;border-radius:8px;padding:8px 12px;font-size:12px;flex:1;">
+        🔥 연속 방문: <span id="gym-streak-val" style="color:#ef9f27;">0일 연속</span><br>
+        <span style="font-size:10px;color:#888;">3일 연속 방문 시 최대 HP +5</span>
+      </div>
+      <button id="gym-event-btn" onclick="playGymEvent()" style="flex:1;background:#1a1a0d;border:1px solid #3a3a0d;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;color:#ef9f27;font-size:12px;">🎽 체육대회 (월요일 개최)</button>
     </div>
   </div>
 
@@ -698,6 +742,39 @@
       <span class="lib-log-info">[도서관] 과목을 선택하면 타이핑 게임이 시작됩니다!</span>
     </div>
 
+    <!-- ★ 신규: 전공 선택 -->
+    <div style="background:#0d1a0d;border:1px solid #1a3a1a;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#5dcaa5;margin-bottom:8px;">🎓 전공 선택 <span id="lib-major-badge" style="font-size:10px;background:#1a3a1a;padding:2px 7px;border-radius:10px;color:#5dcaa5;opacity:0.5;margin-left:6px;">전공 미선택</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="selectLibMajor('cs')"   style="background:#0d1e0d;border:1px solid #2a4a2a;border-radius:6px;padding:4px 10px;cursor:pointer;color:#e0e0e0;font-family:inherit;font-size:11px;">💻 컴퓨터</button>
+        <button onclick="selectLibMajor('math')" style="background:#0d1e0d;border:1px solid #2a4a2a;border-radius:6px;padding:4px 10px;cursor:pointer;color:#e0e0e0;font-family:inherit;font-size:11px;">📐 수학</button>
+        <button onclick="selectLibMajor('eng')"  style="background:#0d1e0d;border:1px solid #2a4a2a;border-radius:6px;padding:4px 10px;cursor:pointer;color:#e0e0e0;font-family:inherit;font-size:11px;">🌐 영어</button>
+        <button onclick="selectLibMajor('art')"  style="background:#0d1e0d;border:1px solid #2a4a2a;border-radius:6px;padding:4px 10px;cursor:pointer;color:#e0e0e0;font-family:inherit;font-size:11px;">🎨 예체능</button>
+      </div>
+    </div>
+
+    <!-- ★ 신규: 도서 대출 -->
+    <div style="background:#0d1a0d;border:1px solid #1a3a1a;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#5dcaa5;margin-bottom:8px;">📚 도서 대출</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+          <span>📕 초집중 전략서</span><span style="font-size:10px;color:#888;">공부 보상 2배 (3일)</span>
+          <button onclick="borrowBook('book_focus')" style="margin-left:auto;background:#0d1e0d;border:1px solid #5dcaa5;border-radius:4px;padding:2px 8px;color:#5dcaa5;cursor:pointer;font-size:10px;font-family:inherit;">대출</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+          <span>📗 운동 생리학 교재</span><span style="font-size:10px;color:#888;">입장 시 HP+5 (2일)</span>
+          <button onclick="borrowBook('book_hp')" style="margin-left:auto;background:#0d1e0d;border:1px solid #5dcaa5;border-radius:4px;padding:2px 8px;color:#5dcaa5;cursor:pointer;font-size:10px;font-family:inherit;">대출</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+          <span>📘 전략 전술 교범</span><span style="font-size:10px;color:#888;">전투 데미지+5 (2일)</span>
+          <button onclick="borrowBook('book_battle')" style="margin-left:auto;background:#0d1e0d;border:1px solid #5dcaa5;border-radius:4px;padding:2px 8px;color:#5dcaa5;cursor:pointer;font-size:10px;font-family:inherit;">대출</button>
+        </div>
+      </div>
+      <div id="lib-borrow-list" style="margin-top:8px;border-top:1px solid #1a3a1a;padding-top:6px;">
+        <span style="color:#888;font-size:12px;">대출 중인 책 없음</span>
+      </div>
+    </div>
+
   </div>
 
   <!--             -->
@@ -798,6 +875,49 @@
         <div class="lab-btn-desc">마지막 저장 시점으로 · 무료</div>
       </button>
     </div>
+
+    <!-- ★ 신규: 세이브 슬롯 3개 -->
+    <div style="margin-top:10px;">
+      <div class="lab-action-title">&gt; 세이브 슬롯</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;background:#070d07;border:1px solid #1a3a1a;border-radius:6px;padding:6px 10px;">
+          <span style="font-size:11px;color:#4dff88;min-width:14px;">1</span>
+          <span id="lab-slot-info-1" style="flex:1;font-size:11px;color:#555;">비어 있음</span>
+          <button onclick="saveToSlot(1)" style="background:#0d1f0d;border:1px solid #4dff88;border-radius:4px;padding:2px 7px;color:#4dff88;cursor:pointer;font-size:10px;font-family:inherit;">저장</button>
+          <button onclick="loadFromSlot(1)" style="background:#0d1f0d;border:1px solid #444;border-radius:4px;padding:2px 7px;color:#888;cursor:pointer;font-size:10px;font-family:inherit;">불러오기</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:#070d07;border:1px solid #1a3a1a;border-radius:6px;padding:6px 10px;">
+          <span style="font-size:11px;color:#4dff88;min-width:14px;">2</span>
+          <span id="lab-slot-info-2" style="flex:1;font-size:11px;color:#555;">비어 있음</span>
+          <button onclick="saveToSlot(2)" style="background:#0d1f0d;border:1px solid #4dff88;border-radius:4px;padding:2px 7px;color:#4dff88;cursor:pointer;font-size:10px;font-family:inherit;">저장</button>
+          <button onclick="loadFromSlot(2)" style="background:#0d1f0d;border:1px solid #444;border-radius:4px;padding:2px 7px;color:#888;cursor:pointer;font-size:10px;font-family:inherit;">불러오기</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:#070d07;border:1px solid #1a3a1a;border-radius:6px;padding:6px 10px;">
+          <span style="font-size:11px;color:#4dff88;min-width:14px;">3</span>
+          <span id="lab-slot-info-3" style="flex:1;font-size:11px;color:#555;">비어 있음</span>
+          <button onclick="saveToSlot(3)" style="background:#0d1f0d;border:1px solid #4dff88;border-radius:4px;padding:2px 7px;color:#4dff88;cursor:pointer;font-size:10px;font-family:inherit;">저장</button>
+          <button onclick="loadFromSlot(3)" style="background:#0d1f0d;border:1px solid #444;border-radius:4px;padding:2px 7px;color:#888;cursor:pointer;font-size:10px;font-family:inherit;">불러오기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ★ 신규: 업적 -->
+    <div style="margin-top:10px;">
+      <div class="lab-action-title">&gt; 업적 <button onclick="checkAchievements()" style="background:#0d1f0d;border:1px solid #4dff88;border-radius:4px;padding:1px 7px;color:#4dff88;cursor:pointer;font-size:10px;font-family:inherit;margin-left:8px;">체크</button></div>
+      <div id="lab-achievements-list" style="background:#070d07;border:1px solid #1a3a1a;border-radius:8px;padding:8px 12px;font-family:'Courier New',monospace;"></div>
+    </div>
+
+    <!-- ★ 신규: 오늘의 일지 -->
+    <div style="margin-top:10px;">
+      <div class="lab-action-title">&gt; 오늘의 탐험 일지 <button onclick="generateLabDiary()" style="background:#0d1f0d;border:1px solid #4dff88;border-radius:4px;padding:1px 7px;color:#4dff88;cursor:pointer;font-size:10px;font-family:inherit;margin-left:8px;">생성</button></div>
+      <div id="lab-diary-content" style="background:#070d07;border:1px solid #1a3a1a;border-radius:8px;padding:8px 12px;font-size:12px;color:#c0e0c0;font-family:'Courier New',monospace;min-height:40px;line-height:1.7;">일지를 생성하려면 위 버튼을 누르세요.</div>
+    </div>
+
+    <!-- ★ 신규: 스킬 트리 -->
+    <div style="margin-top:10px;margin-bottom:12px;">
+      <div class="lab-action-title">&gt; 스킬 트리 (탐험 횟수 기반)</div>
+      <div id="lab-skill-list" style="background:#070d07;border:1px solid #1a3a1a;border-radius:8px;padding:8px 12px;font-family:'Courier New',monospace;"></div>
+    </div>
   </div>
 
   <!--       -->
@@ -869,6 +989,36 @@
 
     <div id="clinic-log" class="clinic-log">
       <span>[의무실] 어서오세요. 몸 상태를 확인해드립니다.</span>
+    </div>
+
+    <!-- ★ 신규: 상태이상 치료 -->
+    <div style="background:#1a0d0d;border:1px solid #3a1a1a;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#f09595;margin-bottom:6px;">🩺 상태이상 현황</div>
+      <div id="clinic-status-list"><span style="color:#5dcaa5;font-size:12px;">✅ 상태이상 없음</span></div>
+    </div>
+
+    <!-- ★ 신규: 예방접종 -->
+    <div style="background:#1a0d0d;border:1px solid #3a1a1a;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#f09595;margin-bottom:6px;">💉 예방접종 (24시간 유지)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button onclick="clinicVaccinate('battle')" style="background:#2a0d0d;border:1px solid #f09595;border-radius:6px;padding:5px 10px;color:#f09595;cursor:pointer;font-size:11px;font-family:inherit;">전투 피해 -30% 💎12</button>
+        <button onclick="clinicVaccinate('status')" style="background:#2a0d0d;border:1px solid #f09595;border-radius:6px;padding:5px 10px;color:#f09595;cursor:pointer;font-size:11px;font-family:inherit;">상태이상 내성 💎10</button>
+        <span id="clinic-vaccine-status" style="font-size:11px;color:#888;">접종 없음</span>
+      </div>
+    </div>
+
+    <!-- ★ 신규: 보험 + 처방전 -->
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <div style="flex:1;background:#1a0d0d;border:1px solid #3a1a1a;border-radius:10px;padding:10px 12px;">
+        <div style="font-size:11px;color:#f09595;margin-bottom:6px;">🛡️ 의료 보험</div>
+        <div id="clinic-insurance-status" style="font-size:11px;color:#888;margin-bottom:6px;">보험 미가입</div>
+        <button onclick="clinicBuyInsurance()" style="background:#2a0d0d;border:1px solid #f09595;border-radius:6px;padding:4px 10px;color:#f09595;cursor:pointer;font-size:11px;font-family:inherit;width:100%;">가입 💎25</button>
+      </div>
+      <div style="flex:1;background:#1a0d0d;border:1px solid #3a1a1a;border-radius:10px;padding:10px 12px;">
+        <div style="font-size:11px;color:#f09595;margin-bottom:6px;">📋 처방전 (1일 1회)</div>
+        <div style="font-size:10px;color:#888;margin-bottom:6px;">현재 상태에 맞는 아이템 지급</div>
+        <button onclick="clinicPrescription()" style="background:#2a0d0d;border:1px solid #f09595;border-radius:6px;padding:4px 10px;color:#f09595;cursor:pointer;font-size:11px;font-family:inherit;width:100%;">처방받기 💎8</button>
+      </div>
     </div>
   </div>
 
@@ -949,6 +1099,18 @@
     <div id="lab2-log" class="lab2-log">
       <span>[실험실] 재료 3가지를 선택하고 조합하세요!</span>
     </div>
+
+    <!-- ★ 신규: 아이템 강화/분해 -->
+    <div style="background:#0d0720;border:1px solid #2e1a5e;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#c4a0ff;margin-bottom:8px;">⚗️ 아이템 강화 / 분해</div>
+      <div id="lab2-enhance-list"><span style="color:#888;font-size:12px;">인벤토리가 비어 있어요</span></div>
+    </div>
+
+    <!-- ★ 신규: 레시피 북 -->
+    <div style="background:#0d0720;border:1px solid #2e1a5e;border-radius:10px;padding:10px 14px;margin-top:8px;margin-bottom:12px;">
+      <div style="font-size:11px;color:#c4a0ff;margin-bottom:6px;">📖 레시피 북 (도서관 공부로 해금)</div>
+      <div id="lab2-recipe-list"></div>
+    </div>
   </div>
 
   <!--          -->
@@ -1027,6 +1189,27 @@
 
     <div id="festival-log" class="fest-log">
       <span>[축제] 어서오세요! 미니게임을 즐겨보세요.</span>
+    </div>
+
+    <!-- ★ 신규: 랜덤 이벤트 버프 + 야시장 + 한정 아이템 -->
+    <div id="fest-buff-status" style="color:#ef9f27;font-size:12px;text-align:center;padding:4px 0;min-height:18px;"></div>
+
+    <div style="background:#1a1408;border:1px solid #2a2010;border-radius:10px;padding:10px 14px;margin-top:6px;">
+      <div style="font-size:11px;color:#ef9f27;margin-bottom:8px;">🍢 야시장 부스</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="buyFestFood(0)" style="background:#1a1408;border:1px solid #3a3010;border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:11px;text-align:center;">🍢 떡볶이<br><span style="color:#5dcaa5;font-size:10px;">SP+20</span><br><span style="color:#ef9f27;font-size:10px;">💎3</span></button>
+        <button onclick="buyFestFood(1)" style="background:#1a1408;border:1px solid #3a3010;border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:11px;text-align:center;">🍡 순대<br><span style="color:#5dcaa5;font-size:10px;">HP+15 SP+10</span><br><span style="color:#ef9f27;font-size:10px;">💎4</span></button>
+        <button onclick="buyFestFood(2)" style="background:#1a1408;border:1px solid #3a3010;border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;color:#e0e0e0;font-size:11px;text-align:center;">🍗 닭꼬치<br><span style="color:#5dcaa5;font-size:10px;">HP+20</span><br><span style="color:#ef9f27;font-size:10px;">💎3</span></button>
+      </div>
+    </div>
+
+    <div style="background:#1a1408;border:1px solid #ef9f27;border-radius:10px;padding:10px 14px;margin-top:8px;margin-bottom:10px;">
+      <div style="font-size:11px;color:#ef9f27;margin-bottom:6px;">🎁 오늘의 한정 아이템 (1일 1회)</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="fest-limited-name" style="font-size:12px;color:#e0e0e0;flex:1;"></span>
+        <span id="fest-limited-badge" style="display:none;font-size:10px;background:#5dcaa5;color:#0d1a0d;padding:2px 6px;border-radius:8px;">구매완료</span>
+        <button onclick="buyFestLimitedItem()" style="background:#1a1408;border:1px solid #ef9f27;border-radius:6px;padding:4px 10px;color:#ef9f27;cursor:pointer;font-size:11px;font-family:inherit;">구매</button>
+      </div>
     </div>
   </div>
 
@@ -1132,6 +1315,48 @@
       <button onclick="doGacha()" style="background:#d4a017;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;transition:opacity 0.2s,transform 0.15s;" onmouseover="this.style.opacity='0.85';this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='1';this.style.transform='none'">💎 3개로 뽑기!</button>
     </div>
 
+    <!-- ★ 신규: 부스 로테이션 -->
+    <div style="background:#f8f4e8;border:1px solid #d4c08a;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#92400e;margin-bottom:8px;">🎪 오늘의 동아리 부스 (1일 1회씩)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;background:#fff;border:1px solid #e5d5a0;border-radius:8px;padding:8px;text-align:center;">
+          <div id="union-booth-name-0" style="font-size:12px;font-weight:500;color:#1a1a1a;">--</div>
+          <div id="union-booth-desc-0" style="font-size:10px;color:#666;margin:3px 0;">--</div>
+          <div id="union-booth-cost-0" style="font-size:11px;color:#d4a017;">--</div>
+          <button onclick="buyUnionBooth(0)" style="margin-top:4px;background:#d4a017;border:none;border-radius:4px;padding:3px 10px;color:#fff;cursor:pointer;font-size:10px;font-family:inherit;">이용</button>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid #e5d5a0;border-radius:8px;padding:8px;text-align:center;">
+          <div id="union-booth-name-1" style="font-size:12px;font-weight:500;color:#1a1a1a;">--</div>
+          <div id="union-booth-desc-1" style="font-size:10px;color:#666;margin:3px 0;">--</div>
+          <div id="union-booth-cost-1" style="font-size:11px;color:#d4a017;">--</div>
+          <button onclick="buyUnionBooth(1)" style="margin-top:4px;background:#d4a017;border:none;border-radius:4px;padding:3px 10px;color:#fff;cursor:pointer;font-size:10px;font-family:inherit;">이용</button>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid #e5d5a0;border-radius:8px;padding:8px;text-align:center;">
+          <div id="union-booth-name-2" style="font-size:12px;font-weight:500;color:#1a1a1a;">--</div>
+          <div id="union-booth-desc-2" style="font-size:10px;color:#666;margin:3px 0;">--</div>
+          <div id="union-booth-cost-2" style="font-size:11px;color:#d4a017;">--</div>
+          <button onclick="buyUnionBooth(2)" style="margin-top:4px;background:#d4a017;border:none;border-radius:4px;padding:3px 10px;color:#fff;cursor:pointer;font-size:10px;font-family:inherit;">이용</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ★ 신규: 한정 세일 배너 -->
+    <div id="union-sale-banner" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px 12px;margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#856404;">🏷️ 이번 주 한정 세일! 생명력 결정 50% 할인</span>
+      <button onclick="buyUnionSale()" style="margin-left:auto;background:#856404;border:none;border-radius:6px;padding:4px 10px;color:#fff;cursor:pointer;font-size:11px;font-family:inherit;">구매 💎10</button>
+    </div>
+
+    <!-- ★ 신규: 동아리 가입 -->
+    <div style="background:#f8f4e8;border:1px solid #d4c08a;border-radius:10px;padding:10px 14px;margin-top:8px;">
+      <div style="font-size:11px;color:#92400e;margin-bottom:6px;">🎓 동아리 가입 (1개만 가입 가능)</div>
+      <div id="union-club-status" style="font-size:11px;color:#888;margin-bottom:8px;">동아리 미가입</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="joinUnionClub('cs_club')" style="background:#fff;border:1px solid #d4c08a;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;color:#1a1a1a;font-family:inherit;">💻 컴퓨터학회 💎15</button>
+        <button onclick="joinUnionClub('sports_club')" style="background:#fff;border:1px solid #d4c08a;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;color:#1a1a1a;font-family:inherit;">🏃 스포츠부 💎15</button>
+        <button onclick="joinUnionClub('art_club')" style="background:#fff;border:1px solid #d4c08a;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;color:#1a1a1a;font-family:inherit;">🎨 예술부 💎15</button>
+      </div>
+    </div>
+
     <!-- 영수증 로그 -->
     <div class="union-receipt" id="union-log">
       <div class="union-receipt-title">🧾 구매 / 뽑기 내역</div>
@@ -1176,12 +1401,22 @@
         <div class="store-item-name">HP 포션</div>
         <div class="store-item-desc">HP +30 즉시 회복</div>
         <div class="store-item-price">💎 5개</div>
+        <div id="store-stock-hp_potion" style="font-size:10px;color:#888;"></div>
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <button onclick="addToCart('hp_potion')" style="flex:1;background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px;color:#ef9f27;cursor:pointer;font-size:10px;font-family:inherit;">🛒</button>
+          <button id="store-wish-hp_potion" onclick="toggleStoreWishlist('hp_potion')" style="background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px 6px;color:#e0e0e0;cursor:pointer;font-size:10px;font-family:inherit;">🤍</button>
+        </div>
       </div>
       <div class="store-item" onclick="buyStore('sp_potion')">
         <div class="store-item-icon">💧</div>
         <div class="store-item-name">SP 포션</div>
         <div class="store-item-desc">SP +20 즉시 회복</div>
         <div class="store-item-price">💎 4개</div>
+        <div id="store-stock-sp_potion" style="font-size:10px;color:#888;"></div>
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <button onclick="addToCart('sp_potion')" style="flex:1;background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px;color:#ef9f27;cursor:pointer;font-size:10px;font-family:inherit;">🛒</button>
+          <button id="store-wish-sp_potion" onclick="toggleStoreWishlist('sp_potion')" style="background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px 6px;color:#e0e0e0;cursor:pointer;font-size:10px;font-family:inherit;">🤍</button>
+        </div>
       </div>
       <div class="store-item" onclick="buyStore('full_potion')">
         <div class="store-item-tag new-tag">NEW</div>
@@ -1189,6 +1424,11 @@
         <div class="store-item-name">풀 회복 포션</div>
         <div class="store-item-desc">HP+SP 완전 회복</div>
         <div class="store-item-price">💎 15개</div>
+        <div id="store-stock-full_potion" style="font-size:10px;color:#888;"></div>
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <button onclick="addToCart('full_potion')" style="flex:1;background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px;color:#ef9f27;cursor:pointer;font-size:10px;font-family:inherit;">🛒</button>
+          <button id="store-wish-full_potion" onclick="toggleStoreWishlist('full_potion')" style="background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px 6px;color:#e0e0e0;cursor:pointer;font-size:10px;font-family:inherit;">🤍</button>
+        </div>
       </div>
     </div>
 
@@ -1200,12 +1440,22 @@
         <div class="store-item-name">데미지 부스터</div>
         <div class="store-item-desc">다음 전투 데미지 +50%</div>
         <div class="store-item-price">💎 8개</div>
+        <div id="store-stock-dmg_boost" style="font-size:10px;color:#888;"></div>
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <button onclick="addToCart('dmg_boost')" style="flex:1;background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px;color:#ef9f27;cursor:pointer;font-size:10px;font-family:inherit;">🛒</button>
+          <button id="store-wish-dmg_boost" onclick="toggleStoreWishlist('dmg_boost')" style="background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px 6px;color:#e0e0e0;cursor:pointer;font-size:10px;font-family:inherit;">🤍</button>
+        </div>
       </div>
       <div class="store-item" onclick="buyStore('shield')">
         <div class="store-item-icon">🛡️</div>
         <div class="store-item-name">방어막</div>
         <div class="store-item-desc">다음 전투 피해 -50%</div>
         <div class="store-item-price">💎 8개</div>
+        <div id="store-stock-shield" style="font-size:10px;color:#888;"></div>
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <button onclick="addToCart('shield')" style="flex:1;background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px;color:#ef9f27;cursor:pointer;font-size:10px;font-family:inherit;">🛒</button>
+          <button id="store-wish-shield" onclick="toggleStoreWishlist('shield')" style="background:#1a1408;border:1px solid #3a3010;border-radius:4px;padding:3px 6px;color:#e0e0e0;cursor:pointer;font-size:10px;font-family:inherit;">🤍</button>
+        </div>
       </div>
       <div class="store-item store-item-locked">
         <div class="store-item-tag soon-tag">준비중</div>
@@ -1214,6 +1464,23 @@
         <div class="store-item-desc">추후 업데이트 예정</div>
         <div class="store-item-price">💎 —</div>
       </div>
+    </div>
+
+    <!-- ★ 신규: 신상품 알림 -->
+    <div id="store-new-item" style="background:#1a1a0d;border:1px solid #3a3a10;border-radius:8px;padding:8px 12px;font-size:11px;color:#ef9f27;margin-top:4px;"></div>
+
+    <!-- ★ 신규: 찜 목록 -->
+    <div id="store-wishlist" style="font-size:11px;color:#888;padding:6px 2px;">찜한 아이템 없음</div>
+
+    <!-- ★ 신규: 카트 묶음 구매 -->
+    <div style="background:#1a1408;border:1px solid #3a3010;border-radius:10px;padding:10px 14px;margin-top:4px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:#ef9f27;">🛒 카트: <span id="store-cart-count">0개</span></span>
+        <span style="font-size:11px;color:#e0e0e0;">합계: <span id="store-cart-total">0💎</span></span>
+        <button onclick="buyCart()" style="margin-left:auto;background:#ef9f27;border:none;border-radius:6px;padding:5px 12px;color:#1a1408;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;">일괄 구매</button>
+        <button onclick="clearCart()" style="background:transparent;border:1px solid #555;border-radius:6px;padding:5px 10px;color:#888;cursor:pointer;font-size:11px;font-family:inherit;">초기화</button>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">3개 이상 담으면 10% 할인!</div>
     </div>
 
     <!-- 영수증 로그 -->
