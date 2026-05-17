@@ -77,22 +77,46 @@ async function syncAndSave() {
 }
 
 // ── 맵 상단 스탯 바 업데이트 ──
+// 게이지 바 + 경고 펄스 + 데이터 조각 팝업 연출 포함
+let _prevData = null; // 데이터 조각 변화 감지용
+
 window.updateMapStats = function() {
-  // 1. 요소 확인 (방어코드)
-  const hpElement = document.getElementById('hp-val');
-  const spElement = document.getElementById('sp-val');
-  const dataElement = document.getElementById('data-val');
+  const hpPct    = Math.max(0, Math.min(100, Math.round(playerStats.hp / playerStats.maxHp * 100)));
+  const spPct    = Math.max(0, Math.min(100, Math.round(playerStats.sp / playerStats.maxSp * 100)));
+  const curData  = playerStats.data || 0;
+
+  // ── HP 게이지 ──
+  const hpBar  = document.getElementById('hp-bar-fill');
+  const hpText = document.getElementById('hp-val');
+  const hpPill = document.getElementById('hp-pill');
+  if (hpBar)  { hpBar.style.width = hpPct + '%'; hpBar.style.background = hpPct <= 25 ? '#e24b4a' : hpPct <= 50 ? '#ef9f27' : '#1d9e75'; }
+  if (hpText) hpText.textContent = playerStats.hp + ' / ' + playerStats.maxHp;
+  if (hpPill) { hpPill.classList.toggle('stat-pill-danger', hpPct <= 25); }
+
+  // ── SP 게이지 ──
+  const spBar  = document.getElementById('sp-bar-fill');
+  const spText = document.getElementById('sp-val');
+  const spPill = document.getElementById('sp-pill');
+  if (spBar)  { spBar.style.width = spPct + '%'; spBar.style.background = spPct <= 25 ? '#e24b4a' : spPct <= 50 ? '#ef9f27' : '#378add'; }
+  if (spText) spText.textContent = playerStats.sp + ' / ' + playerStats.maxSp;
+  if (spPill) { spPill.classList.toggle('stat-pill-danger', spPct <= 25); }
+
+  // ── 데이터 조각 (증가 시 +N 팝업) ──
+  const dataEl = document.getElementById('data-val');
+  if (dataEl) dataEl.textContent = curData + '개';
+  if (_prevData !== null && curData > _prevData) {
+    const diff = curData - _prevData;
+    if (typeof window.showDataPopup === 'function') window.showDataPopup('+' + diff + ' 💎');
+  }
+  _prevData = curData;
+
+  // ── 푸앙이 호감도 ──
   const favorElement = document.getElementById('favor-display');
-
-  if (hpElement) hpElement.textContent = playerStats.hp + ' / ' + playerStats.maxHp;
-  if (spElement) spElement.textContent = playerStats.sp + ' / ' + playerStats.maxSp;
-  if (dataElement) dataElement.textContent = (playerStats.data || 0) + '개'; 
-
-  if (favorElement) {  // 푸앙이 호감도 업데이트
-    const favorScore = puangState.favorability || 0; 
-    const heartCount = Math.floor((favorScore || 0) / 20);
-    const finalHearts = Math.min(5, Math.max(0, heartCount)); // 0~5 사이로 제한
-    favorElement.textContent = "♥".repeat(finalHearts) + "♡".repeat(5 - finalHearts);
+  if (favorElement) {
+    const favorScore  = puangState.favorability || 0;
+    const heartCount  = Math.floor((favorScore || 0) / 20);
+    const finalHearts = Math.min(5, Math.max(0, heartCount));
+    favorElement.textContent = '♥'.repeat(finalHearts) + '♡'.repeat(5 - finalHearts);
   }
 };
 
