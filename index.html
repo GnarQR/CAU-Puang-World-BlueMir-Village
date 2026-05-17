@@ -125,6 +125,8 @@
       <div class="stat-right-group">
         <div class="stat-reset-timer" id="stat-reset-timer">--:--:--</div>
         <button class="stat-collapse-btn" id="stat-collapse-btn" onclick="toggleStatBar()" title="스탯 숨기기">▲</button>
+        <button class="inv-map-btn" onclick="openProfile()" title="프로필">👤</button>
+        <button class="inv-map-btn" onclick="openStatsViewer()" title="통계">📊</button>
         <button class="inv-map-btn" onclick="openInventory()" title="인벤토리">🎒</button>
         <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="테마 전환">🌙</button>
       </div>
@@ -133,11 +135,20 @@
     <div class="map-bg" id="map-bg">  <!-- 맵 배경 + 장소 버튼 -->
       <img class="map-image" src="images/map/cau_map.png" />
       <div class="map-info-group">
-        <div id="datetime-display" class="map-datetime"></div>  <!-- 날짜/시간 표시 -->
-        <div class="map-favor-mini"> <!-- 푸앙이 호감도 표시 -->
-          푸앙이 호감도 <span id="favor-display">♥♥♥♡♡</span>  
+        <div id="datetime-display" class="map-datetime"></div>
+        <div class="map-favor-mini">
+          푸앙이 호감도 <span id="favor-display">♥♥♥♡♡</span>
         </div>
-      </div> 
+        <!-- ★ 날씨 뱃지 -->
+        <div id="weather-badge" class="weather-badge" style="display:none;"></div>
+      </div>
+
+      <!-- ★ 퀘스트 패널 -->
+      <div class="quest-panel" id="quest-panel-wrap">
+        <div class="quest-panel-title">📋 오늘의 미션</div>
+        <div id="quest-panel"></div>
+        <button class="quest-check-btn" onclick="checkDailyQuests()">체크</button>
+      </div>
 
       <!-- TODO : 장소 들어가는 버튼 노가다로 나중에 위치 조정해주세요. -->
       <!-- 블루미르홀 (푸앙이와 호감도작 하는 곳) -->

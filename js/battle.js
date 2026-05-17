@@ -299,10 +299,40 @@ window.initBattle = function(origin = 'map', bossId = null) {
   // 1. 전역 변수 설정
   battleOrigin = origin;
   battleBusy = false;
-  battlePlayerHp = playerStats.hp; 
+  battlePlayerHp = playerStats.hp;
   battlePlayerMaxHp = playerStats.maxHp;
-  battleTurn = 1; 
+  battleTurn = 1;
   buffActive = false;
+
+  // ── ★ 버프 연동: 전투 시작 시 패시브 적용 로그 ──
+  setTimeout(() => {
+    const lines = [];
+    if (typeof window.getCafOvereatPenalty === 'function' && window.getCafOvereatPenalty())
+      lines.push('[패널티] 과식 상태 — 적 공격 주사위 +2');
+    if (typeof window.hasLibEffect === 'function' && window.hasLibEffect('battle_dmg'))
+      lines.push('[버프] 전략 전술 교범 — 공격 데미지 +5');
+    if (typeof window.getVaccineBuff === 'function') {
+      const v = window.getVaccineBuff();
+      if (v && v.type === 'battle') lines.push('[버프] 예방접종 — 피해 30% 감소');
+    }
+    if ((playerStats._regenPerTurn || 0) > 0)
+      lines.push('[패시브] 리젠 +' + playerStats._regenPerTurn + ' HP / 턴');
+    if ((playerStats._agilityBonus || 0) > 0)
+      lines.push('[패시브] 선공 확률 +' + playerStats._agilityBonus + '%');
+    const efx = typeof window.getStatusEffects === 'function' ? window.getStatusEffects() : [];
+    const efxNames = { poison:'중독(매턴HP-3)', fatigue:'피로(데미지-30%)', fracture:'골절(최대HP-20)', curse:'저주(보상-50%)' };
+    efx.forEach(id => { if (efxNames[id]) lines.push('[상태이상] ' + efxNames[id]); });
+    if (typeof inventory !== 'undefined') {
+      if (inventory.some(i => i.id === 'dmg_boost' || i.id === 'speed'))
+        lines.push('[아이템] 공격 강화 — 데미지 +50%');
+      if (inventory.some(i => i.id === 'shield'))
+        lines.push('[아이템] 방어막 — 피해 -50%');
+    }
+    lines.forEach(l => { if (typeof addBattleLog === 'function') addBattleLog(l, 'log-system2'); });
+  }, 900);
+
+  // 탐험 횟수 누적 (스킬 트리용)
+  playerStats._explorationCount = (playerStats._explorationCount || 0) + 1;
 
   // 2. 몬스터 / 보스 데이터 가져오기
   if (origin === 'mountain' && bossId) {
@@ -537,11 +567,51 @@ async function animateDice(sides, ignoreGold = false) {
 // 적 공격 → 플레이어 피격 → 사망 체크 → 다음 턴 시작
 async function enemyTurn() {
   await sleepMs(600);
-  const roll = Math.floor(Math.random() * 12) + 1;
-  const dmg  = Math.max(1, roll - 5);  // 몹 딜량 조정 시 이 줄 수정
 
-  addBattleLog('[룰 판정] ' + (currentMonster ? currentMonster.name : '적') + ' 공격! 주사위: ' + roll, 'log-dice');
+  // ── ★ 턴 시작: 리젠 적용 ──
+  const regenAmt = playerStats._regenPerTurn || 0;
+  if (regenAmt > 0) {
+    battlePlayerHp = Math.min(battlePlayerMaxHp, battlePlayerHp + regenAmt);
+    localStorage.setItem('battlePlayerHp', battlePlayerHp);
+    addBattleLog('[패시브] 턴 리젠 HP +' + regenAmt, 'log-success');
+    updateBattleBars();
+  }
+  // 중독 상태이상 (-3 HP/턴)
+  if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('poison')) {
+    battlePlayerHp = Math.max(1, battlePlayerHp - 3);
+    localStorage.setItem('battlePlayerHp', battlePlayerHp);
+    addBattleLog('[상태이상] 중독 — HP -3', 'log-damage');
+    updateBattleBars();
+  }
+
+  const roll = Math.floor(Math.random() * 12) + 1;
+  // 과식 패널티 (+2)
+  const overeatAdd = (typeof window.getCafOvereatPenalty === 'function' && window.getCafOvereatPenalty()) ? 2 : 0;
+  let dmg = Math.max(1, roll - 5 + overeatAdd);  // 몹 딜량
+
+  addBattleLog('[룰 판정] ' + (currentMonster ? currentMonster.name : '적') + ' 공격! 주사위: ' + (roll + overeatAdd), 'log-dice');
   await sleepMs(400);
+
+  // ── ★ 방어 버프 연동 ──
+  // 예방접종 (전투 피해 30% 감소)
+  if (typeof window.getVaccineBuff === 'function') {
+    const v = window.getVaccineBuff();
+    if (v && v.type === 'battle') {
+      dmg = Math.floor(dmg * 0.7);
+      addBattleLog('[버프] 예방접종 — 피해 30% 감소', 'log-success');
+    }
+  }
+  // 방어막 아이템
+  if (typeof inventory !== 'undefined') {
+    const shieldIdx = inventory.findIndex(i => i.id === 'shield');
+    if (shieldIdx >= 0) {
+      dmg = Math.floor(dmg * 0.5);
+      inventory.splice(shieldIdx, 1);
+      if (typeof saveInventory === 'function') saveInventory();
+      addBattleLog('[아이템 소모] 방어막 — 피해 50% 감소!', 'log-success');
+    }
+  }
+  dmg = Math.max(0, dmg);
 
   // 플레이어 피격 애니메이션
   const playerImg = document.getElementById('player-img');
@@ -562,14 +632,24 @@ async function enemyTurn() {
   if (typeof updateBattleBars === 'function') updateBattleBars();
   addBattleLog('[결과] 플레이어가 ' + dmg + ' 데미지를 받았다!', 'log-damage');
 
-  // 플레이어 사망 → 패배 처리
+  // 플레이어 사망 → 패배 처리 (보험 체크)
   if (battlePlayerHp <= 0) {
+    // 의료 보험 — HP 30으로 부활
+    if (typeof window.useClinicInsurance === 'function' && window.useClinicInsurance()) {
+      battlePlayerHp = 30;
+      playerStats.hp = 30;
+      localStorage.setItem('battlePlayerHp', battlePlayerHp);
+      updateBattleBars();
+      addBattleLog('[🛡️ 보험 발동!] HP 30으로 부활! 보험이 소모되었습니다.', 'log-success');
+      if (typeof showToast === 'function') showToast('🛡️ 의료보험 발동! 부활!', 'warning', 3000);
+      battleBusy = false;
+      return;
+    }
     addBattleLog('[SYSTEM] 플레이어가 쓰러졌다... 3초 후 복귀합니다.', 'log-damage');
     document.getElementById('dice-result').textContent = '전투 패배...';
+    if (typeof showToast === 'function') showToast('💀 전투 패배...', 'error', 3000);
     await sleepMs(3000);
-    if (typeof returnToGame === 'function') {
-      returnToGame();
-    }
+    if (typeof returnToGame === 'function') returnToGame();
     return;
   }
 
@@ -606,6 +686,30 @@ window.doCmd = async function(cmd) {
         addBattleLog('[버프] 하이퍼 프롬프트 발동! 데미지 2배', 'log-success');
       }
 
+      // ── ★ 패시브 데미지 버프 연동 ──
+      // 체육관 근력 트레이닝
+      if ((playerStats.unionBonusDmg || 0) > 0) dmg += playerStats.unionBonusDmg;
+      // 베테랑 탐험가 스킬
+      if ((playerStats._battleBonusReward || 0) > 0) dmg += Math.floor(playerStats._battleBonusReward / 2);
+      // 도서관 전술 교범
+      if (typeof window.hasLibEffect === 'function' && window.hasLibEffect('battle_dmg')) dmg += 5;
+      // 피로 상태이상 (-30%)
+      if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('fatigue')) {
+        dmg = Math.floor(dmg * 0.7);
+        addBattleLog('[상태이상] 피로 — 데미지 30% 감소', 'log-damage');
+      }
+      // 인벤토리 dmg_boost / speed 아이템
+      if (typeof inventory !== 'undefined') {
+        const boostIdx = inventory.findIndex(i => i.id === 'dmg_boost' || i.id === 'speed');
+        if (boostIdx >= 0) {
+          dmg = Math.floor(dmg * 1.5);
+          inventory.splice(boostIdx, 1);
+          if (typeof saveInventory === 'function') saveInventory();
+          addBattleLog('[아이템 소모] 공격 강화 — 데미지 1.5배!', 'log-success');
+        }
+      }
+      dmg = Math.max(1, dmg);
+
       // 적 피격 애니메이션
       document.getElementById('enemy-img').classList.add('shake-enemy');
       setTimeout(() => document.getElementById('enemy-img').classList.remove('shake-enemy'), 300);
@@ -622,12 +726,32 @@ window.doCmd = async function(cmd) {
     }
 
     if (enemyHp <= 0) {  // 적 사망 → 승리 처리
-      const reward = currentMonster ? currentMonster.reward : 5;
+      let reward = currentMonster ? currentMonster.reward : 5;
+      // 저주 상태이상 (-50% 보상)
+      if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('curse')) {
+        reward = Math.floor(reward * 0.5);
+        addBattleLog('[상태이상] 저주 — 보상 50% 감소', 'log-damage');
+      }
+      // 베테랑 탐험가 스킬 보너스
+      reward += (playerStats._battleBonusReward || 0);
+      // 축제 2× 버프
+      if (typeof window.hasFestDoubleBuff === 'function' && window.hasFestDoubleBuff()) {
+        reward *= 2;
+        addBattleLog('[이벤트] 축제 2× 버프 — 보상 2배!', 'log-success');
+      }
+      // 전투 승리 횟수 누적 (업적용)
+      playerStats._battleWins = (playerStats._battleWins || 0) + 1;
+      // 과식 패널티 해제
+      if (typeof window.clearCafOvereatPenalty === 'function') window.clearCafOvereatPenalty();
+
       addBattleLog('[SYSTEM] ' + (currentMonster ? currentMonster.name : '적') + '을(를) 물리쳤다! 데이터 조각 x' + reward + ' 획득', 'log-success');
       document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀합니다.';
       document.getElementById('dice-display').textContent = '🎉';
-      playerStats.data += currentMonster ? currentMonster.reward : 5;  // 승리 보상
+      playerStats.data += reward;
       updateMapStats();
+      if (typeof window.checkAchievements === 'function') window.checkAchievements();
+      if (typeof window.updateDailyBadges === 'function') window.updateDailyBadges();
+      if (typeof showToast === 'function') showToast('⚔️ 전투 승리! 💎 +' + reward, 'success', 3000);
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;

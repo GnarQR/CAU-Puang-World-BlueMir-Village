@@ -619,3 +619,612 @@ document.addEventListener('DOMContentLoaded', () => {
   buildQuickBar();
 });
 
+
+
+// ================================================================
+// 9. 퀘스트 / 데일리 미션 시스템
+// ================================================================
+
+const DAILY_QUESTS = [
+  { id: 'q_cafeteria', label: '🍽️ 식당 2회 방문',   check: () => (dailyUsage.cafeteria || 0) >= 2, reward: 5  },
+  { id: 'q_library',   label: '📚 도서관 공부 2회', check: () => (dailyUsage.library   || 0) >= 2, reward: 6  },
+  { id: 'q_battle',    label: '⚔️ 전투 1회 승리',   check: () => (playerStats._battleWins || 0) >= (window._questBattleBase || 0) + 1, reward: 8 },
+  { id: 'q_gym',       label: '💪 체육관 방문',      check: () => (dailyUsage.gym       || 0) >= 1, reward: 4  },
+  { id: 'q_clinic',    label: '🏥 의무실 방문',      check: () => (dailyUsage.clinic    || 0) >= 1, reward: 3  },
+  { id: 'q_festival',  label: '🎪 축제 미니게임 2회', check: () => (dailyUsage.festival  || 0) >= 2, reward: 5 },
+];
+
+function getTodayQuests() {
+  const seed = new Date().toDateString().split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  // 매일 3개 랜덤 선택 (시드 기반)
+  const shuffled = [...DAILY_QUESTS].sort((a, b) => {
+    const ha = (seed * a.id.length) % 100;
+    const hb = (seed * b.id.label.length) % 100;
+    return ha - hb;
+  });
+  return shuffled.slice(0, 3);
+}
+
+function getQuestCompletions() {
+  const today = new Date().toDateString();
+  const raw = JSON.parse(localStorage.getItem('questCompleted') || '{}');
+  if (raw.date !== today) return { date: today };
+  return raw;
+}
+function saveQuestCompletions(data) {
+  localStorage.setItem('questCompleted', JSON.stringify(data));
+}
+
+window.checkDailyQuests = function() {
+  const quests = getTodayQuests();
+  const done   = getQuestCompletions();
+  let newDone  = false;
+
+  quests.forEach(q => {
+    if (!done[q.id] && q.check()) {
+      done[q.id] = true;
+      playerStats.data += q.reward;
+      if (typeof saveInventory === 'function') {}
+      if (typeof window.syncAndSave === 'function') window.syncAndSave();
+      if (typeof showToast === 'function') showToast('✅ 미션 완료: ' + q.label + ' +💎' + q.reward, 'success', 3000);
+      newDone = true;
+    }
+  });
+
+  if (newDone) saveQuestCompletions(done);
+  renderQuestPanel();
+};
+
+function renderQuestPanel() {
+  const panel = document.getElementById('quest-panel');
+  if (!panel) return;
+
+  const quests = getTodayQuests();
+  const done   = getQuestCompletions();
+
+  panel.innerHTML = quests.map(q => {
+    const isDone = !!done[q.id];
+    const pct    = isDone ? 100 : 0;
+    return `
+      <div class="quest-row ${isDone ? 'quest-done' : ''}">
+        <span class="quest-check">${isDone ? '✅' : '⬜'}</span>
+        <span class="quest-label">${q.label}</span>
+        <span class="quest-reward">+💎${q.reward}</span>
+      </div>`;
+  }).join('');
+}
+
+// 주기적으로 퀘스트 체크 (30초마다)
+document.addEventListener('DOMContentLoaded', () => {
+  // 전투 기준점 저장 (오늘 시작 시점의 승리 수)
+  window._questBattleBase = playerStats._battleWins || 0;
+  renderQuestPanel();
+  setInterval(() => {
+    if (typeof dailyUsage !== 'undefined') window.checkDailyQuests();
+  }, 30000);
+});
+
+
+// ================================================================
+// 10. 플레이어 프로필 팝업 + 칭호 시스템
+// ================================================================
+
+const TITLES = [
+  { id: 't_newbie',   name: '신입 탐험가',    check: () => true,  color: '#6c8ebf' },
+  { id: 't_fighter',  name: '이면세계 용사',   check: () => (playerStats._battleWins || 0) >= 5,  color: '#ef9f27' },
+  { id: 't_scholar',  name: '중앙대 수석',     check: () => (typeof libStudyCount !== 'undefined' ? libStudyCount : 0) >= 10, color: '#c9a84c' },
+  { id: 't_friend',   name: '푸앙이 친구',     check: () => puangState.favorability >= 80, color: '#d4537e' },
+  { id: 't_rich',     name: '데이터 재벌',     check: () => playerStats.data >= 100, color: '#fcd34d' },
+  { id: 't_veteran',  name: '베테랑 탐험가',   check: () => (playerStats._explorationCount || 0) >= 20, color: '#5dcaa5' },
+  { id: 't_legend',   name: '캠퍼스 전설',     check: () => (playerStats._battleWins || 0) >= 20 && puangState.favorability >= 90, color: '#a855f7' },
+];
+
+function getActiveTitle() {
+  // 가장 희귀한 달성 칭호 반환
+  for (let i = TITLES.length - 1; i >= 0; i--) {
+    if (TITLES[i].check()) return TITLES[i];
+  }
+  return TITLES[0];
+}
+
+window.openProfile = function() {
+  let overlay = document.getElementById('profile-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'profile-overlay';
+    overlay.className = 'profile-overlay';
+    overlay.innerHTML = `
+      <div class="profile-panel">
+        <button class="profile-close" onclick="closeProfile()">✕</button>
+        <div class="profile-avatar">🧑‍💻</div>
+        <div class="profile-name" id="profile-name">탐험가</div>
+        <div class="profile-title-badge" id="profile-title">신입 탐험가</div>
+        <div class="profile-stats-grid" id="profile-stats"></div>
+        <div class="profile-titles-section">
+          <div class="profile-section-label">🏷️ 칭호 목록</div>
+          <div class="profile-titles-list" id="profile-titles"></div>
+        </div>
+      </div>`;
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeProfile(); });
+    document.body.appendChild(overlay);
+  }
+  renderProfile();
+  overlay.classList.add('profile-open');
+};
+
+window.closeProfile = function() {
+  const o = document.getElementById('profile-overlay');
+  if (o) o.classList.remove('profile-open');
+};
+
+function renderProfile() {
+  const nameEl   = document.getElementById('profile-name');
+  const titleEl  = document.getElementById('profile-title');
+  const statsEl  = document.getElementById('profile-stats');
+  const titlesEl = document.getElementById('profile-titles');
+
+  const name   = playerStats.name || localStorage.getItem('playerName') || '탐험가';
+  const active = getActiveTitle();
+
+  if (nameEl)  nameEl.textContent = name;
+  if (titleEl) { titleEl.textContent = active.name; titleEl.style.color = active.color; titleEl.style.borderColor = active.color + '55'; }
+
+  if (statsEl) statsEl.innerHTML = [
+    { icon:'❤️', label:'HP',       val: playerStats.hp + '/' + playerStats.maxHp },
+    { icon:'💙', label:'SP',       val: playerStats.sp + '/' + playerStats.maxSp },
+    { icon:'💎', label:'데이터',   val: playerStats.data + '개' },
+    { icon:'⚔️', label:'전투 승리', val: (playerStats._battleWins || 0) + '회' },
+    { icon:'🗺️', label:'탐험 수',  val: (playerStats._explorationCount || 0) + '회' },
+    { icon:'🐉', label:'호감도',   val: puangState.favorability + '/100' },
+  ].map(s => `
+    <div class="profile-stat-card">
+      <div class="profile-stat-icon">${s.icon}</div>
+      <div class="profile-stat-label">${s.label}</div>
+      <div class="profile-stat-val">${s.val}</div>
+    </div>`).join('');
+
+  if (titlesEl) titlesEl.innerHTML = TITLES.map(t => {
+    const unlocked = t.check();
+    return `<div class="profile-title-row ${unlocked ? 'unlocked' : 'locked'}">
+      <span style="color:${unlocked ? t.color : '#444'};font-weight:700;">${unlocked ? '🔓' : '🔒'} ${t.name}</span>
+    </div>`;
+  }).join('');
+}
+
+// stat-brand 클릭으로 프로필 열기 (DOMContentLoaded에서 등록)
+document.addEventListener('DOMContentLoaded', () => {
+  const brand = document.querySelector('.stat-brand');
+  if (brand) { brand.style.cursor = 'pointer'; brand.addEventListener('click', window.openProfile); }
+});
+
+
+// ================================================================
+// 11. 맵 방문 기록 하이라이트 + NEW 뱃지
+// ================================================================
+
+function getTodayVisits() {
+  const today = new Date().toDateString();
+  const raw   = JSON.parse(localStorage.getItem('mapVisits') || '{}');
+  if (raw.date !== today) return { date: today, places: [] };
+  return raw;
+}
+function markVisit(placeId) {
+  const v = getTodayVisits();
+  if (!v.places.includes(placeId)) v.places.push(placeId);
+  localStorage.setItem('mapVisits', JSON.stringify(v));
+}
+function isFirstEverVisit(placeId) {
+  const all = JSON.parse(localStorage.getItem('allVisits') || '[]');
+  if (!all.includes(placeId)) {
+    all.push(placeId);
+    localStorage.setItem('allVisits', JSON.stringify(all));
+    return true;
+  }
+  return false;
+}
+
+function updateVisitHighlights() {
+  const visits = getTodayVisits().places;
+  document.querySelectorAll('.map-spot').forEach(btn => {
+    const match = btn.getAttribute('onclick')?.match(/'(\w+)'/);
+    if (!match) return;
+    const pid = match[1];
+    const wrap = btn.querySelector('.map-spot-wrap');
+    if (!wrap) return;
+    // 오늘 방문한 장소에 초록 점 추가
+    let dot = wrap.querySelector('.visit-dot');
+    if (visits.includes(pid)) {
+      if (!dot) { dot = document.createElement('span'); dot.className = 'visit-dot'; wrap.appendChild(dot); }
+    } else {
+      if (dot) dot.remove();
+    }
+  });
+}
+
+// enterPlace 후킹 — 방문 기록
+const _origEnterPlace_visit = window.enterPlace;
+if (_origEnterPlace_visit) {
+  window.enterPlace = function(placeId) {
+    const isFirst = isFirstEverVisit(placeId);
+    if (isFirst && typeof showToast === 'function') {
+      const labels = { dormitory:'블루미르홀', cafeteria:'학생식당', library:'중앙도서관', lab:'310관 연구실', battle:'이면 세계', clinic:'의무실', lab2:'공대 실험실', festival:'중앙 축제', union:'학생회관', mountain:'청룡산', gym:'체육관', store:'CAU 편의점' };
+      showToast('🆕 처음 방문! ' + (labels[placeId] || placeId), 'info', 2500);
+    }
+    markVisit(placeId);
+    setTimeout(updateVisitHighlights, 400);
+    _origEnterPlace_visit(placeId);
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(updateVisitHighlights, 500);
+});
+
+
+// ================================================================
+// 12. 맵 NPC 말풍선
+// ================================================================
+
+const NPC_LINES = {
+  dormitory: [
+    () => puangState.favorability >= 80 ? '푸앙이가 기다리고 있어요! 🐉' : '푸앙이한테 말 걸어봐요~',
+    () => '오늘 기분: ' + (puangState.moodToday >= 60 ? '좋음 😊' : '별로 😒'),
+  ],
+  cafeteria: [
+    () => playerStats.hp < playerStats.maxHp * 0.4 ? '얼굴이 안 좋아 보이는데... 밥은 먹었어요? 🍽️' : '오늘 특선 먹어봤어요?',
+    () => '남은 주문: ' + (typeof remainDaily === 'function' ? remainDaily('cafeteria') + '회' : '?회'),
+  ],
+  library: [
+    () => new Date().getHours() >= 22 ? '야자 중이에요? 파이팅! 📚' : '공부하러 왔어요?',
+    () => '남은 공부: ' + (typeof remainDaily === 'function' ? remainDaily('library') + '회' : '?회'),
+  ],
+  lab: [
+    () => '연구실에서 저장 잊지 마세요! 💾',
+    () => (playerStats._explorationCount || 0) >= 10 ? '베테랑 탐험가 기운이 느껴져요!' : '탐험 많이 해야 스킬 해금돼요!',
+  ],
+  battle: [
+    () => playerStats.hp < 30 ? '⚠️ HP가 너무 낮아요! 회복 먼저 하세요!' : '이면 세계로 돌진! ⚔️',
+    () => '전투 승리 ' + (playerStats._battleWins || 0) + '회째!',
+  ],
+  gym: [
+    () => new Date().getDay() === 1 ? '오늘 체육대회 날! 🎽' : '꾸준히 오면 체력 올라요!',
+    () => '연속 방문: ' + (localStorage.getItem('gymStreak') || '0') + '일',
+  ],
+  clinic: [
+    () => (playerStats.statusEffects || []).length > 0 ? '⚠️ 상태이상 있어요! 어서 치료 받으세요' : '몸 상태 양호! 예방접종도 맞아봐요',
+    () => window.getClinicInsurance?.() ? '🛡️ 보험 가입 중' : '보험 가입하면 안심이에요~',
+  ],
+  festival: [
+    () => window.hasFestDoubleBuff?.() ? '🌟 지금 2× 보너스 활성 중!' : '오늘 연예인 나올 수도 있어요!',
+    () => '야시장 먹거리도 있어요 🍢',
+  ],
+  store: [
+    () => '오늘 재고 확인했어요? 🛒',
+    () => '3개 이상 사면 10% 할인!',
+  ],
+  union: [
+    () => new Date().getDay() === 1 ? '🏷️ 오늘 한정 세일 날!' : '오늘의 동아리 부스 확인해봐요',
+    () => (JSON.parse(localStorage.getItem('unionJoinedClubs') || '[]').length > 0) ? '동아리 활동 중 🎓' : '동아리 가입하면 패시브 버프!',
+  ],
+  lab2:     [() => '실험 실패해도 포기하지 마요! 💥', () => '아이템 강화도 할 수 있어요'],
+  mountain: [() => '⛰️ 강한 적이 나와요! HP 꽉 채우고 가세요', () => '보스 처치하면 큰 보상!'],
+};
+
+function getRandomLine(placeId) {
+  const lines = NPC_LINES[placeId];
+  if (!lines || lines.length === 0) return null;
+  try {
+    const fn = lines[Math.floor(Math.random() * lines.length)];
+    return typeof fn === 'function' ? fn() : fn;
+  } catch(e) { return null; }
+}
+
+function initNpcBubbles() {
+  const tooltip = document.getElementById('map-tooltip');
+  if (!tooltip) return;
+
+  document.querySelectorAll('.map-spot').forEach(btn => {
+    const match = btn.getAttribute('onclick')?.match(/'(\w+)'/);
+    if (!match) return;
+    const pid = match[1];
+
+    btn.addEventListener('mouseenter', () => {
+      const line = getRandomLine(pid);
+      if (line) {
+        // 기존 툴팁 위에 NPC 말풍선 추가 (별도 요소)
+        let bubble = document.getElementById('npc-bubble');
+        if (!bubble) {
+          bubble = document.createElement('div');
+          bubble.id = 'npc-bubble';
+          bubble.className = 'npc-bubble';
+          document.getElementById('map-bg')?.appendChild(bubble);
+        }
+        bubble.textContent = line;
+        const rect = btn.getBoundingClientRect();
+        const mapRect = document.getElementById('map-bg')?.getBoundingClientRect();
+        if (mapRect) {
+          bubble.style.left = (rect.left - mapRect.left + rect.width / 2) + 'px';
+          bubble.style.top  = (rect.top  - mapRect.top  - 44) + 'px';
+        }
+        bubble.classList.add('bubble-show');
+      }
+    });
+    btn.addEventListener('mouseleave', () => {
+      const bubble = document.getElementById('npc-bubble');
+      if (bubble) bubble.classList.remove('bubble-show');
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => { setTimeout(initNpcBubbles, 400); });
+
+
+// ================================================================
+// 13. 통계 뷰어 (연구실 탭)
+// ================================================================
+
+window.openStatsViewer = function() {
+  let overlay = document.getElementById('stats-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'stats-overlay';
+    overlay.className = 'stats-overlay';
+    overlay.innerHTML = `
+      <div class="stats-panel">
+        <div class="stats-header">
+          <span class="stats-title">📊 탐험 통계</span>
+          <button class="stats-close" onclick="closeStatsViewer()">✕</button>
+        </div>
+        <div class="stats-body" id="stats-body"></div>
+      </div>`;
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeStatsViewer(); });
+    document.body.appendChild(overlay);
+  }
+  renderStats();
+  overlay.classList.add('stats-open');
+};
+
+window.closeStatsViewer = function() {
+  const o = document.getElementById('stats-overlay');
+  if (o) o.classList.remove('stats-open');
+};
+
+function renderStats() {
+  const el = document.getElementById('stats-body');
+  if (!el) return;
+
+  // 장소별 방문 기록
+  const usage = (typeof dailyUsage !== 'undefined') ? dailyUsage : {};
+  const placeLabels = { cafeteria:'식당', library:'도서관', gym:'체육관', clinic:'의무실', festival:'축제', lab2:'실험실', union:'학생회관', lab:'연구실' };
+  const usageBars = Object.entries(placeLabels).map(([k, label]) => {
+    const used  = usage[k] || 0;
+    const limit = (typeof dailyLimits !== 'undefined') ? (dailyLimits[k] || 1) : 1;
+    const pct   = Math.min(100, Math.round(used / limit * 100));
+    return `<div class="stats-bar-row">
+      <span class="stats-bar-label">${label}</span>
+      <div class="stats-bar-wrap"><div class="stats-bar-fill" style="width:${pct}%;"></div></div>
+      <span class="stats-bar-val">${used}/${limit}</span>
+    </div>`;
+  }).join('');
+
+  // 7일 데이터 조각 기록 (간이 그래프)
+  const dataHistory = JSON.parse(localStorage.getItem('dataHistory') || '[]');
+  const graphBars = dataHistory.slice(-7).map((d, i) => {
+    const max = Math.max(...dataHistory.slice(-7), 1);
+    const h = Math.max(4, Math.round(d.val / max * 60));
+    return `<div class="graph-bar-col">
+      <div class="graph-bar" style="height:${h}px;" title="${d.val}💎"></div>
+      <div class="graph-bar-label">${d.day}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="stats-section-title">📅 오늘 장소 이용</div>
+    ${usageBars}
+    <div class="stats-section-title" style="margin-top:14px;">💎 최근 7일 데이터 조각</div>
+    <div class="graph-wrap">${graphBars || '<span style="color:#555;font-size:12px;">기록 없음</span>'}</div>
+    <div class="stats-nums-grid">
+      <div class="stats-num-card"><div class="sn-val">${playerStats._battleWins || 0}</div><div class="sn-label">전투 승리</div></div>
+      <div class="stats-num-card"><div class="sn-val">${playerStats._explorationCount || 0}</div><div class="sn-label">총 탐험</div></div>
+      <div class="stats-num-card"><div class="sn-val">${puangState.favorability}</div><div class="sn-label">호감도</div></div>
+      <div class="stats-num-card"><div class="sn-val">${(JSON.parse(localStorage.getItem('labAchievements') || '[]')).length}</div><div class="sn-label">업적</div></div>
+    </div>`;
+}
+
+// 매일 데이터 조각 이력 기록 (하루 1회 스냅샷)
+function recordDataHistory() {
+  const today = new Date().toDateString();
+  const history = JSON.parse(localStorage.getItem('dataHistory') || '[]');
+  const last = history[history.length - 1];
+  if (!last || last.date !== today) {
+    const days = ['일','월','화','수','목','금','토'];
+    history.push({ date: today, day: days[new Date().getDay()], val: playerStats.data || 0 });
+    if (history.length > 14) history.shift();
+    localStorage.setItem('dataHistory', JSON.stringify(history));
+  }
+}
+document.addEventListener('DOMContentLoaded', () => { setTimeout(recordDataHistory, 1000); });
+
+
+// ================================================================
+// 14. Web Audio 효과음
+// ================================================================
+
+let _audioCtx = null;
+let _sfxEnabled = true;
+
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', gain = 0.18) {
+  if (!_sfxEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const vol = ctx.createGain();
+    osc.connect(vol); vol.connect(ctx.destination);
+    osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    vol.gain.setValueAtTime(gain, ctx.currentTime);
+    vol.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+window.sfx = {
+  click:    () => playTone(600, 0.07, 'square', 0.1),
+  success:  () => { playTone(523, 0.1); setTimeout(() => playTone(659, 0.1), 100); setTimeout(() => playTone(784, 0.15), 200); },
+  error:    () => { playTone(220, 0.15, 'sawtooth', 0.12); setTimeout(() => playTone(180, 0.2, 'sawtooth', 0.1), 120); },
+  warning:  () => { playTone(440, 0.1, 'triangle'); setTimeout(() => playTone(440, 0.1, 'triangle'), 180); },
+  purchase: () => { playTone(440, 0.08); setTimeout(() => playTone(550, 0.08), 80); setTimeout(() => playTone(660, 0.12), 160); },
+  battle:   () => { playTone(150, 0.15, 'sawtooth', 0.15); setTimeout(() => playTone(200, 0.2, 'square', 0.1), 100); },
+  levelup:  () => [523,587,659,698,784,880].forEach((f,i) => setTimeout(() => playTone(f, 0.12), i * 80)),
+  enter:    () => { playTone(330, 0.08, 'sine', 0.12); setTimeout(() => playTone(440, 0.1), 90); },
+};
+
+window.toggleSfx = function() {
+  _sfxEnabled = !_sfxEnabled;
+  const btn = document.getElementById('sfx-toggle-btn');
+  if (btn) btn.textContent = _sfxEnabled ? '🔊' : '🔇';
+  localStorage.setItem('sfxEnabled', _sfxEnabled ? '1' : '0');
+  if (typeof showToast === 'function') showToast(_sfxEnabled ? '🔊 효과음 ON' : '🔇 효과음 OFF', 'info', 1500);
+};
+
+// 버튼 클릭에 효과음 연결
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  if (btn.classList.contains('map-spot'))     { window.sfx.enter();    return; }
+  if (btn.classList.contains('inv-use-btn'))  { window.sfx.purchase(); return; }
+  if (btn.classList.contains('quick-btn'))    { window.sfx.click();    return; }
+  if (btn.classList.contains('store-cart-buy-btn')) { window.sfx.purchase(); return; }
+  window.sfx.click();
+}, { passive: true });
+
+// 토스트 타입별 효과음
+const _origShowToast = window.showToast;
+if (_origShowToast) {
+  window.showToast = function(msg, type = 'info', duration = 2500) {
+    _origShowToast(msg, type, duration);
+    if (type === 'success') window.sfx.success();
+    else if (type === 'error') window.sfx.error();
+    else if (type === 'warning') window.sfx.warning();
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('sfxEnabled');
+  if (saved === '0') _sfxEnabled = false;
+  // 퀵바에 효과음 버튼 추가
+  const bar = document.getElementById('quick-bar');
+  if (bar) {
+    const btn = document.createElement('button');
+    btn.id = 'sfx-toggle-btn';
+    btn.className = 'quick-btn';
+    btn.title = '효과음 토글';
+    btn.innerHTML = `<span class="quick-icon">${_sfxEnabled ? '🔊' : '🔇'}</span><span class="quick-label">효과음</span>`;
+    btn.onclick = window.toggleSfx;
+    bar.appendChild(btn);
+  }
+});
+
+
+// ================================================================
+// 15. 날씨 연동 이벤트 (Open-Meteo 무료 API)
+// ================================================================
+
+let _weatherData = null;
+
+async function fetchWeather() {
+  // 서울 좌표 고정 (중앙대 위치)
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=37.5045&longitude=126.9544&current=weathercode,temperature_2m&timezone=Asia%2FSeoul';
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    const code = data?.current?.weathercode;
+    const temp = data?.current?.temperature_2m;
+    _weatherData = { code, temp };
+    applyWeatherEffects(code, temp);
+    showWeatherOverlay(code);
+    displayWeatherBadge(code, temp);
+  } catch(e) {
+    console.log('날씨 API 실패:', e);
+  }
+}
+
+// WMO 날씨 코드 분류
+function getWeatherType(code) {
+  if (code === 0) return 'clear';
+  if (code <= 3)  return 'cloudy';
+  if (code <= 67) return 'rain';
+  if (code <= 77) return 'snow';
+  if (code <= 99) return 'storm';
+  return 'cloudy';
+}
+
+function applyWeatherEffects(code, temp) {
+  const type = getWeatherType(code);
+  // 비 오는 날 보너스
+  if (type === 'rain' || type === 'storm') {
+    window._weatherCafBonus  = 10; // 식당 SP+10
+    window._weatherLibBonus  = 2;  // 도서관 보상+2
+    if (typeof showToast === 'function') showToast('🌧️ 비 오는 날 보너스! 식당 SP+10, 도서관+2💎', 'info', 4000);
+  }
+  // 눈 오는 날
+  if (type === 'snow') {
+    window._weatherCafBonus  = 5;
+    if (typeof showToast === 'function') showToast('❄️ 눈 오는 날! 따뜻한 식당 SP+5 보너스', 'info', 3500);
+  }
+  // 맑은 날
+  if (type === 'clear') {
+    window._weatherFestBonus = 3;
+    if (typeof showToast === 'function') showToast('☀️ 맑은 날! 축제 보상+3💎 보너스', 'success', 3500);
+  }
+}
+
+function showWeatherOverlay(code) {
+  const type = getWeatherType(code);
+  const mapBg = document.getElementById('map-bg');
+  if (!mapBg) return;
+
+  // 기존 날씨 레이어 제거
+  const old = document.getElementById('weather-layer');
+  if (old) old.remove();
+
+  if (type === 'clear') return;
+
+  const layer = document.createElement('div');
+  layer.id = 'weather-layer';
+  layer.className = 'weather-layer weather-' + type;
+
+  // 파티클 생성
+  const count = type === 'rain' || type === 'storm' ? 40 : type === 'snow' ? 30 : 0;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'weather-particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = (Math.random() * 3) + 's';
+    p.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    p.textContent = type === 'snow' ? '❄' : '|';
+    layer.appendChild(p);
+  }
+  mapBg.appendChild(layer);
+}
+
+function displayWeatherBadge(code, temp) {
+  const type = getWeatherType(code);
+  const icons = { clear:'☀️', cloudy:'☁️', rain:'🌧️', snow:'❄️', storm:'⛈️' };
+  const el = document.getElementById('weather-badge');
+  if (el) {
+    el.textContent = (icons[type] || '🌤️') + ' ' + Math.round(temp) + '°C';
+    el.style.display = 'flex';
+  }
+}
+
+// 날씨 뱃지 HTML은 index.html map-info-group에 추가됨 (아래 index.html 수정에서 처리)
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(fetchWeather, 2000);
+  setInterval(fetchWeather, 10 * 60 * 1000); // 10분마다 갱신
+});
+
