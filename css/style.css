@@ -4942,3 +4942,371 @@ body.light-theme #puang-room          { background: #fff; }
   .map-stat-pill { min-width: 90px; }
 }
 
+
+/* ================================================================
+   인벤토리 오버레이 / 일일뱃지 / 모바일 최적화
+================================================================ */
+
+/* ── 인벤토리 오버레이 배경 ── */
+.inv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 7000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.inv-overlay.inv-open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── 인벤토리 패널 ── */
+.inv-panel {
+  background: #0d1117;
+  border: 1.5px solid #0f3460;
+  border-radius: 16px;
+  width: min(480px, 94vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.2s ease;
+}
+.inv-overlay.inv-open .inv-panel {
+  transform: translateY(0) scale(1);
+}
+
+.inv-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #16213e;
+  border-bottom: 1px solid #0f3460;
+  flex-shrink: 0;
+}
+.inv-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0e0e0;
+  flex: 1;
+}
+.inv-count {
+  font-size: 11px;
+  color: #6c8ebf;
+  background: #0f3460;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.inv-close-btn {
+  background: transparent;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  color: #6c8ebf;
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.inv-close-btn:hover { background: #1e2d50; color: #e0e0e0; }
+
+/* ── 아이템 그리드 ── */
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.inv-item-card {
+  background: #16213e;
+  border: 1.5px solid var(--item-color, #0f3460);
+  border-radius: 12px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.inv-item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+.inv-item-icon { font-size: 28px; line-height: 1; }
+.inv-item-name {
+  font-size: 10px;
+  color: #c0c8e0;
+  text-align: center;
+  line-height: 1.4;
+  font-weight: 500;
+}
+.inv-item-lv {
+  font-size: 9px;
+  color: #ef9f27;
+  font-weight: 700;
+}
+.inv-use-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--item-color, #0f3460);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--item-color, #a0c4ff);
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  transition: background 0.2s;
+}
+.inv-use-btn:hover { background: rgba(255,255,255,0.14); }
+
+/* ── 툴팁 ── */
+.inv-tooltip {
+  position: sticky;
+  bottom: 0;
+  background: #16213e;
+  border-top: 1px solid #0f3460;
+  padding: 10px 16px;
+  flex-shrink: 0;
+}
+.inv-tip-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin-bottom: 4px;
+}
+.inv-tip-desc {
+  font-size: 11px;
+  color: #6c8ebf;
+  line-height: 1.5;
+}
+
+/* ── 빈 인벤토리 ── */
+.inv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 40px 20px;
+  font-size: 13px;
+  color: #6c8ebf;
+  text-align: center;
+  line-height: 1.8;
+}
+.inv-empty span { font-size: 11px; color: #4a5a7a; }
+
+/* ── 맵 상단 인벤토리 버튼 ── */
+.inv-map-btn {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  flex-shrink: 0;
+}
+.inv-map-btn:hover {
+  background: #1e2d50;
+  border-color: #a0c4ff;
+  transform: scale(1.1);
+}
+
+
+/* ── 일일 한도 뱃지 (맵 버튼 위) ── */
+.map-daily-badge {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #0d1117;
+  pointer-events: none;
+  z-index: 10;
+  line-height: 1;
+}
+.badge-remain    { background: #1d9e75; color: #fff; }
+.badge-exhausted { background: #e24b4a; color: #fff; animation: exhaustedBlink 1.8s ease-in-out infinite; }
+@keyframes exhaustedBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* ── 스탯바 접기 버튼 ── */
+.stat-collapse-btn {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  color: #6c8ebf;
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.stat-collapse-btn:hover { background: #1e2d50; color: #a0c4ff; }
+
+/* 스탯 접힌 상태 */
+.stat-main.stat-collapsed {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  padding: 0;
+  gap: 0;
+  pointer-events: none;
+}
+.stat-main {
+  transition: max-width 0.3s ease, opacity 0.3s ease;
+  max-width: 600px;
+}
+
+
+/* ================================================================
+   하단 퀵 액세스 바
+================================================================ */
+.quick-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(480px, 100vw);
+  background: rgba(10, 12, 20, 0.97);
+  border-top: 1px solid #0f3460;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 6px 12px;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  z-index: 6000;
+  backdrop-filter: blur(8px);
+  gap: 8px;
+}
+
+.quick-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #0f3460;
+  border-radius: 10px;
+  padding: 8px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  color: #6c8ebf;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+}
+.quick-btn:hover, .quick-btn:active {
+  background: #16213e;
+  border-color: #a0c4ff;
+  color: #e0e0e0;
+  transform: translateY(-2px);
+}
+.quick-btn-center {
+  border-color: #378add;
+  color: #a0c4ff;
+}
+.quick-btn-center:hover {
+  border-color: #60a5fa;
+  background: #0d1a2e;
+}
+
+.quick-icon  { font-size: 18px; line-height: 1; }
+.quick-label {
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 퀵바가 있을 때 body 하단 여백 확보 */
+body { padding-bottom: calc(20px + 60px) !important; }
+
+
+/* ================================================================
+   모바일 — 맵 버튼 터치 영역 확대
+================================================================ */
+@media (max-width: 640px) {
+  /* 터치 타겟 최소 44px × 44px 보장 */
+  .map-spot {
+    padding: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .map-spot-icon {
+    width: clamp(38px, 9vw, 52px);
+    height: clamp(38px, 9vw, 52px);
+    font-size: clamp(16px, 3.5vw, 22px);
+  }
+  .map-spot-label {
+    font-size: clamp(9px, 2vw, 11px);
+    padding: 2px 5px;
+  }
+
+  /* 퀵바에서 레이블 숨김 (아이콘만) */
+  .quick-label { display: none; }
+  .quick-btn   { padding: 10px 8px; }
+  .quick-icon  { font-size: 20px; }
+
+  /* 스탯 pill 더 compact */
+  .map-stat-pill { min-width: 90px; padding: 4px 7px; }
+  .stat-gauge-wrap { min-width: 36px; }
+}
+
+@media (max-width: 400px) {
+  .stat-brand-name { display: none; }
+  .map-stat-pill   { min-width: 76px; }
+  .stat-pill-num   { min-width: 34px; font-size: 10px; }
+}
+
+/* 라이트 테마 — 인벤토리 / 퀵바 */
+body.light-theme .inv-panel     { background: #f8faff; border-color: #bfdbfe; }
+body.light-theme .inv-header    { background: #eff6ff; border-color: #bfdbfe; }
+body.light-theme .inv-title     { color: #1e3a8a; }
+body.light-theme .inv-count     { background: #dbeafe; color: #1e40af; }
+body.light-theme .inv-close-btn { border-color: #bfdbfe; color: #1e40af; }
+body.light-theme .inv-close-btn:hover { background: #dbeafe; }
+body.light-theme .inv-item-card { background: #fff; }
+body.light-theme .inv-use-btn   { color: #1e40af; }
+body.light-theme .inv-tooltip   { background: #eff6ff; border-color: #bfdbfe; }
+body.light-theme .inv-tip-name  { color: #1e3a8a; }
+body.light-theme .inv-tip-desc  { color: #3b5bdb; }
+body.light-theme .inv-empty     { color: #3b5bdb; }
+body.light-theme .quick-bar     { background: rgba(240,244,255,0.97); border-color: #bfdbfe; }
+body.light-theme .quick-btn     { border-color: #bfdbfe; color: #4a6099; }
+body.light-theme .quick-btn:hover { background: #dbeafe; color: #1e3a8a; }
+body.light-theme .quick-btn-center { border-color: #1d4ed8; color: #1d4ed8; }
+body.light-theme .stat-collapse-btn { background: #fff; border-color: #bfdbfe; color: #4a6099; }
+body.light-theme .inv-map-btn   { background: #fff; border-color: #bfdbfe; }
+

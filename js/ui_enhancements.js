@@ -329,3 +329,293 @@ window.showDataPopup = function(text) {
     el.style.transform = 'translateY(-28px)';
   }, 1000);
 };
+
+
+// ================================================================
+// 6. 인벤토리 오버레이
+// ================================================================
+
+window.openInventory = function() {
+  let overlay = document.getElementById('inventory-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'inventory-overlay';
+    overlay.className = 'inv-overlay';
+    overlay.innerHTML = `
+      <div class="inv-panel">
+        <div class="inv-header">
+          <span class="inv-title">🎒 인벤토리</span>
+          <span class="inv-count" id="inv-count">0개</span>
+          <button class="inv-close-btn" onclick="closeInventory()">✕</button>
+        </div>
+        <div class="inv-grid" id="inv-grid"></div>
+        <div class="inv-tooltip" id="inv-tooltip" style="display:none;"></div>
+        <div class="inv-empty" id="inv-empty">아이템이 없어요.<br><span>전투, 도서관, 가게에서 획득해보세요!</span></div>
+      </div>`;
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeInventory(); });
+    document.body.appendChild(overlay);
+  }
+
+  renderInventoryOverlay();
+  overlay.classList.add('inv-open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeInventory = function() {
+  const overlay = document.getElementById('inventory-overlay');
+  if (overlay) overlay.classList.remove('inv-open');
+  document.body.style.overflow = '';
+  const tip = document.getElementById('inv-tooltip');
+  if (tip) tip.style.display = 'none';
+};
+
+function renderInventoryOverlay() {
+  const grid   = document.getElementById('inv-grid');
+  const empty  = document.getElementById('inv-empty');
+  const count  = document.getElementById('inv-count');
+  if (!grid) return;
+
+  const inv = (typeof inventory !== 'undefined') ? inventory : [];
+  if (count) count.textContent = inv.length + '개';
+
+  if (inv.length === 0) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'flex';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  // 아이템 타입별 색상
+  const typeColor = {
+    dmg_boost: '#ef9f27', speed: '#ef9f27',
+    shield: '#378add',
+    regen: '#1d9e75', lucky: '#1d9e75',
+    rx_hp: '#e24b4a', rx_sp: '#378add', rx_cure: '#a855f7', rx_boost: '#ef9f27',
+    ultimate: '#fcd34d', mirror: '#5dcaa5',
+  };
+
+  grid.innerHTML = inv.map((item, i) => {
+    const lvl   = item.enhanceLevel ? ` <span class="inv-item-lv">+${item.enhanceLevel}</span>` : '';
+    const color = typeColor[item.id] || '#6c8ebf';
+    return `
+      <div class="inv-item-card" style="--item-color:${color};"
+           onmouseenter="showInvTooltip(event,${i})"
+           onmouseleave="hideInvTooltip()"
+           ontouchstart="showInvTooltip(event,${i})">
+        <div class="inv-item-icon">${item.icon || '📦'}</div>
+        <div class="inv-item-name">${item.name || '아이템'}${lvl}</div>
+        <button class="inv-use-btn" onclick="useInventoryItem(${i})">사용</button>
+      </div>`;
+  }).join('');
+}
+
+window.showInvTooltip = function(e, idx) {
+  const inv = (typeof inventory !== 'undefined') ? inventory : [];
+  const item = inv[idx];
+  if (!item) return;
+  const tip = document.getElementById('inv-tooltip');
+  if (!tip) return;
+
+  const lvl = item.enhanceLevel ? ` (+${item.enhanceLevel} 강화)` : '';
+  tip.innerHTML = `
+    <div class="inv-tip-name">${item.icon} ${item.name}${lvl}</div>
+    <div class="inv-tip-desc">${item.desc || '효과 없음'}</div>`;
+  tip.style.display = 'block';
+};
+
+window.hideInvTooltip = function() {
+  const tip = document.getElementById('inv-tooltip');
+  if (tip) tip.style.display = 'none';
+};
+
+// 인벤토리 아이템 즉시 사용 (전투 외부)
+window.useInventoryItem = function(idx) {
+  const inv = (typeof inventory !== 'undefined') ? inventory : [];
+  const item = inv[idx];
+  if (!item) return;
+
+  let msg = '';
+  let type = 'info';
+
+  if (item.id === 'rx_hp' || item.id === 'hp_potion') {
+    const gain = Math.min(50, playerStats.maxHp - playerStats.hp);
+    playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 50);
+    msg = `❤️ HP +${gain} 회복!`;  type = 'success';
+  } else if (item.id === 'rx_sp' || item.id === 'sp_potion') {
+    const gain = Math.min(40, playerStats.maxSp - playerStats.sp);
+    playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 40);
+    msg = `💧 SP +${gain} 회복!`;  type = 'success';
+  } else if (item.id === 'rx_cure') {
+    if (typeof playerStats.statusEffects !== 'undefined') playerStats.statusEffects = [];
+    msg = '🧬 모든 상태이상 제거!'; type = 'success';
+  } else if (item.id === 'full_potion') {
+    playerStats.hp = playerStats.maxHp;
+    playerStats.sp = playerStats.maxSp;
+    msg = '✨ HP + SP 완전 회복!';  type = 'success';
+  } else {
+    // 전투용 아이템은 맵에서 사용 불가 안내
+    if (typeof showToast === 'function') showToast('⚔️ ' + item.name + ' — 전투 중에만 사용 가능해요!', 'warning', 2500);
+    return;
+  }
+
+  inventory.splice(idx, 1);
+  if (typeof saveInventory === 'function') saveInventory();
+  if (typeof window.updateMapStats === 'function') window.updateMapStats();
+  if (typeof showToast === 'function') showToast(msg, type, 2200);
+  renderInventoryOverlay();
+};
+
+
+// ================================================================
+// 7. 일일 리셋 — 장소별 한도 소진 표시 (맵 버튼 뱃지)
+// ================================================================
+
+// 장소 key ↔ placeId 매핑
+const PLACE_DAILY_KEY = {
+  cafeteria: 'cafeteria',
+  library:   'library',
+  gym:       'gym',
+  clinic:    'clinic',
+  lab2:      'lab2',
+  festival:  'festival',
+  union:     'union',
+  lab:       'lab',
+};
+
+window.updateDailyBadges = function() {
+  if (typeof dailyLimits === 'undefined' || typeof dailyUsage === 'undefined') return;
+  if (typeof checkAndResetDaily === 'function') checkAndResetDaily();
+
+  Object.entries(PLACE_DAILY_KEY).forEach(([placeId, key]) => {
+    const badge = document.getElementById('daily-badge-' + placeId);
+    if (!badge) return;
+    const remain = dailyLimits[key] - (dailyUsage[key] || 0);
+    if (remain <= 0) {
+      badge.textContent = '✕';
+      badge.className = 'map-daily-badge badge-exhausted';
+      badge.style.display = 'flex';
+    } else {
+      badge.textContent = remain;
+      badge.className = 'map-daily-badge badge-remain';
+      badge.style.display = 'flex';
+    }
+  });
+};
+
+// 맵 버튼에 뱃지 DOM 주입 (DOMContentLoaded 후 1회)
+function injectDailyBadges() {
+  Object.keys(PLACE_DAILY_KEY).forEach(placeId => {
+    // map-spot 버튼에서 onclick에 해당 placeId 찾기
+    const btn = document.querySelector(`.map-spot[onclick*="'${placeId}'"]`);
+    if (!btn) return;
+    const wrap = btn.querySelector('.map-spot-wrap');
+    if (!wrap || wrap.querySelector('#daily-badge-' + placeId)) return;
+    const badge = document.createElement('span');
+    badge.id = 'daily-badge-' + placeId;
+    badge.className = 'map-daily-badge badge-remain';
+    badge.style.display = 'none';
+    wrap.appendChild(badge);
+  });
+  window.updateDailyBadges();
+}
+
+// enterPlace / leaveXxx 후 뱃지 갱신
+const _origEnterPlace_badge = window.enterPlace;
+if (_origEnterPlace_badge) {
+  window.enterPlace = function(placeId) {
+    _origEnterPlace_badge(placeId);
+    setTimeout(window.updateDailyBadges, 500);
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(injectDailyBadges, 300);
+  // 1분마다 갱신 (자정 직후 초기화 감지)
+  setInterval(window.updateDailyBadges, 60000);
+});
+
+
+// ================================================================
+// 8. 모바일 최적화
+// ================================================================
+
+// ── 8-1. 스탯바 접기/펼치기 ──
+window.toggleStatBar = function() {
+  const bar = document.querySelector('.stat-main');
+  const btn = document.getElementById('stat-collapse-btn');
+  if (!bar || !btn) return;
+  const collapsed = bar.classList.toggle('stat-collapsed');
+  btn.textContent  = collapsed ? '▼' : '▲';
+  btn.title        = collapsed ? '스탯 보기' : '스탯 숨기기';
+  localStorage.setItem('statBarCollapsed', collapsed ? '1' : '0');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('statBarCollapsed');
+  if (saved === '1') {
+    const bar = document.querySelector('.stat-main');
+    const btn = document.getElementById('stat-collapse-btn');
+    if (bar) { bar.classList.add('stat-collapsed'); }
+    if (btn) { btn.textContent = '▼'; btn.title = '스탯 보기'; }
+  }
+});
+
+// ── 8-2. 하단 퀵 액세스 바 ──
+function buildQuickBar() {
+  if (document.getElementById('quick-bar')) return;
+
+  const bar = document.createElement('div');
+  bar.id = 'quick-bar';
+  bar.className = 'quick-bar';
+  bar.innerHTML = `
+    <button class="quick-btn" onclick="openInventory()" title="인벤토리">
+      <span class="quick-icon">🎒</span>
+      <span class="quick-label">인벤토리</span>
+    </button>
+    <button class="quick-btn quick-btn-center" onclick="goToMap()" title="맵으로">
+      <span class="quick-icon">🗺️</span>
+      <span class="quick-label">맵</span>
+    </button>
+    <button class="quick-btn" onclick="quickSave()" title="저장" id="quick-save-btn">
+      <span class="quick-icon">💾</span>
+      <span class="quick-label">저장</span>
+    </button>`;
+  document.body.appendChild(bar);
+}
+
+window.goToMap = function() {
+  // 현재 열려 있는 모든 장소 컨테이너를 닫고 맵으로
+  const ids = ['battle-container','cafeteria-container','library-container',
+                'lab-container','explore-container','puang-room','gym-container',
+                'clinic-container','lab2-container','festival-container',
+                'union-container','mountain-container','store-container'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.classList.remove('visible'); }
+  });
+  const game = document.getElementById('game-container');
+  if (game) game.style.display = 'flex';
+  if (typeof window.updateMapStats === 'function') window.updateMapStats();
+  if (typeof window.updateDailyBadges === 'function') window.updateDailyBadges();
+};
+
+window.quickSave = async function() {
+  const btn = document.getElementById('quick-save-btn');
+  const icon = btn ? btn.querySelector('.quick-icon') : null;
+  if (icon) icon.textContent = '⏳';
+
+  try {
+    if (typeof saveAllDataToServer === 'function') await saveAllDataToServer();
+    if (icon) icon.textContent = '✅';
+    if (typeof showToast === 'function') showToast('💾 저장 완료!', 'success', 1800);
+  } catch(e) {
+    if (icon) icon.textContent = '❌';
+    if (typeof showToast === 'function') showToast('저장 실패 — 다시 시도해주세요.', 'error', 2500);
+  }
+  setTimeout(() => { if (icon) icon.textContent = '💾'; }, 2000);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildQuickBar();
+});
+
