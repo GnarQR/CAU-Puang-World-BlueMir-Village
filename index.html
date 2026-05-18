@@ -15,6 +15,7 @@
 
   <!-- 인트로 화면 -->
   <div id="intro-overlay">
+    <canvas id="intro-particles-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:0;"></canvas>
 
     <!-- 1단계: API 키 입력 -->
     <div class="intro-step" id="step-api">
@@ -91,9 +92,12 @@
   <!-- 맵 화면 -->
   <div class="map-container" id="game-container">
     <div class="map-stat-bar">
-      <div class="stat-brand">
-        <img src="images/puang/puang_title.png" class="puang-logo" />
-        <span class="stat-brand-name">CAU 푸앙 월드</span>
+      <div class="stat-brand" id="stat-brand-wrap" style="cursor:pointer;">
+        <div id="stat-avatar" class="stat-avatar">🧑‍💻</div>
+        <div class="stat-brand-info">
+          <div class="stat-brand-name" id="stat-brand-name">CAU 푸앙 월드</div>
+          <div class="stat-brand-title" id="stat-brand-title">신입 탐험가</div>
+        </div>
       </div>
 
       <div class="stat-main">
@@ -276,9 +280,34 @@
   <!-- 탐험 맵 (205관) -->
   <!--                -->
   <div id="game-screens">
-    <div id="explore-container">
+    <div id="explore-container" style="position:relative;">
       <button id="explore-exit-btn" onclick="showExitPopup()">← 탈출하기</button>
       <canvas id="map-canvas" width="1024" height="598"></canvas>
+      <!-- ★ 탐험 HUD -->
+      <div id="explore-hud">
+        <div class="explore-hud-left">
+          <div class="explore-hud-row">
+            <span class="explore-hud-label">HP</span>
+            <div class="explore-hud-bar-wrap"><div class="explore-hud-bar-fill" id="explore-hp-fill" style="width:100%;background:#1d9e75;"></div></div>
+            <span class="explore-hud-num" id="explore-hp-text">--/--</span>
+          </div>
+          <div class="explore-hud-row">
+            <span class="explore-hud-label" style="color:#e24b4a;">조우</span>
+            <div class="explore-hud-bar-wrap"><div class="explore-hud-bar-fill" id="explore-encounter-fill" style="width:0%;background:#e24b4a;"></div></div>
+          </div>
+        </div>
+        <div class="explore-hud-floor" id="explore-floor-badge">B1F</div>
+      </div>
+      <!-- ★ 모바일 터치 방향키 -->
+      <div id="explore-dpad">
+        <div class="dpad-row"><button class="dpad-btn" ontouchstart="dpadPress('up')" ontouchend="dpadRelease()" onmousedown="dpadPress('up')" onmouseup="dpadRelease()">▲</button></div>
+        <div class="dpad-row">
+          <button class="dpad-btn" ontouchstart="dpadPress('left')" ontouchend="dpadRelease()" onmousedown="dpadPress('left')" onmouseup="dpadRelease()">◀</button>
+          <button class="dpad-btn dpad-center" disabled>●</button>
+          <button class="dpad-btn" ontouchstart="dpadPress('right')" ontouchend="dpadRelease()" onmousedown="dpadPress('right')" onmouseup="dpadRelease()">▶</button>
+        </div>
+        <div class="dpad-row"><button class="dpad-btn" ontouchstart="dpadPress('down')" ontouchend="dpadRelease()" onmousedown="dpadPress('down')" onmouseup="dpadRelease()">▼</button></div>
+      </div>
     
       <div id="exit-popup" class="custom-popup hidden">
         <div class="popup-content">
@@ -298,20 +327,26 @@
   <!-- 전투 화면 -->
   <!--          -->
   <div id="battle-container" class="battle-overlay">
+    <!-- ★ 보스 전용 배경 레이어 -->
+    <div id="battle-boss-bg"></div>
+    <div id="battle-rage-overlay"></div>
     <!-- 전투 헤더 -->
-    <div class="battle-header">
+    <div class="battle-header" id="battle-header">
       <div>
-        <div class="battle-label"> 전투 발생 </div>
-        <div class="battle-title"> 205관 이면 세계 </div>
+        <div class="battle-label" id="battle-label">전투 발생</div>
+        <div class="battle-title" id="battle-title">205관 이면 세계</div>
       </div>
-      <div class="battle-turn" id="turn-display"> 턴 1 </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="battle-phase-badge" class="battle-phase-badge" style="display:none;"></div>
+        <div class="battle-turn" id="turn-display">턴 1</div>
+      </div>
     </div>
 
     <!-- 전투 필드: 적 vs 플레이어 -->
     <div class="battle-field">
-      <!-- 몬스터 영역 -->
-      <div class="fighter">  <!-- 몬스터 PNG 파일 DB에서 불러오기 -->
-        <img id="enemy-img" src="" style="width:auto; height:160px; object-fit:contain;"> <!-- 크기 조절 -->
+      <div class="fighter">
+        <div id="battle-monster-intro" class="battle-monster-intro" style="display:none;"></div>
+        <img id="enemy-img" src="" style="width:auto; height:160px; object-fit:contain;">
         <div class="fighter-name" id="enemy-name">???</div>
         <div class="hp-bar-wrap">
           <div class="hp-bar-label"><span>HP</span><span id="enemy-hp-text">-- / --</span></div>
@@ -319,9 +354,10 @@
             <div class="hp-bar-fill2" id="enemy-hp-bar" style="width:100%; background:#e24b4a;"></div>
           </div>
         </div>
+        <div id="enemy-weakness-badge" class="enemy-weakness-badge" style="display:none;"></div>
       </div>
 
-      <div class="vs-badge">VS</div>
+      <div class="vs-badge" id="vs-badge">VS</div>
 
       <!-- 플레이어 영역 -->
       <div class="fighter"> <!-- 플레이어 PNG 파일 -->
@@ -334,6 +370,8 @@
             <div class="hp-bar-fill2" id="battle-player-hp-bar" style="width:80%; background:#1d9e75;"></div>
           </div>
         </div>
+        <!-- ★ 버프 아이콘 -->
+        <div id="battle-buff-icons" class="battle-buff-icons"></div>
         <!-- ★ SP 바 -->
         <div class="hp-bar-wrap" style="margin-top:4px;">
           <div class="hp-bar-label"><span style="color:#378add;">SP</span><span id="battle-player-sp-text">40 / 40</span></div>
@@ -349,7 +387,7 @@
     <!-- 주사위 + 커맨드 -->
     <!-- 기술 변경 시 같이 변경할 것 -->
     <div class="dice-area">
-      <div class="cmd-label">커맨드 선택</div>
+      <div class="cmd-label">커맨드 선택 <span id="battle-sp-mini" style="font-size:10px;color:#378add;margin-left:6px;"></span></div>
       <div class="cmd-grid">
         <button class="cmd-btn attack" onclick="doCmd('attack')">
           <span class="cmd-name">벡터 캐논</span>
@@ -1665,6 +1703,7 @@
   <script src="js/puang.js"></script>
   <script src="js/locations.js"></script>
   <script src="js/ui_enhancements.js"></script>
+  <script src="js/ui_ideas4.js"></script>
 
   <!-- 토스트 컨테이너 -->
   <!-- ★ 청룡호 (호감도 100 해금) -->
