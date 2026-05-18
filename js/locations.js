@@ -115,10 +115,18 @@ window.orderFood = function(id) {
     return;
   }
   playerStats.data -= item.cost;
-  const hpGain = Math.min(item.hp, playerStats.maxHp - playerStats.hp);
-  const spGain = Math.min(item.sp, playerStats.maxSp - playerStats.sp);
-  playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + item.hp);
-  playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + item.sp);
+
+  // ★ Fix 3a: caf_bonus (목요일 요일 보너스) — HP/SP 회복량 +10
+  const cafBonus = (window._todayBonusKey === 'caf_bonus') ? 10 : 0;
+  // ★ Fix 4a: 날씨 보너스 — _weatherCafBonus (비/눈 올 때 SP 추가 회복)
+  const weatherCafBonus = window._weatherCafBonus || 0;
+
+  const hpRaw  = item.hp + cafBonus;
+  const spRaw  = item.sp + cafBonus + weatherCafBonus;
+  const hpGain = Math.min(hpRaw, playerStats.maxHp - playerStats.hp);
+  const spGain = Math.min(spRaw, playerStats.maxSp - playerStats.sp);
+  playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + hpRaw);
+  playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + spRaw);
   syncCafStats(); 
   if (typeof window.syncAndSave === 'function') window.syncAndSave();
 
@@ -133,6 +141,8 @@ window.orderFood = function(id) {
   let msg = '[✅ ' + item.name + '] ';
   if (hpGain > 0) msg += 'HP +' + hpGain + ' ';
   if (spGain > 0) msg += 'SP +' + spGain + ' ';
+  if (cafBonus > 0) msg += '[🗓️+' + cafBonus + '] ';
+  if (weatherCafBonus > 0) msg += '[🌧️+' + weatherCafBonus + '] ';
   msg += '· 💎 -' + item.cost;
   addCafLog(msg, hpGain > 0 ? 'caf-log-ok' : 'caf-log-sp');
 }
@@ -142,10 +152,20 @@ window.orderFood = function(id) {
 // ================================================================
 
 const LIB_WORDS = [
+  // 기존 단어 (유지)
   '푸앙이','청룡호','블루미르','중앙대학교','이면세계',
   '데드라인','학점귀신','블루미르홀','청룡산','동아리',
   '족보','교양','수강신청','과제','시험기간',
   '학생식당','도서관','연구실','체육관','공대',
+  // ★ Fix 9: 단어 풀 대폭 확장 (20→60개)
+  '알고리즘','자료구조','운영체제','데이터베이스','컴퓨터구조',
+  '프로그래밍','네트워크','인공지능','머신러닝','딥러닝',
+  '캡스톤','졸업논문','학위논문','성적증명서','재수강',
+  '축제','이면균열','탐험가','학점','출석인정',
+  '프로젝트','팀플','발표수업','오픈북','선택과목',
+  '전공필수','일반교양','복수전공','부전공','연계전공',
+  '학생회','과대표','동아리방','봉사활동','장학금',
+  '기말고사','중간고사','레포트','퀴즈','출석체크',
 ];
 
 const libNpcTexts = [
@@ -318,11 +338,15 @@ function finishLibTyping() {
   else if (libTypingCorrect >= 3)  reward = 3;
   else if (libTypingCorrect >= 1)  reward = 1;
 
-  // ★ Fix: 행운의 시약 효과 — 도서관 보상 2배 적용
-  if (playerStats._luckyActive && reward > 0) {
+  // ★ Fix 5: _libStudyIsDouble (화요일 도서관 2× 요일 보너스)
+  if (reward > 0 && window._libStudyIsDouble) {
     reward *= 2;
-    playerStats._luckyActive = false;
-    addLibLog('[🍀 행운의 시약] 보상 2배 적용!', 'lib-log-reward');
+    addLibLog('[🗓️ 화요일 2×] 도서관 보너스 적용!', 'lib-log-reward');
+  }
+  // ★ Fix 4b: 날씨 보너스 — _weatherLibBonus (비/눈 올 때 보상 추가)
+  if (reward > 0 && (window._weatherLibBonus || 0) > 0) {
+    reward += window._weatherLibBonus;
+    addLibLog('[🌧️ 날씨 보너스] +' + window._weatherLibBonus + '💎 추가!', 'lib-log-reward');
   }
 
   playerStats.data += reward;
@@ -538,9 +562,8 @@ window.doLabAction = function(action) {
     if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
   else if (action === 'upgrade-atk') {
-    // ★ Fix: unionBonusDmg가 undefined일 수 있어 playerStats 기준으로 안전하게 처리
-    playerStats.unionBonusDmg = (playerStats.unionBonusDmg || 0) + 5;
-    if (typeof unionBonusDmg !== 'undefined') unionBonusDmg = playerStats.unionBonusDmg;
+    if (typeof unionBonusDmg !== 'undefined') unionBonusDmg += 5;
+    playerStats.unionBonusDmg = unionBonusDmg;  // playerStats에 저장
     syncLabStats(); 
     if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
@@ -561,8 +584,6 @@ let gymSequence     = [];
 let gymPlayerSeq    = [];
 let gymShowingSeq   = false;
 const GYM_COLORS    = ['🔴','🔵','🟢','🟡'];
-// ★ Fix: 체육관 비용을 gymInputBtn()에서도 참조할 수 있도록 스코프 상위로 이동
-const GYM_COSTS     = { run: 4, weight: 8, yoga: 4 };
 
 window.enterGym = function() {
   document.getElementById('game-container').style.display = 'none';
@@ -628,12 +649,16 @@ window.startGymGame = function(mode) {
     syncGymStats();
     return;
   }
-  const costs = GYM_COSTS;  // ★ Fix: 전역 GYM_COSTS 참조
-  if (playerStats.data < costs[mode]) {
-    addGymLog('[❌] 데이터 조각 부족! (필요: ' + costs[mode] + '개)', '#f09595');
+  const costs = { run: 4, weight: 8, yoga: 4 };
+  // ★ Fix 3b: gym_discount (월요일 요일 보너스) — 비용 -1
+  const gymDiscount = (window._todayBonusKey === 'gym_discount') ? 1 : 0;
+  const finalCost = Math.max(0, costs[mode] - gymDiscount);
+  if (playerStats.data < finalCost) {
+    addGymLog('[❌] 데이터 조각 부족! (필요: ' + finalCost + '개)', '#f09595');
     return;
   }
-  playerStats.data -= costs[mode];
+  if (gymDiscount > 0) addGymLog('[🗓️ 월요일 할인] 비용 -1!', '#5dcaa5');
+  playerStats.data -= finalCost;
   gymCurrentMode = mode;
   gymSequence    = [];
   gymPlayerSeq   = [];
@@ -685,11 +710,7 @@ window.gymInputBtn = function(colorIdx) {
     document.getElementById('gym-game-title').textContent = '❌ 틀렸어요!';
     document.getElementById('gym-game-status').textContent = '정답: ' + gymSequence.map(i => GYM_COLORS[i]).join(' ');
     document.getElementById('gym-input-btns').style.display = 'none';
-    // ★ Fix: 실패 시 비용 50% 환불 (완전 손실 → UX 개선)
-    const refund = Math.floor(GYM_COSTS[gymCurrentMode] / 2);
-    playerStats.data += refund;
-    if (typeof window.syncAndSave === 'function') window.syncAndSave();
-    addGymLog('[❌] 훈련 실패! 💎 ' + refund + '개 반환됐어요.', '#f09595');
+    addGymLog('[❌] 훈련 실패! 데이터 조각만 소모됐어요.', '#f09595');
     setTimeout(() => {
       document.getElementById('gym-select-panel').style.display = 'block';
       document.getElementById('gym-game-panel').style.display = 'none';
@@ -829,48 +850,8 @@ function addLab2Log(msg) {
 function renderInventory() {
   const el = document.getElementById('inventory-display');
   if (!el) return;
-  if (inventory.length === 0) {
-    el.innerHTML = '<span style="color:#888;">없음</span>';
-    return;
-  }
-  // ★ Fix: 아이템별 사용 버튼 추가 (텍스트만 표시하던 것 → 클릭해서 사용 가능)
-  el.innerHTML = inventory.map((item, idx) => {
-    const usableOutsideBattle = ['lucky']; // 전투 외에서도 효과 있는 아이템
-    const isUsable = usableOutsideBattle.includes(item.id);
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(44,22,90,0.5);border:1px solid #4a2a8a;border-radius:6px;padding:3px 8px;margin:2px;font-size:12px;">
-      ${item.icon} ${item.name}
-      <span style="font-size:10px;color:#a088cc;">(${item.desc})</span>
-      ${isUsable ? `<button onclick="useInventoryItem(${idx})" style="background:#1d9e75;border:none;border-radius:4px;padding:1px 6px;color:#fff;cursor:pointer;font-size:10px;margin-left:4px;">사용</button>` : ''}
-      <button onclick="discardInventoryItem(${idx})" style="background:transparent;border:none;color:#f09595;cursor:pointer;font-size:11px;padding:0 2px;" title="버리기">✕</button>
-    </span>`;
-  }).join('');
+  el.textContent = inventory.length === 0 ? '없음' : inventory.map(i => i.icon + ' ' + i.name).join('  ·  ');
 }
-
-// ★ Fix: 맵/장소에서 아이템 직접 사용 (lucky 등 전투 외 아이템)
-window.useInventoryItem = function(idx) {
-  const item = inventory[idx];
-  if (!item) return;
-  if (item.id === 'lucky') {
-    playerStats._luckyActive = true;
-    inventory.splice(idx, 1);
-    if (typeof saveInventory === 'function') saveInventory();
-    renderInventory();
-    if (typeof syncLab2Stats === 'function') syncLab2Stats();
-    if (typeof showToast === 'function') showToast('🍀 행운의 시약 사용! 다음 도서관 보상 2배', 'success', 2500);
-    addLab2Log('[✅] 행운의 시약 사용! 다음 공부 보상 2배 적용됩니다.');
-  }
-};
-
-// ★ Fix: 아이템 버리기
-window.discardInventoryItem = function(idx) {
-  const item = inventory[idx];
-  if (!item) return;
-  inventory.splice(idx, 1);
-  if (typeof saveInventory === 'function') saveInventory();
-  renderInventory();
-  if (typeof syncLab2Stats === 'function') syncLab2Stats();
-  if (typeof showToast === 'function') showToast('🗑️ ' + item.name + ' 버림', 'info', 1500);
-};
 
 // 재료 조합 레시피
 const LAB2_RECIPES = [
@@ -941,14 +922,11 @@ window.craftItem = function(id) { addLab2Log('[안내] 이제 재료를 직접 �
 // ================================================================
 
 // 퀴즈 문제 데이터 (중앙대 관련 퀴즈) - TODO : 나중에 문제 추가하거나 변경해주세요.
-// ★ Fix: 정답이 전부 0번(첫 번째)으로 고정되어 있던 버그 수정 — 정답 위치 분산
 const quizData = [
-  { q: '중앙대학교의 마스코트는?',        choices: ['파란이', '푸앙이', '청룡이', '중앙이'],    ans: 1 },
-  { q: '중앙대학교가 위치한 구는?',        choices: ['관악구', '마포구', '동작구', '서대문구'], ans: 2 },
-  { q: '중앙대학교의 상징 색은?',          choices: ['빨간색', '초록색', '노란색', '파란색'],   ans: 3 },
-  { q: '블루미르홀은 어떤 건물인가요?',    choices: ['도서관', '강의동', '본관', '기숙사'],     ans: 3 },
-  { q: '중앙대학교의 영문 약자는?',        choices: ['SKU', 'KHU', 'CAU', 'SNU'],              ans: 2 },
-  { q: '이면 세계의 보스 "데드라인 악령"의 약점은?', choices: ['카페인 속성', '족보 수집 속성', '빠른 손가락 속성', '시간 관리 속성'], ans: 3 },
+  { q: '중앙대학교의 마스코트는?',        choices: ['푸앙이', '파란이', '청룡이', '중앙이'], ans: 0 },
+  { q: '중앙대학교가 위치한 구는?',        choices: ['동작구', '관악구', '마포구', '서대문구'], ans: 0 },
+  { q: '중앙대학교의 상징 색은?',          choices: ['파란색', '빨간색', '초록색', '노란색'], ans: 0 },
+  { q: '블루미르홀은 어떤 건물인가요?',    choices: ['기숙사', '도서관', '강의동', '본관'], ans: 0 },
 ];
 
 // 현재 진행 중인 퀴즈 (answerQuiz에서 정답 체크 시 사용)
@@ -1029,9 +1007,12 @@ window.playFestival = function(game) {
 // 퀴즈 정답 체크 — 맞으면 💎 +5, 틀리면 정답 공개
 window.answerQuiz = function(idx) {
   if (idx === currentQuiz.ans) {
-    playerStats.data += 5;
+    // ★ Fix 4c: 날씨 보너스 — _weatherFestBonus
+    const festWBonus2 = window._weatherFestBonus || 0;
+    const quizReward = 5 + festWBonus2;
+    playerStats.data += quizReward;
     if (typeof window.syncAndSave === 'function') window.syncAndSave();
-    addFestivalLog('[퀴즈] 정답! 💎 +5', '#5dcaa5');
+    addFestivalLog('[퀴즈] 정답! 💎 +' + quizReward + (festWBonus2 > 0 ? ' [☀️+' + festWBonus2 + ']' : ''), '#5dcaa5');
   } 
   
   else {
@@ -1048,18 +1029,18 @@ window.jankenPlay = function(choice) {
 
   let result = '';
   if (choice === cpu) {
-    // ★ Fix: 무승부 시 💎 +1 위로 보상 추가
-    playerStats.data += 1;
-    if (typeof window.syncAndSave === 'function') window.syncAndSave();
-    result = '비겼습니다! 💎 +1';
-    addFestivalLog('[가위바위보] 나: ' + choice + ' CPU: ' + cpu + ' → 비김 💎 +1', '#6c8ebf');
+    result = '비겼습니다!';
+    addFestivalLog('[가위바위보] 나: ' + choice + ' CPU: ' + cpu + ' → 비김', '#6c8ebf');
   } 
   
   else if (wins[choice] === cpu) {
-    playerStats.data += 8;
+    // ★ Fix 4c: 날씨 보너스 — _weatherFestBonus (맑은 날 축제 보상 +3)
+    const festWBonus = window._weatherFestBonus || 0;
+    const jankenReward = 8 + festWBonus;
+    playerStats.data += jankenReward;
     if (typeof window.syncAndSave === 'function') window.syncAndSave();
-    result = '이겼습니다! 💎 +8';
-    addFestivalLog('[가위바위보] 나: ' + choice + ' CPU: ' + cpu + ' → 승리! 💎 +8', '#5dcaa5');
+    result = '이겼습니다! 💎 +' + jankenReward + (festWBonus > 0 ? ' [☀️+' + festWBonus + ']' : '');
+    addFestivalLog('[가위바위보] 나: ' + choice + ' CPU: ' + cpu + ' → 승리! 💎 +' + jankenReward, '#5dcaa5');
   } 
   
   else {
@@ -1094,6 +1075,7 @@ async function spinSlot() {
   }
 
   // 결과 판정
+  // ★ Fix 1: _slotLucky 버프 — "행운아" 스킬 해금 시 꽝이 나오면 강제로 페어로 상향
   let reward = 0, msg = '';
   if (results[0] === results[1] && results[1] === results[2]) {
     if (results[0] === '7️⃣')  { reward = 30; msg = '🎉 JACKPOT! 777! 💎 +30!'; }
@@ -1106,9 +1088,20 @@ async function spinSlot() {
   } 
   
   else {
-    msg = '꽝... 💎 -3';
+    // ★ Fix 1: _slotLucky 활성이면 꽝 → 페어로 상향 (꽝 확률 절반 효과)
+    if (playerStats._slotLucky && Math.random() < 0.5) {
+      reward = 3; msg = '🍀 행운아 발동! 꽝 → 페어! 💎 +3';
+      addFestivalLog('[🍀 행운아] 꽝을 페어로 구했어요!', '#1d9e75');
+    } else {
+      msg = '꽝... 💎 -3';
+    }
   }
 
+  // ★ Fix 7b: data_bonus (토요일 요일 보너스) — 슬롯 보상에도 +2
+  if (reward > 0 && window._todayBonusKey === 'data_bonus') {
+    reward += 2;
+    msg += ' [🗓️+2]';
+  }
   playerStats.data += reward;
   if (typeof window.syncAndSave === 'function') window.syncAndSave();
   document.getElementById('slot-result').textContent = msg;
