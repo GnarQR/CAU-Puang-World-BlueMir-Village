@@ -584,6 +584,15 @@ function buildQuickBar() {
 }
 
 window.goToMap = function() {
+  // ★ Fix 10: 전투 중이면 맵 이동 차단
+  const battleCont = document.getElementById('battle-container');
+  const inBattle = battleCont &&
+    (battleCont.classList.contains('visible') || battleCont.style.display === 'flex');
+  if (inBattle) {
+    if (typeof showToast === 'function') showToast('⚔️ 전투 중에는 이동할 수 없어요!', 'warning', 2000);
+    return;
+  }
+
   // 현재 열려 있는 모든 장소 컨테이너를 닫고 맵으로
   const ids = ['battle-container','cafeteria-container','library-container',
                 'lab-container','explore-container','puang-room','gym-container',

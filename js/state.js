@@ -31,23 +31,6 @@ async function loadAllDataFromServer() {
         saveDailyUsage();
       }
 
-      // ★ Fix: inventory Firebase 복원 (저장만 되고 복원이 안 되던 버그 수정)
-      if (serverData.inventory && Array.isArray(serverData.inventory)) {
-        inventory.length = 0;
-        serverData.inventory.forEach(item => inventory.push(item));
-        localStorage.setItem('cau_inventory', JSON.stringify(inventory));
-      }
-
-      // ★ Fix: labSkills Firebase 복원 (localStorage에만 저장되던 버그 수정)
-      if (serverData.labSkills && Array.isArray(serverData.labSkills)) {
-        localStorage.setItem('labSkills', JSON.stringify(serverData.labSkills));
-      }
-
-      // ★ Fix: cafVisitTotal Firebase 복원 (단골카드 다기기 동기화)
-      if (serverData.cafVisitTotal !== undefined) {
-        localStorage.setItem('cafVisitTotal', String(serverData.cafVisitTotal));
-      }
-
       // 이전에 diamond 값 저장했던 것 수정 (마이그레이션)
       if (serverData.playerStats) {
         Object.assign(playerStats, serverData.playerStats);  // 서버 데이터 복사
@@ -77,9 +60,7 @@ async function loadAllDataFromServer() {
       serverDataLoaded = true; // 데이터 로드 완료 표시
       console.log("모든 데이터 서버 동기화 완료!");
       if (typeof updateMapStats === 'function') updateMapStats();
-    } else {
-      // ★ Fix: 신규 유저 (서버에 데이터 없음) — 이전엔 이 분기가 없어서 신규유저는 저장이 영구 차단됐음
-      serverDataLoaded = true;
+      else serverDataLoaded = true; // 신규 유저 (서버에 데이터 없음)
     }
   } 
   
@@ -152,19 +133,26 @@ async function saveAllDataToServer() {
       puangState: puangState,
       dailyUsage: dailyUsage,
       playerStats: {
-        name: playerStats.name || localStorage.getItem('playerName') || '탐험가', // 🌟 닉네임 저장
+        name: playerStats.name || localStorage.getItem('playerName') || '탐험가',
         hp: playerStats.hp,
         maxHp: playerStats.maxHp,
         sp: playerStats.sp,
         maxSp: playerStats.maxSp,
         data: playerStats.data ?? 0,
         ownedRoomItems: playerStats.ownedRoomItems || [],
-        roomDecorations: playerStats.roomDecorations || {}
+        roomDecorations: playerStats.roomDecorations || {},
+        // ★ Fix 6: statusEffects Firebase 저장 추가 (새로고침 시 상태이상 소멸 버그 수정)
+        statusEffects: playerStats.statusEffects || [],
+        // 누적 스탯도 함께 저장
+        _battleWins: playerStats._battleWins || 0,
+        _explorationCount: playerStats._explorationCount || 0,
+        _regenPerTurn: playerStats._regenPerTurn || 0,
+        _battleBonusReward: playerStats._battleBonusReward || 0,
+        unionBonusDmg: playerStats.unionBonusDmg || 0,
+        _slotLucky: playerStats._slotLucky || false,
+        _libTimeBonus: playerStats._libTimeBonus || 0,
       },
       inventory: inventory,
-      // ★ Fix: labSkills, cafVisitTotal Firebase 동기화 추가
-      labSkills: JSON.parse(localStorage.getItem('labSkills') || '[]'),
-      cafVisitTotal: parseInt(localStorage.getItem('cafVisitTotal') || '0'),
       lastUpdated: new Date()
     };
 

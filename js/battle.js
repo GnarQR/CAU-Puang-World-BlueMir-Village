@@ -516,6 +516,62 @@ function sleepMs(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+// ★ Fix 8: 전투 중 아이템 사용 실행 함수
+window._useBattleItem = function(idx) {
+  const inv = (typeof inventory !== 'undefined') ? inventory : [];
+  const item = inv[idx];
+  if (!item) return;
+
+  let log = '';
+  if (item.id === 'hp_potion' || item.id === 'rx_hp') {
+    const gain = Math.min(30, battlePlayerMaxHp - battlePlayerHp);
+    battlePlayerHp = Math.min(battlePlayerMaxHp, battlePlayerHp + 30);
+    playerStats.hp = battlePlayerHp;
+    log = '[아이템] ' + item.icon + ' ' + item.name + ' — HP +' + gain + '!';
+  } else if (item.id === 'sp_potion' || item.id === 'rx_sp') {
+    const gain = Math.min(20, battlePlayerMaxSp - battlePlayerSp);
+    battlePlayerSp = Math.min(battlePlayerMaxSp, battlePlayerSp + 20);
+    playerStats.sp = battlePlayerSp;
+    log = '[아이템] ' + item.icon + ' ' + item.name + ' — SP +' + gain + '!';
+  } else if (item.id === 'full_potion') {
+    battlePlayerHp = battlePlayerMaxHp;
+    battlePlayerSp = battlePlayerMaxSp;
+    playerStats.hp = battlePlayerHp;
+    playerStats.sp = battlePlayerSp;
+    log = '[아이템] ' + item.icon + ' 풀 회복! HP + SP 완전 회복!';
+  } else if (item.id === 'rx_cure') {
+    if (typeof playerStats.statusEffects !== 'undefined') playerStats.statusEffects = [];
+    log = '[아이템] ' + item.icon + ' 모든 상태이상 제거!';
+  } else if (item.id === 'shield' || item.id === 'dmg_boost' || item.id === 'speed' || item.id === 'regen') {
+    // 이미 자동 소모 아이템 — 효과는 enemyTurn/doCmd에서 적용됨
+    log = '[아이템] ' + item.icon + ' ' + item.name + ' — 다음 턴에 자동 적용!';
+  }
+
+  inventory.splice(idx, 1);
+  if (typeof saveInventory === 'function') saveInventory();
+  if (typeof updateBattleBars === 'function') updateBattleBars();
+  if (log) addBattleLog(log, 'log-success');
+
+  // 커맨드 버튼 원상복구
+  const grid = document.querySelector('.cmd-grid');
+  if (grid) grid.innerHTML = `
+    <button class="cmd-btn attack" onclick="doCmd('attack')"><span class="cmd-name">벡터 캐논</span><span class="cmd-desc">물리 공격 · 데미지 d20 [1]</span></button>
+    <button class="cmd-btn" onclick="doCmd('rag')"><span class="cmd-name">RAG 리커버리</span><span class="cmd-desc">HP 회복 · 회복량 d10 [2]</span></button>
+    <button class="cmd-btn attack" onclick="doCmd('hyper')"><span class="cmd-name">하이퍼 프롬프트</span><span class="cmd-desc">버프 · 다음 턴 데미지 2배 [3]</span></button>
+    <button class="cmd-btn special" onclick="doCmd('special')"><span class="cmd-name">⚡ 데이터 서지</span><span class="cmd-desc">SP 15 소모 · 강력 공격+회복 [4]</span></button>
+    <button class="cmd-btn" onclick="doCmd('run')"><span class="cmd-name">이면 세계 탈출</span><span class="cmd-desc">전투 종료 · 50% 확률 [5]</span></button>
+    <button class="cmd-btn" onclick="doCmd('item')"><span class="cmd-name">🎒 아이템</span><span class="cmd-desc">인벤토리 사용 [6]</span></button>`;
+  document.getElementById('dice-result').textContent = '아이템 사용 완료!';
+  if (typeof setBattleButtons === 'function') setBattleButtons(false);
+};
+
+window._cancelItemSelect = function(oldHtml) {
+  const grid = document.querySelector('.cmd-grid');
+  if (grid) grid.innerHTML = oldHtml;
+  document.getElementById('dice-result').textContent = '커맨드를 선택하세요';
+  if (typeof setBattleButtons === 'function') setBattleButtons(false);
+};
+
 // ── 전투 종료 시 상태 삭제 ──
 function clearBattleState() {
   localStorage.removeItem('inBattle');
@@ -661,10 +717,6 @@ async function enemyTurn() {
     addBattleLog('[SYSTEM] 플레이어가 쓰러졌다... 3초 후 복귀합니다.', 'log-damage');
     document.getElementById('dice-result').textContent = '전투 패배...';
     if (typeof showToast === 'function') showToast('💀 전투 패배...', 'error', 3000);
-    // ★ Fix: 패배 후 HP 0인 채로 맵 복귀하던 버그 수정 — 최소 HP 1로 복구
-    battlePlayerHp = 1;
-    playerStats.hp = 1;
-    localStorage.setItem('battlePlayerHp', 1);
     await sleepMs(3000);
     if (typeof returnToGame === 'function') returnToGame();
     return;
@@ -755,6 +807,16 @@ window.doCmd = async function(cmd) {
       if (typeof window.hasFestDoubleBuff === 'function' && window.hasFestDoubleBuff()) {
         reward *= 2;
         addBattleLog('[이벤트] 축제 2× 버프 — 보상 2배!', 'log-success');
+      }
+      // ★ Fix 2: battle_bonus (수요일 요일 보너스) — 보상 +5
+      if (window._todayBonusKey === 'battle_bonus') {
+        reward += 5;
+        addBattleLog('[🗓️ 수요일 보너스] 전투 보상 +5 💎', 'log-success');
+      }
+      // ★ Fix 7: data_bonus (토요일 요일 보너스) — 모든 💎 획득 +2
+      if (window._todayBonusKey === 'data_bonus') {
+        reward += 2;
+        addBattleLog('[🗓️ 토요일 보너스] 💎 +2', 'log-success');
       }
       // 전투 승리 횟수 누적 (업적용)
       playerStats._battleWins = (playerStats._battleWins || 0) + 1;
@@ -849,6 +911,9 @@ window.doCmd = async function(cmd) {
       if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('curse')) reward = Math.floor(reward * 0.5);
       reward += (playerStats._battleBonusReward || 0);
       if (typeof window.hasFestDoubleBuff === 'function' && window.hasFestDoubleBuff()) reward *= 2;
+      // ★ Fix 2+7: battle_bonus / data_bonus 요일 보너스
+      if (window._todayBonusKey === 'battle_bonus') reward += 5;
+      if (window._todayBonusKey === 'data_bonus')   reward += 2;
       playerStats._battleWins = (playerStats._battleWins || 0) + 1;
       if (typeof window.clearCafOvereatPenalty === 'function') window.clearCafOvereatPenalty();
       // ★ 도감 등록
@@ -866,6 +931,45 @@ window.doCmd = async function(cmd) {
       return;
     }
   }
+  // ★ Fix 8: 전투 중 아이템 사용 커맨드
+  else if (cmd === 'item') {
+    const inv = (typeof inventory !== 'undefined') ? inventory : [];
+    if (inv.length === 0) {
+      addBattleLog('[아이템] 보유 중인 아이템이 없습니다.', 'log-damage');
+      battleBusy = false;
+      if (typeof setBattleButtons === 'function') setBattleButtons(false);
+      return;
+    }
+
+    // 전투 중 사용 가능한 아이템만 필터
+    const usableInBattle = ['hp_potion','sp_potion','full_potion','rx_hp','rx_sp','rx_cure','regen','shield','speed','dmg_boost'];
+    const usable = inv.filter(i => usableInBattle.includes(i.id));
+
+    if (usable.length === 0) {
+      addBattleLog('[아이템] 전투 중 사용 가능한 아이템이 없습니다.', 'log-damage');
+      battleBusy = false;
+      if (typeof setBattleButtons === 'function') setBattleButtons(false);
+      return;
+    }
+
+    // 목록 표시 (dice-result에 텍스트로 안내)
+    const listText = usable.map((it, i) => (i+1) + '.' + it.icon + it.name).join('  ');
+    document.getElementById('dice-result').textContent = '사용할 아이템 번호 선택:';
+    addBattleLog('[아이템] 보유: ' + listText, 'log-system2');
+
+    // 선택 버튼 동적 생성
+    const grid = document.querySelector('.cmd-grid');
+    if (grid) {
+      const old_html = grid.innerHTML;
+      grid.innerHTML = usable.map((it, i) =>
+        `<button class="cmd-btn" style="font-size:11px;" onclick="window._useBattleItem(${inv.indexOf(it)})">${it.icon} ${it.name}<br><span style="font-size:10px;color:#888;">${it.desc || ''}</span></button>`
+      ).join('') + `<button class="cmd-btn" onclick="window._cancelItemSelect('${old_html.replace(/'/g, "\'")}')">취소</button>`;
+    }
+
+    battleBusy = false;
+    return;
+  }
+
   else if (cmd === 'run') {
     document.getElementById('dice-result').textContent = 'd2 굴리는 중...';
     const roll = await animateDice(2, true); // 도망은 황금 주사위 효과 없음
