@@ -139,6 +139,13 @@
       </div>
     </div>
 
+    <!-- ★ Fix: 오늘의 미션 — 스탯바 바로 아래 왼쪽으로 위치 이동 -->
+    <div class="quest-bar" id="quest-panel-wrap">
+      <div class="quest-bar-title">📋 오늘의 미션</div>
+      <div id="quest-panel" class="quest-bar-list"></div>
+      <button class="quest-check-btn quest-bar-btn" onclick="checkDailyQuests()">체크</button>
+    </div>
+
     <div class="map-bg" id="map-bg">  <!-- 맵 배경 + 장소 버튼 -->
       <img class="map-image" src="images/map/cau_map.png" />
       <div class="map-info-group">
@@ -148,13 +155,6 @@
         </div>
         <!-- ★ 날씨 뱃지 -->
         <div id="weather-badge" class="weather-badge" style="display:none;"></div>
-      </div>
-
-      <!-- ★ 퀘스트 패널 -->
-      <div class="quest-panel" id="quest-panel-wrap">
-        <div class="quest-panel-title">📋 오늘의 미션</div>
-        <div id="quest-panel"></div>
-        <button class="quest-check-btn" onclick="checkDailyQuests()">체크</button>
       </div>
 
       <!-- TODO : 장소 들어가는 버튼 노가다로 나중에 위치 조정해주세요. -->

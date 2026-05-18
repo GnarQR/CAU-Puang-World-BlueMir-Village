@@ -59,36 +59,72 @@ if (_origIB4) window.initBattle = function(origin, bossId) {
   }, 150);
 };
 
-// 분노 페이즈 감지
-let _prevHP4 = 100;
-setInterval(() => {
-  const bar = document.getElementById('enemy-hp-bar');
-  if (!bar) return;
-  const pct = parseFloat(bar.style.width) || 100;
-  const c = document.getElementById('battle-container');
-  if (!c || !c.classList.contains('battle-boss-mode')) { _prevHP4=100; return; }
-  if (pct <= 50 && _prevHP4 > 50) {
-    c.classList.add('battle-rage-mode');
-    const ro = document.getElementById('battle-rage-overlay');
-    if (ro) ro.style.display = 'block';
-    const pb = document.getElementById('battle-phase-badge');
-    if (pb) { pb.textContent = '🔥 분노 페이즈'; pb.style.display = 'flex'; }
-    bar.style.background = '#ff2222';
-    if (typeof showToast === 'function') showToast('🔥 분노 페이즈!', 'warning', 3000);
-  }
-  _prevHP4 = pct;
-}, 400);
+// ── 분노 페이즈 감지 & SP 미니 업데이트 ──
+// ★ 수정: 항상 실행되던 setInterval을 전투 시작/종료에 연동하여
+//         전투 화면이 없을 때는 타이머가 돌지 않도록 개선
+let _rageIntervalId  = null;
+let _spMiniIntervalId = null;
 
-// SP 미니
-setInterval(() => {
-  const sm = document.getElementById('battle-sp-mini');
-  const bc = document.getElementById('battle-container');
-  if (!sm || !bc || bc.style.display==='none') return;
-  if (typeof playerStats !== 'undefined')
-    sm.textContent = 'SP '+(playerStats.sp||0)+'/'+(playerStats.maxSp||40);
-}, 800);
+function _startBattleTimers() {
+  // 이미 실행 중이면 중복 등록 방지
+  if (_rageIntervalId) return;
 
-// 전투 로그 아이콘
+  let _prevHP4 = 100;
+
+  // 분노 페이즈 감지 (400ms)
+  _rageIntervalId = setInterval(() => {
+    const bar = document.getElementById('enemy-hp-bar');
+    if (!bar) return;
+    const pct = parseFloat(bar.style.width) || 100;
+    const c = document.getElementById('battle-container');
+    if (!c || !c.classList.contains('battle-boss-mode')) { _prevHP4=100; return; }
+    if (pct <= 50 && _prevHP4 > 50) {
+      c.classList.add('battle-rage-mode');
+      const ro = document.getElementById('battle-rage-overlay');
+      if (ro) ro.style.display = 'block';
+      const pb = document.getElementById('battle-phase-badge');
+      if (pb) { pb.textContent = '🔥 분노 페이즈'; pb.style.display = 'flex'; }
+      bar.style.background = '#ff2222';
+      if (typeof showToast === 'function') showToast('🔥 분노 페이즈!', 'warning', 3000);
+    }
+    _prevHP4 = pct;
+  }, 400);
+
+  // SP 미니 업데이트 (800ms)
+  _spMiniIntervalId = setInterval(() => {
+    const sm = document.getElementById('battle-sp-mini');
+    const bc = document.getElementById('battle-container');
+    if (!sm || !bc || bc.style.display==='none') return;
+    if (typeof playerStats !== 'undefined')
+      sm.textContent = 'SP '+(playerStats.sp||0)+'/'+(playerStats.maxSp||40);
+  }, 800);
+}
+
+function _stopBattleTimers() {
+  if (_rageIntervalId)   { clearInterval(_rageIntervalId);   _rageIntervalId   = null; }
+  if (_spMiniIntervalId) { clearInterval(_spMiniIntervalId); _spMiniIntervalId = null; }
+}
+
+// initBattle 후킹 — 전투 시작 시 타이머 ON
+const _origIB4 = window.initBattle;
+if (_origIB4) window.initBattle = function(origin, bossId) {
+  _origIB4(origin, bossId);
+  _startBattleTimers();  // ★ 전투 시작할 때만 타이머 켬
+  setTimeout(() => {
+    const boss = bossId && window.BOSSES ? window.BOSSES[bossId] : null;
+    window.applyBattleMode(boss);
+    if (boss) window.triggerBossIntro(boss);
+  }, 150);
+};
+
+// returnToGame 후킹 — 전투 종료 시 타이머 OFF
+const _origRTG4 = window.returnToGame;
+if (_origRTG4) window.returnToGame = function() {
+  _stopBattleTimers();   // ★ 전투 끝나면 타이머 끔
+  _origRTG4.apply(this, arguments);
+};
+
+// 전투 로그 아이콘 (MutationObserver — 항상 감시해도 DOM 변경 시에만 콜백 실행되므로 부담 없음)
 document.addEventListener('DOMContentLoaded', () => {
   const log = document.getElementById('battle-log');
   if (!log) return;
@@ -103,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // ================================================================
 // 2. 탐험 HUD + 터치 방향키
 // ================================================================
-
 function updateExploreHUD() {
   const c = document.getElementById('explore-container');
   if (!c || c.style.display==='none') return;

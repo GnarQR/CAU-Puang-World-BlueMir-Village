@@ -661,6 +661,10 @@ async function enemyTurn() {
     addBattleLog('[SYSTEM] 플레이어가 쓰러졌다... 3초 후 복귀합니다.', 'log-damage');
     document.getElementById('dice-result').textContent = '전투 패배...';
     if (typeof showToast === 'function') showToast('💀 전투 패배...', 'error', 3000);
+    // ★ Fix: 패배 후 HP 0인 채로 맵 복귀하던 버그 수정 — 최소 HP 1로 복구
+    battlePlayerHp = 1;
+    playerStats.hp = 1;
+    localStorage.setItem('battlePlayerHp', 1);
     await sleepMs(3000);
     if (typeof returnToGame === 'function') returnToGame();
     return;

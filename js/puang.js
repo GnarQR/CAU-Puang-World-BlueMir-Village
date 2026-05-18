@@ -213,6 +213,10 @@ window.giveItem = async function(itemId) {
     addChatMsg('player', '👏 푸앙이를 칭찬했다');
   }
 
+  // ★ Fix: 아이템 버튼 중복 클릭 방지 (로딩 중 잠금)
+  const itemBtns = document.querySelectorAll('.room-item-btn');
+  itemBtns.forEach(b => b.disabled = true);
+
   // 로딩 표시
   addChatMsg('puang', '...');
 
@@ -265,22 +269,68 @@ window.giveItem = async function(itemId) {
     log.removeChild(log.lastElementChild);
     addChatMsg('puang', '고마워 푸앙~', 0);
     console.error('Groq API 오류:', e);
+  } finally {
+    // ★ Fix: 아이템 버튼 잠금 해제
+    const itemBtns2 = document.querySelectorAll('.room-item-btn');
+    itemBtns2.forEach(b => b.disabled = false);
   }
 
   updateRoomUI();
 }
 
 // ── 채팅 전송 ──
-// 플레이어 입력을 Groq LLM에 전달하고 푸앙이 응답을 받아 표시
 // 나중에 키 숨길 때: fetch URL을 Cloudflare Workers URL로 교체
+// ★ Fix: 대화 맥락(최근 6턴) 전달 + 로딩 중 버튼 중복 입력 방지
+let _chatBusy = false;
+
+// chat-log DOM에서 최근 대화를 messages 배열로 변환 (최대 6턴)
+function buildChatHistory() {
+  const log = document.getElementById('chat-log');
+  if (!log) return [];
+  const msgs = [];
+  log.querySelectorAll('.chat-player .chat-player-bubble').forEach(el => {
+    msgs.push({ role: 'user', content: el.textContent });
+  });
+  log.querySelectorAll('.chat-puang .chat-puang-bubble').forEach(el => {
+    const text = el.childNodes[el.childNodes.length - 1]?.textContent?.trim();
+    if (text && text !== '...') msgs.push({ role: 'assistant', content: text });
+  });
+  // 인터리브가 깨질 수 있으므로 DOM 순서 기반 재구성 (최근 6개 메시지)
+  const ordered = [];
+  log.children && Array.from(log.children).forEach(el => {
+    if (el.classList.contains('chat-player')) {
+      const t = el.querySelector('.chat-player-bubble')?.textContent?.trim();
+      if (t) ordered.push({ role: 'user', content: t });
+    } else if (el.classList.contains('chat-puang')) {
+      const nodes = el.querySelector('.chat-puang-bubble')?.childNodes;
+      if (nodes) {
+        const t = Array.from(nodes).map(n => n.textContent).join('').replace('푸앙', '').trim();
+        const full = el.querySelector('.chat-puang-bubble')?.textContent?.trim();
+        if (full && full !== '...') ordered.push({ role: 'assistant', content: full });
+      }
+    }
+  });
+  return ordered.slice(-6); // 최근 6턴만
+}
+
 window.sendChat = async function() {
+  if (_chatBusy) return; // ★ Fix: 중복 전송 방지
   const input = document.getElementById('chat-input');
   const text  = input.value.trim();
   if (!text) return;
 
+  _chatBusy = true;
+  const sendBtn = document.getElementById('room-send-btn');
+  if (sendBtn) sendBtn.disabled = true; // ★ Fix: 버튼 잠금
+
   addChatMsg('player', text);
   input.value = '';
   addChatMsg('puang', '...');
+
+  // ★ Fix: 이전 대화 맥락 구성 (현재 입력 제외한 이전 히스토리)
+  const history = buildChatHistory();
+  // 마지막에 추가된 player 메시지(방금 입력)와 puang '...' 제외
+  const contextMsgs = history.slice(0, -1);
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -297,13 +347,13 @@ window.sendChat = async function() {
         messages: [
           {
             role: 'system',
-            // 푸앙이 prompt 수정할 필요 있음
             content: `You must respond only in Korean. Never use Chinese characters or Japanese. Always write in Korean Hangul only.
                     너는 중앙대학교 마스코트 푸앙이야.
                     항상 같은 캐릭터를 유지해. 절대 말투가 바뀌면 안 돼.
                     - 문장 끝에 반드시 "푸앙"을 붙여 (예: "고마워 푸앙~", "기분 좋다 푸앙!")
                     - 반말로 말해. 존댓말 절대 금지.
                     - 귀엽고 솔직한 성격. 가끔 장난기 있게.
+                    - 이전 대화 맥락을 기억해서 자연스럽게 이어가.
 
                     현재 호감도: ${puangState.favorability}/100
                     말투 지시: ${getFavorLabel(puangState.favorability)}
@@ -317,13 +367,16 @@ window.sendChat = async function() {
                     - 무례하거나 이상한 말: -3 ~ -8
                     - 보통 대화: 0 ~ +2`
           },
+          ...contextMsgs, // ★ Fix: 이전 대화 히스토리 삽입
           { role: 'user', content: text }
         ]
       })
     });
 
     const data   = await res.json();
-    const parsed = JSON.parse(data.choices[0].message.content);
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) throw new Error('API 응답 없음');
+    const parsed = JSON.parse(content);
 
     const log = document.getElementById('chat-log');
     log.removeChild(log.lastElementChild);
@@ -334,9 +387,12 @@ window.sendChat = async function() {
   
   catch (e) {
     const log = document.getElementById('chat-log');
-    log.removeChild(log.lastElementChild);
+    if (log.lastElementChild) log.removeChild(log.lastElementChild);
     addChatMsg('puang', '미안 푸앙, 지금 좀 멍했어 푸앙...', 0);
     console.error('Groq API 오류:', e);
+  } finally {
+    _chatBusy = false;
+    if (sendBtn) sendBtn.disabled = false; // ★ Fix: 버튼 잠금 해제
   }
 }
 

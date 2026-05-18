@@ -31,6 +31,16 @@ window.enterPlace = function(placeId) {
     return;
   }
 
+  // ★ Fix: HP 0 상태에서 전투/탐험 진입 차단 (의무실 외)
+  if (typeof playerStats !== 'undefined' && playerStats.hp <= 0) {
+    const safePlaces = ['clinic', 'lab', 'dormitory'];
+    if (!safePlaces.includes(placeId)) {
+      showSystemMsgOnMap('⚠️ HP가 0입니다! 의무실에서 회복 후 이동하세요.');
+      if (typeof showToast === 'function') showToast('❤️ HP 0 — 의무실에서 회복하세요!', 'error', 3000);
+      return;
+    }
+  }
+
   // 1. 모든 컨테이너 숨기기 
   // (index.html에 추가한 explore-container를 포함하여 숨깁니다)
   const containers = [

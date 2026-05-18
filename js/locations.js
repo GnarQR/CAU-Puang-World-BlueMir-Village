@@ -318,6 +318,13 @@ function finishLibTyping() {
   else if (libTypingCorrect >= 3)  reward = 3;
   else if (libTypingCorrect >= 1)  reward = 1;
 
+  // ★ Fix: 행운의 시약 효과 — 도서관 보상 2배 적용
+  if (playerStats._luckyActive && reward > 0) {
+    reward *= 2;
+    playerStats._luckyActive = false;
+    addLibLog('[🍀 행운의 시약] 보상 2배 적용!', 'lib-log-reward');
+  }
+
   playerStats.data += reward;
   libStudyCount++;
   libFocus = Math.max(0, libFocus - 20);
@@ -531,8 +538,9 @@ window.doLabAction = function(action) {
     if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
   else if (action === 'upgrade-atk') {
-    if (typeof unionBonusDmg !== 'undefined') unionBonusDmg += 5;
-    playerStats.unionBonusDmg = unionBonusDmg;  // playerStats에 저장
+    // ★ Fix: unionBonusDmg가 undefined일 수 있어 playerStats 기준으로 안전하게 처리
+    playerStats.unionBonusDmg = (playerStats.unionBonusDmg || 0) + 5;
+    if (typeof unionBonusDmg !== 'undefined') unionBonusDmg = playerStats.unionBonusDmg;
     syncLabStats(); 
     if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
@@ -553,6 +561,8 @@ let gymSequence     = [];
 let gymPlayerSeq    = [];
 let gymShowingSeq   = false;
 const GYM_COLORS    = ['🔴','🔵','🟢','🟡'];
+// ★ Fix: 체육관 비용을 gymInputBtn()에서도 참조할 수 있도록 스코프 상위로 이동
+const GYM_COSTS     = { run: 4, weight: 8, yoga: 4 };
 
 window.enterGym = function() {
   document.getElementById('game-container').style.display = 'none';
@@ -618,7 +628,7 @@ window.startGymGame = function(mode) {
     syncGymStats();
     return;
   }
-  const costs = { run: 4, weight: 8, yoga: 4 };
+  const costs = GYM_COSTS;  // ★ Fix: 전역 GYM_COSTS 참조
   if (playerStats.data < costs[mode]) {
     addGymLog('[❌] 데이터 조각 부족! (필요: ' + costs[mode] + '개)', '#f09595');
     return;
@@ -675,7 +685,11 @@ window.gymInputBtn = function(colorIdx) {
     document.getElementById('gym-game-title').textContent = '❌ 틀렸어요!';
     document.getElementById('gym-game-status').textContent = '정답: ' + gymSequence.map(i => GYM_COLORS[i]).join(' ');
     document.getElementById('gym-input-btns').style.display = 'none';
-    addGymLog('[❌] 훈련 실패! 데이터 조각만 소모됐어요.', '#f09595');
+    // ★ Fix: 실패 시 비용 50% 환불 (완전 손실 → UX 개선)
+    const refund = Math.floor(GYM_COSTS[gymCurrentMode] / 2);
+    playerStats.data += refund;
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+    addGymLog('[❌] 훈련 실패! 💎 ' + refund + '개 반환됐어요.', '#f09595');
     setTimeout(() => {
       document.getElementById('gym-select-panel').style.display = 'block';
       document.getElementById('gym-game-panel').style.display = 'none';
@@ -815,8 +829,48 @@ function addLab2Log(msg) {
 function renderInventory() {
   const el = document.getElementById('inventory-display');
   if (!el) return;
-  el.textContent = inventory.length === 0 ? '없음' : inventory.map(i => i.icon + ' ' + i.name).join('  ·  ');
+  if (inventory.length === 0) {
+    el.innerHTML = '<span style="color:#888;">없음</span>';
+    return;
+  }
+  // ★ Fix: 아이템별 사용 버튼 추가 (텍스트만 표시하던 것 → 클릭해서 사용 가능)
+  el.innerHTML = inventory.map((item, idx) => {
+    const usableOutsideBattle = ['lucky']; // 전투 외에서도 효과 있는 아이템
+    const isUsable = usableOutsideBattle.includes(item.id);
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(44,22,90,0.5);border:1px solid #4a2a8a;border-radius:6px;padding:3px 8px;margin:2px;font-size:12px;">
+      ${item.icon} ${item.name}
+      <span style="font-size:10px;color:#a088cc;">(${item.desc})</span>
+      ${isUsable ? `<button onclick="useInventoryItem(${idx})" style="background:#1d9e75;border:none;border-radius:4px;padding:1px 6px;color:#fff;cursor:pointer;font-size:10px;margin-left:4px;">사용</button>` : ''}
+      <button onclick="discardInventoryItem(${idx})" style="background:transparent;border:none;color:#f09595;cursor:pointer;font-size:11px;padding:0 2px;" title="버리기">✕</button>
+    </span>`;
+  }).join('');
 }
+
+// ★ Fix: 맵/장소에서 아이템 직접 사용 (lucky 등 전투 외 아이템)
+window.useInventoryItem = function(idx) {
+  const item = inventory[idx];
+  if (!item) return;
+  if (item.id === 'lucky') {
+    playerStats._luckyActive = true;
+    inventory.splice(idx, 1);
+    if (typeof saveInventory === 'function') saveInventory();
+    renderInventory();
+    if (typeof syncLab2Stats === 'function') syncLab2Stats();
+    if (typeof showToast === 'function') showToast('🍀 행운의 시약 사용! 다음 도서관 보상 2배', 'success', 2500);
+    addLab2Log('[✅] 행운의 시약 사용! 다음 공부 보상 2배 적용됩니다.');
+  }
+};
+
+// ★ Fix: 아이템 버리기
+window.discardInventoryItem = function(idx) {
+  const item = inventory[idx];
+  if (!item) return;
+  inventory.splice(idx, 1);
+  if (typeof saveInventory === 'function') saveInventory();
+  renderInventory();
+  if (typeof syncLab2Stats === 'function') syncLab2Stats();
+  if (typeof showToast === 'function') showToast('🗑️ ' + item.name + ' 버림', 'info', 1500);
+};
 
 // 재료 조합 레시피
 const LAB2_RECIPES = [
@@ -887,11 +941,14 @@ window.craftItem = function(id) { addLab2Log('[안내] 이제 재료를 직접 �
 // ================================================================
 
 // 퀴즈 문제 데이터 (중앙대 관련 퀴즈) - TODO : 나중에 문제 추가하거나 변경해주세요.
+// ★ Fix: 정답이 전부 0번(첫 번째)으로 고정되어 있던 버그 수정 — 정답 위치 분산
 const quizData = [
-  { q: '중앙대학교의 마스코트는?',        choices: ['푸앙이', '파란이', '청룡이', '중앙이'], ans: 0 },
-  { q: '중앙대학교가 위치한 구는?',        choices: ['동작구', '관악구', '마포구', '서대문구'], ans: 0 },
-  { q: '중앙대학교의 상징 색은?',          choices: ['파란색', '빨간색', '초록색', '노란색'], ans: 0 },
-  { q: '블루미르홀은 어떤 건물인가요?',    choices: ['기숙사', '도서관', '강의동', '본관'], ans: 0 },
+  { q: '중앙대학교의 마스코트는?',        choices: ['파란이', '푸앙이', '청룡이', '중앙이'],    ans: 1 },
+  { q: '중앙대학교가 위치한 구는?',        choices: ['관악구', '마포구', '동작구', '서대문구'], ans: 2 },
+  { q: '중앙대학교의 상징 색은?',          choices: ['빨간색', '초록색', '노란색', '파란색'],   ans: 3 },
+  { q: '블루미르홀은 어떤 건물인가요?',    choices: ['도서관', '강의동', '본관', '기숙사'],     ans: 3 },
+  { q: '중앙대학교의 영문 약자는?',        choices: ['SKU', 'KHU', 'CAU', 'SNU'],              ans: 2 },
+  { q: '이면 세계의 보스 "데드라인 악령"의 약점은?', choices: ['카페인 속성', '족보 수집 속성', '빠른 손가락 속성', '시간 관리 속성'], ans: 3 },
 ];
 
 // 현재 진행 중인 퀴즈 (answerQuiz에서 정답 체크 시 사용)
@@ -991,8 +1048,11 @@ window.jankenPlay = function(choice) {
 
   let result = '';
   if (choice === cpu) {
-    result = '비겼습니다!';
-    addFestivalLog('[가위바위보] 나: ' + choice + ' CPU: ' + cpu + ' → 비김', '#6c8ebf');
+    // ★ Fix: 무승부 시 💎 +1 위로 보상 추가
+    playerStats.data += 1;
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
+    result = '비겼습니다! 💎 +1';
+    addFestivalLog('[가위바위보] 나: ' + choice + ' CPU: ' + cpu + ' → 비김 💎 +1', '#6c8ebf');
   } 
   
   else if (wins[choice] === cpu) {

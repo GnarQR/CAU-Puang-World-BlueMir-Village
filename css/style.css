@@ -5611,6 +5611,8 @@ body.light-theme .inv-map-btn   { background: #fff; border-color: #bfdbfe; }
 
 /* ── 퀘스트 패널 ── */
 .quest-panel {
+  /* ★ Fix: 맵 우측 절대 위치에서 스탯바 아래 가로 바 형태로 이동 */
+  /* 기존 스타일 유지 — quest-bar가 실제로 사용됨 */
   position: absolute;
   top: 10px;
   right: 10px;
@@ -5622,6 +5624,53 @@ body.light-theme .inv-map-btn   { background: #fff; border-color: #bfdbfe; }
   z-index: 20;
   backdrop-filter: blur(6px);
 }
+
+/* ★ Fix: 스탯바 아래 가로 형태 미션 바 */
+.quest-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10,12,22,0.88);
+  border-bottom: 1px solid #0f2a50;
+  padding: 5px 14px;
+  flex-wrap: wrap;
+  backdrop-filter: blur(4px);
+  min-height: 34px;
+}
+.quest-bar-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6c8ebf;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.quest-bar-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.quest-bar-list .quest-row {
+  border-bottom: none;
+  background: rgba(15,30,60,0.5);
+  border: 1px solid #0f3060;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+.quest-bar-btn {
+  flex-shrink: 0;
+  width: auto !important;
+  padding: 3px 10px !important;
+  margin-top: 0 !important;
+}
+body.light-theme .quest-bar {
+  background: rgba(230,238,255,0.92);
+  border-bottom-color: #bfdbfe;
+}
+body.light-theme .quest-bar-title { color: #1e3a8a; }
+body.light-theme .quest-bar-list .quest-row { background: rgba(255,255,255,0.7); border-color: #bfdbfe; color: #374151; }
 .quest-panel-title {
   font-size: 11px;
   font-weight: 700;

@@ -123,9 +123,11 @@ const ROOM_ITEMS = {
   'item_painting': { id: 'item_painting',slot: 'wall',   sprite: 'none',        name: '청룡호 수채화',      emoji: '🖼️', price: 10, desc: '벽 그림 추가' },
 
   // 바닥 아이템 (floor 슬롯)
-  'item_carpet':   { id: 'item_carpet',  slot: 'floor',  sprite: 'spr-carpet-blue', name: '푸앙이 발자국 카펫', emoji: '👣', price: 12, desc: '바닥 카펫 추가' },
-  'item_plant':    { id: 'item_plant',   slot: 'floor2', sprite: 'spr-plant',       name: '캠퍼스 벚꽃 화분',  emoji: '🌿', price: 8,  desc: '화분 장식' },
-  'item_lamp':     { id: 'item_lamp',    slot: 'floor3', sprite: 'spr-lamp',        name: '별빛 조명',         emoji: '🌟', price: 7,  desc: '방 조명 변경' },
+  // ★ 수정: 'item_carpet' / 'item_lamp' 키 중복으로 앞 정의가 덮어씌워지던 버그 수정
+  //         미구현 항목이므로 키만 구분해두고 slot/sprite는 추후 확정
+  'item_carpet_floor': { id: 'item_carpet_floor', slot: 'floor',  sprite: 'spr-carpet-blue', name: '푸앙이 발자국 카펫', emoji: '👣', price: 12, desc: '바닥 카펫 추가' },
+  'item_plant':        { id: 'item_plant',         slot: 'floor2', sprite: 'spr-plant',       name: '캠퍼스 벚꽃 화분',  emoji: '🌿', price: 8,  desc: '화분 장식' },
+  'item_lamp_floor':   { id: 'item_lamp_floor',    slot: 'floor3', sprite: 'spr-lamp',        name: '별빛 조명',         emoji: '🌟', price: 7,  desc: '방 조명 변경' },
 
   // 특수 가구 (furniture 슬롯) — 기본 배치됨
   // 추후 추가용: 'item_tank', 'item_doll' 등
