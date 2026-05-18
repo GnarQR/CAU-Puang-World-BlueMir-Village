@@ -165,7 +165,9 @@ function buildRoomHTML() {
       <div id="room-slot-dreamcatcher"   class="room-slot-hint" style="right:8%;top:8%;width:139px;height:152px;z-index:6;"></div>
  
       <!-- 푸앙이 캐릭터 -->
-      <div id="room-puang-char">🦎</div>
+      <div id="room-puang-char">
+        <img src="images/puang/puang_normal.png" alt="푸앙이" style="width:80px;height:80px;object-fit:contain;">
+      </div>
     </div>
   `;
 }
@@ -191,7 +193,16 @@ window.applyRoomDecorations = function() {
   const charEl = document.getElementById('room-puang-char');
   if (charEl) {
     const skinEmojis = { skin_cat: '🐱', skin_dragon: '🐲', skin_robot: '🤖' };
-    charEl.textContent = skinEmojis[decos.costume] || '🦎';
+    const costume = skinEmojis[decos.costume];     
+    
+    // 코스튬 적용 시에만 이모지로 교체
+    if (costume) { charEl.textContent = costume; } 
+    else {
+      // 코스튬 없으면 img 태그 유지 (지우지 않음)
+      if (!charEl.querySelector('img')) {
+        charEl.innerHTML = '<img src="images/puang/puang_normal.png" alt="푸앙이" style="width:80px;height:80px;object-fit:contain;">';
+      }
+    }
   }
 };
  
