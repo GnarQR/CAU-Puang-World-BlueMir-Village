@@ -322,11 +322,11 @@ h1 {
 
 #puang-room {  
     display: none;
-    position: relative;
     width: 100%;
-    max-width: 760px;
+    max-width: 700px;
     flex-direction: column;
     gap: 0;
+    position: relative;
 }
 
 #puang-room.visible {display: flex;}
@@ -605,27 +605,28 @@ h1 {
     left: 50%;
     transform: translateX(-50%);
     z-index: 30;
+    white-space: nowrap;
 }
 
 /* 채팅 패널 — glassmorphism 오버레이 */
 #room-chat-panel {
     position: absolute !important;
-    bottom: 16px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    width: 85%;
+    transform: translate(-50%, -50%);
+    width: 92%;
+    max-height: 85%;
     z-index: 30;
     border-radius: 20px;
-    background: rgba(13, 17, 35, 0.72) !important;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(212, 83, 126, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-    padding: 16px;
+    background: rgba(10, 14, 28, 0.82) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(212, 83, 126, 0.35);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55);
+    padding: 20px 20px 16px;
     box-sizing: border-box;
+    overflow-y: auto;
 }
-
-
 
 /* 대화 시작 버튼 */
 .room-talk-start-btn {  

@@ -1114,12 +1114,6 @@
   <!--           -->
   <!-- 공대 실험실 -->
   <!--           -->
-  <!--          -->
-  <!-- 공대 실험실 -->
-  <!--          -->
-  <!--          -->
-  <!-- 공대 실험실 -->
-  <!--          -->
   <div id="lab2-container" class="lab2-wrap">
 
     <!-- 헤더 -->
@@ -1205,9 +1199,6 @@
   <!--          -->
   <!-- 중앙 축제 -->
   <!--          -->
-  <!--         -->
-  <!-- 중앙 축제 -->
-  <!--         -->
   <div id="festival-container" class="fest-wrap">
 
     <!-- 헤더 -->
@@ -1613,18 +1604,25 @@
       <div id="room-slot-hanging_deco"    class="room-slot-hint" style="left:38%;top:5%;width:122px;height:152px;z-index:6;"></div>
       <div id="room-slot-memo_poster"     class="room-slot-hint" style="left:20%;top:35%;width:144px;height:152px;z-index:6;"></div>
       <div id="room-slot-dreamcatcher"    class="room-slot-hint" style="right:8%;top:8%;width:139px;height:152px;z-index:6;"></div>
-      <div id="room-puang-char">🦎</div>
+      <div id="room-puang-char">
+        <img src="/images/puang/puang_normal.png" alt="푸앙이"
+            style="width:80px;height:80px;object-fit:contain;"
+            onerror="console.error('푸앙 이미지 로드 실패:', this.src); this.style.outline='2px solid red'">
+      </div>
     </div>
 
-    <!-- 대화 시작 버튼 (채팅 숨김 상태일 때만 표시) -->
-    <div id="room-talk-btn-wrap" style="display:flex; justify-content:center; padding:12px 0;">
-      <button class="room-talk-start-btn" onclick="openRoomChat()">
-        🐉 푸앙이와 대화하기
-      </button>
-    </div>
+      <!-- 대화 시작 버튼 (채팅 숨김 상태일 때만 표시) -->
+      <div id="room-talk-btn-wrap" style="position:absolute;bottom:8%;left:50%;transform:translateX(-50%);z-index:30;">
+        <button class="room-talk-start-btn" onclick="openRoomChat()">🐉 푸앙이와 대화하기</button>
+      </div>
 
-    <!-- 채팅 UI (처음엔 숨김) 메인: 푸앙이 + 채팅 -->
-    <div class="room-main" id="room-chat-panel" style="display:none;">
+      <!-- 채팅 UI (처음엔 숨김) 메인: 푸앙이 + 채팅 -->
+      <div class="room-main" id="room-chat-panel" style="display:none;">
+      <!-- X 닫기 버튼 -->
+      <button onclick="closeRoomChat()" style="position:absolute;top:12px;right:14px;background:rgba(212,83,126,0.15);
+        border:1px solid rgba(212,83,126,0.4);color:#d4537e;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;z-index:35;
+        display:flex;align-items:center;justify-content:center;transition:background 0.2s;" onmouseover="this.style.background='rgba(212,83,126,0.35)'" 
+        onmouseout="this.style.background='rgba(212,83,126,0.15)'">✕</button>
 
       <!-- 왼쪽: 푸앙이 캐릭터 + 상태 -->
       <div class="room-left">
