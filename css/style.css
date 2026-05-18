@@ -557,8 +557,17 @@ h1 {
   border-radius: 6px;
   pointer-events: none;
   z-index: 1;
+  background: transparent !important;
 }
- 
+
+/* ── 아이템 설치된 슬롯 ── */
+.room-slot-filled {
+  position: absolute;
+  border: none !important;
+  background-color: transparent !important;
+  pointer-events: none;
+}
+
 /* ── 배경 테마 오버레이 ── */
 #puang-room-scene.theme-default { filter: none; }
 #puang-room-scene.theme-night   { filter: brightness(0.7) hue-rotate(200deg); }

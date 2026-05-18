@@ -211,8 +211,13 @@ function renderSlot(slotId, itemId) {
   if (!el) return;
  
   if (!itemId) {
-    // 빈 슬롯 — 점선 힌트만
+    // 빈 슬롯 — 점선 힌트 복원 (인라인 style 위치/크기는 유지)
     el.className = 'room-slot-hint';
+    el.style.backgroundImage = '';
+    el.style.backgroundPosition = '';
+    el.style.backgroundSize = '';
+    el.style.backgroundRepeat = '';
+    el.style.border = '';
     el.innerHTML = '';
     return;
   }
@@ -220,10 +225,26 @@ function renderSlot(slotId, itemId) {
   const item = ROOM_ITEMS[itemId];
   if (!item) return;
  
-  // 슬롯에 스프라이트 표시
-  const sheetClass = item.spriteSheet === 'wall' ? 'room-wall-deco' : 'room-furniture';
-  el.className = `${sheetClass} ${item.spriteClass}`;
+  // 슬롯 div 위치/크기(인라인 style)는 유지하고 테두리만 제거 후 스프라이트 적용
+  el.className = 'room-slot-filled';
+ 
+  // 임시 div로 CSS 클래스의 background 값 읽기
+  const tmpEl = document.createElement('div');
+  tmpEl.className = item.spriteSheet === 'wall'
+    ? `room-wall-deco ${item.spriteClass}`
+    : `room-furniture ${item.spriteClass}`;
+  tmpEl.style.cssText = 'visibility:hidden;position:absolute;left:-9999px;';
+  document.body.appendChild(tmpEl);
+ 
+  const computed = window.getComputedStyle(tmpEl);
+  el.style.backgroundImage    = computed.backgroundImage;
+  el.style.backgroundPosition = computed.backgroundPosition;
+  el.style.backgroundSize     = computed.backgroundSize;
+  el.style.backgroundRepeat   = 'no-repeat';
+  el.style.backgroundColor    = 'transparent';
   el.innerHTML = '';
+ 
+  document.body.removeChild(tmpEl);
 }
 
 // ── 아이템 구매 ──
