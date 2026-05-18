@@ -7,7 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CAU RPG — 중앙대 이면 세계 탐험</title>
   <link rel="stylesheet" href="css/style.css">  <!-- CSS -->
-  <link rel="stylesheet" href="css/room.css">
 
 </head>
 
@@ -1599,23 +1598,22 @@
 
     <!-- 방 씬 (항상 표시) -->
     <div id="puang-room-scene" class="theme-default">
-      <div id="room-back-wall"></div>
-      <div id="room-left-wall"></div>
-      <div id="room-ceiling"></div>
-      <div id="room-left-edge"></div>
-      <div id="room-floor"></div>
-      <div id="room-wall-floor-line"></div>
-      <div id="room-window"><div class="room-window-arch"></div></div>
-      <div id="room-window-light"></div>
-      <div id="furniture-bed"      class="room-item spr-bed"      style="right:8%;top:8%;z-index:6;"></div>
-      <div id="furniture-wardrobe" class="room-item spr-wardrobe" style="right:2%;top:4%;z-index:5;"></div>
-      <div id="furniture-sofa"     class="room-item spr-sofa"     style="left:14%;bottom:28%;z-index:9;"></div>
-      <div id="room-slot-wall"   class="room-slot-target"></div>
-      <div id="room-slot-floor"  class="room-slot-target"></div>
-      <div id="room-slot-floor2" class="room-slot-target"></div>
-      <div id="room-slot-floor3" class="room-slot-target"></div>
-      <div id="room-left-shadow"></div>
-      <div id="room-right-shadow"></div>
+      <div id="room-slot-bed"             class="room-slot-hint" style="right:8%;top:38%;width:179px;height:144px;z-index:8;"></div>
+      <div id="room-slot-desk"            class="room-slot-hint" style="left:8%;top:42%;width:169px;height:144px;z-index:8;"></div>
+      <div id="room-slot-carpet"          class="room-slot-hint" style="left:26%;top:60%;width:189px;height:144px;z-index:5;"></div>
+      <div id="room-slot-bookshelf_small" class="room-slot-hint" style="right:28%;top:22%;width:93px;height:144px;z-index:7;"></div>
+      <div id="room-slot-bookshelf_big"   class="room-slot-hint" style="right:1%;top:28%;width:109px;height:192px;z-index:7;"></div>
+      <div id="room-slot-lamp"            class="room-slot-hint" style="right:22%;top:52%;width:60px;height:80px;z-index:9;"></div>
+      <div id="room-slot-hanging_plant"   class="room-slot-hint" style="right:5%;top:3%;width:77px;height:160px;z-index:6;"></div>
+      <div id="room-slot-shelf_left"      class="room-slot-hint" style="left:12%;top:15%;width:173px;height:173px;z-index:6;"></div>
+      <div id="room-slot-shelf_right"     class="room-slot-hint" style="right:14%;top:12%;width:151px;height:108px;z-index:6;"></div>
+      <div id="room-slot-painting_left"   class="room-slot-hint" style="left:14%;top:10%;width:193px;height:173px;z-index:6;"></div>
+      <div id="room-slot-painting_right"  class="room-slot-hint" style="right:5%;top:18%;width:229px;height:97px;z-index:6;"></div>
+      <div id="room-slot-wall_plant"      class="room-slot-hint" style="left:16%;top:30%;width:108px;height:152px;z-index:6;"></div>
+      <div id="room-slot-hanging_deco"    class="room-slot-hint" style="left:38%;top:5%;width:122px;height:152px;z-index:6;"></div>
+      <div id="room-slot-memo_poster"     class="room-slot-hint" style="left:20%;top:35%;width:144px;height:152px;z-index:6;"></div>
+      <div id="room-slot-dreamcatcher"    class="room-slot-hint" style="right:8%;top:8%;width:139px;height:152px;z-index:6;"></div>
+      <div id="room-puang-char">🦎</div>
     </div>
 
     <!-- 대화 시작 버튼 (채팅 숨김 상태일 때만 표시) -->

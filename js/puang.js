@@ -7,8 +7,6 @@
 window.openRoomChat = function() {
   document.getElementById('room-chat-panel').style.display = 'flex';
   document.getElementById('room-talk-btn-wrap').style.display = 'none';
-  // 방 씬 높이 줄이기
-  document.getElementById('puang-room-scene').style.height = '220px';
   updateRoomUI();
 }
 
@@ -16,7 +14,6 @@ window.openRoomChat = function() {
 window.closeRoomChat = function() {
   document.getElementById('room-chat-panel').style.display = 'none';
   document.getElementById('room-talk-btn-wrap').style.display = 'flex';
-  document.getElementById('puang-room-scene').style.height = '420px';
 }
 
 // ── 호감도 → 하트 이모지 변환 ──
@@ -351,7 +348,6 @@ window.enterRoom = function() {
   // 방 진입 시 채팅 패널 닫힌 상태로 초기화
   document.getElementById('room-chat-panel').style.display = 'none';
   document.getElementById('room-talk-btn-wrap').style.display = 'flex';
-  document.getElementById('puang-room-scene').style.height = '420px';
 
   applyRoomDecorations();
   document.getElementById('game-container').style.display = 'none';

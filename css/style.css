@@ -297,24 +297,285 @@ h1 {
     letter-spacing: 1.5px;
 }
 
-#puang-room {  /* ── 블루미르 홀 : 푸앙이의 방 컨테이너 ── */
+/* =============================================
+   푸앙이의 방 — 이미지 배경 기반 쿼터뷰
+   배경: puang_room.png (1024x1024)
+   가구: puang_furniture_sprite.png (1254x1254)
+   벽장식: puang_wall_furniture_sprite.png (1536x1024)
+   ============================================= */
+
+/* ── 블루미르 홀 : 푸앙이의 방 컨테이너 ── */
+/* ── 방 씬 전체 컨테이너 ── */
+#puang-room-scene {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  height: 700px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 2px solid #3a4a6a;
+  /* 배경: 빈 방 이미지 */
+  background-image: url('../images/furniture/puang_room.png');
+  background-size: cover;
+  background-position: center;
+}
+
+#puang-room {  
     display: none;
+    position: relative;
     width: 100%;
-    max-width: 680px;
+    max-width: 760px;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
 }
 
 #puang-room.visible {display: flex;}
 
+/* ── 가구 공통 ── */
+.room-furniture {
+  position: absolute;
+  background-image: url('../images/furniture/puang_furniture_sprite.png');
+  background-repeat: no-repeat;
+  image-rendering: auto;
+  /* 스프라이트 원본 1254px → 표시 배율 조정 */
+}
+ 
+/* ── 벽 장식 공통 ── */
+.room-wall-deco {
+  position: absolute;
+  background-image: url('../images/furniture/puang_wall_furniture_sprite.png');
+  background-repeat: no-repeat;
+  image-rendering: auto;
+}
+ 
+/* ── 개별 가구 스프라이트 좌표 + 화면 배치 ── */
+/* 스케일: 1254px 원본을 약 0.32배로 축소 (700px 씬 기준) */
+ 
+/* 침대 — 우측 중앙 */
+/* 원본: x=0 y=0 w=559 h=449 → 표시: 179x144 */
+.spr-bed {
+  background-position: 0px 0px;
+  background-size: 401px 401px; /* 1254 * 0.32 */
+  width: 179px;
+  height: 144px;
+  right: 8%;
+  top: 38%;
+  z-index: 8;
+}
+ 
+/* 책장(작은) — 우측 상단 */
+/* 원본: x=530 y=0 w=289 h=449 → 표시: 93x144 */
+.spr-bookshelf-small {
+  background-position: -170px 0px; /* 530 * 0.32 */
+  background-size: 401px 401px;
+  width: 93px;
+  height: 144px;
+  right: 28%;
+  top: 22%;
+  z-index: 7;
+}
+ 
+/* 행잉화분 — 우상단 천장 */
+/* 원본: x=860 y=0 w=239 h=499 → 표시: 77x160 */
+.spr-hanging-plant {
+  background-position: -275px 0px; /* 860 * 0.32 */
+  background-size: 401px 401px;
+  width: 77px;
+  height: 160px;
+  right: 5%;
+  top: 3%;
+  z-index: 6;
+}
+ 
+/* 책상 — 좌측 중앙 */
+/* 원본: x=0 y=430 w=529 h=449 → 표시: 169x144 */
+.spr-desk {
+  background-position: 0px -138px; /* 430 * 0.32 */
+  background-size: 401px 401px;
+  width: 169px;
+  height: 144px;
+  left: 8%;
+  top: 42%;
+  z-index: 8;
+}
+ 
+/* 카펫 — 바닥 중앙 */
+/* 원본: x=280 y=600 w=589 h=449 → 표시: 189x144 */
+.spr-carpet {
+  background-position: -90px -192px; /* 280*0.32, 600*0.32 */
+  background-size: 401px 401px;
+  width: 189px;
+  height: 144px;
+  left: 26%;
+  top: 60%;
+  z-index: 5;
+}
+ 
+/* 책장(큰) — 우측 */
+/* 원본: x=780 y=350 w=339 h=599 → 표시: 109x192 */
+.spr-bookshelf-big {
+  background-position: -250px -112px; /* 780*0.32, 350*0.32 */
+  background-size: 401px 401px;
+  width: 109px;
+  height: 192px;
+  right: 1%;
+  top: 28%;
+  z-index: 7;
+}
+ 
+/* 램프 — 우하단 */
+/* 원본: x=680 y=830 w=369 h=423 → 표시: 60x80 */
+.spr-lamp {
+  background-position: -218px -266px; /* 680*0.32, 830*0.32 */
+  background-size: 401px 401px;
+  width: 60px;
+  height: 80px;
+  right: 22%;
+  top: 52%;
+  z-index: 9;
+}
+ 
+/* ── 벽 장식 스프라이트 ── */
+/* 스케일: 1536px 원본 → 약 0.36배 (700px 씬 기준) */
+ 
+/* 벽선반(왼쪽 벽용) */
+/* 원본: x=0 y=0 w=479 h=479 → 표시: 173x173 */
+.spr-shelf-left {
+  background-position: 0px 0px;
+  background-size: 553px 369px; /* 1536*0.36, 1024*0.36 */
+  width: 173px;
+  height: 173px;
+  left: 12%;
+  top: 15%;
+  z-index: 6;
+}
+ 
+/* 벽선반(오른쪽 벽용) */
+/* 원본: x=480 y=0 w=419 h=299 → 표시: 151x108 */
+.spr-shelf-right {
+  background-position: -173px 0px; /* 480*0.36 */
+  background-size: 553px 369px;
+  width: 151px;
+  height: 108px;
+  right: 14%;
+  top: 12%;
+  z-index: 6;
+}
+ 
+/* 액자(왼쪽 벽용) */
+/* 원본: x=1000 y=0 w=535 h=479 → 표시: 193x173 */
+.spr-painting-left {
+  background-position: -360px 0px; /* 1000*0.36 */
+  background-size: 553px 369px;
+  width: 193px;
+  height: 173px;
+  left: 14%;
+  top: 10%;
+  z-index: 6;
+}
+ 
+/* 액자(오른쪽 벽용) */
+/* 원본: x=900 y=430 w=635 h=269 → 표시: 229x97 */
+.spr-painting-right {
+  background-position: -324px -155px; /* 900*0.36, 430*0.36 */
+  background-size: 553px 369px;
+  width: 229px;
+  height: 97px;
+  right: 5%;
+  top: 18%;
+  z-index: 6;
+}
+ 
+/* 벽 화분/식물 장식 */
+/* 원본: x=0 y=600 w=299 h=423 → 표시: 108x152 */
+.spr-wall-plant {
+  background-position: 0px -216px; /* 600*0.36 */
+  background-size: 553px 369px;
+  width: 108px;
+  height: 152px;
+  left: 16%;
+  top: 30%;
+  z-index: 6;
+}
+ 
+/* 행잉 장식 */
+/* 원본: x=280 y=600 w=339 h=423 → 표시: 122x152 */
+.spr-hanging-deco {
+  background-position: -101px -216px; /* 280*0.36, 600*0.36 */
+  background-size: 553px 369px;
+  width: 122px;
+  height: 152px;
+  left: 38%;
+  top: 5%;
+  z-index: 6;
+}
+ 
+/* 메모/포스터 */
+/* 원본: x=700 y=600 w=399 h=423 → 표시: 144x152 */
+.spr-memo-poster {
+  background-position: -252px -216px; /* 700*0.36, 600*0.36 */
+  background-size: 553px 369px;
+  width: 144px;
+  height: 152px;
+  left: 20%;
+  top: 35%;
+  z-index: 6;
+}
+ 
+/* 드림캐처 */
+/* 원본: x=1150 y=600 w=385 h=423 → 표시: 139x152 */
+.spr-dreamcatcher {
+  background-position: -414px -216px; /* 1150*0.36, 600*0.36 */
+  background-size: 553px 369px;
+  width: 139px;
+  height: 152px;
+  right: 8%;
+  top: 8%;
+  z-index: 6;
+}
+ 
+/* ── 푸앙이 캐릭터 ── */
+#room-puang-char {
+  position: absolute;
+  bottom: 20%;
+  left: 42%;
+  z-index: 20;
+  font-size: 44px;
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,0.4));
+  animation: puang-idle 2.4s ease-in-out infinite;
+  cursor: pointer;
+}
+@keyframes puang-idle {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+ 
+/* ── 빈 슬롯 힌트 ── */
+.room-slot-hint {
+  position: absolute;
+  border: 2px dashed rgba(100,140,200,0.35);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+ 
+/* ── 배경 테마 오버레이 ── */
+#puang-room-scene.theme-default { filter: none; }
+#puang-room-scene.theme-night   { filter: brightness(0.7) hue-rotate(200deg); }
+#puang-room-scene.theme-sakura  { filter: brightness(1.05) hue-rotate(320deg) saturate(1.2); }
+#puang-room-scene.theme-dark    { filter: brightness(0.4) saturate(0.5); }
+ 
 .room-header {  /* 방 헤더 */
-    background: #16213e;
+    background: rgba(13, 17, 35, 0.82);
+    backdrop-filter: blur(8px);
     border: 1px solid #d4537e;
     border-radius: 12px;
     padding: 10px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
+    z-index: 31;
 }
 
 .room-title {
@@ -337,7 +598,37 @@ h1 {
 
 .room-back-btn:hover {background: rgba(212, 83, 126, 0.3);}
 
-.room-talk-start-btn {  /* 대화 시작 버튼 */
+/* 대화 버튼 — 씬 위에 절대 위치 */
+#room-talk-btn-wrap {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+}
+
+/* 채팅 패널 — glassmorphism 오버레이 */
+#room-chat-panel {
+    position: absolute !important;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85%;
+    z-index: 30;
+    border-radius: 20px;
+    background: rgba(13, 17, 35, 0.72) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 83, 126, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+
+
+/* 대화 시작 버튼 */
+.room-talk-start-btn {  
   background: linear-gradient(135deg, #7a5fa0, #5a3f80);
   border: none;
   border-radius: 24px;
@@ -356,23 +647,25 @@ h1 {
   box-shadow: 0 6px 20px rgba(90, 60, 140, 0.5);
 }
 
-.room-main {  /* 방 메인 영역: 푸앙이 + 채팅 */
+/* 방 메인 영역: 푸앙이 + 채팅 */
+.room-main {  
     display: flex;
     gap: 12px;
-    min-height: 300px;
+    min-height: 260px;
+    max-height: 340px;
 }
 
 .room-left {  /* 왼쪽: 푸앙이 캐릭터 + 컨디션 */
-    width: 180px;
+    width: 160px;
     flex-shrink: 0;
-    background: linear-gradient(180deg, #0d1b2a 0%, #1a2744 100%);
-    border: 1px solid #0f3460;
+    background: rgba(10, 20, 40, 0.55);
+    border: 1px solid rgba(15, 52, 96, 0.6);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 16px 12px;
-    gap: 10px;
+    padding: 12px 10px;
+    gap: 8px;
 }
 
 .puang-char-img {

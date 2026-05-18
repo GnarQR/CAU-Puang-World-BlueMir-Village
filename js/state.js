@@ -7,7 +7,7 @@
 // 인트로 화면에서 플레이어가 입력한 키를 저장
 // sendChat(), giveItem() 등 LLM 호출 시 사용
 let GROQ_API_KEY = '';
-let serverDataLoaded = false; // 서버 데이터 로드 완료 전 저장 방
+let serverDataLoaded = false; // 서버 데이터 로드 완료 전 저장 방지
 
 // Firebase 초기화 및 DB 참조
 // 데이터 동기화 핵심 함수 
@@ -170,7 +170,16 @@ const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {
   ownedRoomItems: [],       // 구매한 방 아이템 ID 배열
   roomDecorations: {        // 현재 설치된 아이템
     background: 'default',  // 배경 테마
-    wall: null, floor: null, floor2: null, floor3: null, // 각 슬롯에 설치된 아이템 ID
+    // 가구 슬롯
+    bed: null, desk: null, carpet: null,
+    bookshelf_small: null, bookshelf_big: null,
+    lamp: null, hanging_plant: null,
+    // 벽 장식 슬롯
+    shelf_left: null, shelf_right: null,
+    painting_left: null, painting_right: null,
+    wall_plant: null, hanging_deco: null,
+    memo_poster: null, dreamcatcher: null,
+    costume: null,
   },
 };
 
