@@ -454,6 +454,7 @@ if(_origSE4b) window.startExploration=function(){
 window.startOnboarding = function() {
   if (localStorage.getItem('onboardingDone')) return;
 
+  // ── 수정 1: stat-right-group ID 존재 보장 (index.html에 id 추가됨)
   const steps = [
     {
       id: 'map-bg',
@@ -482,12 +483,19 @@ window.startOnboarding = function() {
   ];
 
   let step = 0;
+  // ── 수정 3: 이벤트 중복 등록 방지용 플래그
+  let _listenerAdded = false;
 
   function clr() {
-    ['ob-ov', 'ob-box', 'ob-card'].forEach(id => {
+    ['ob-ov', 'ob-box', 'ob-card', 'ob-connector'].forEach(id => {
       const e = document.getElementById(id);
       if (e) e.remove();
     });
+  }
+
+  function next() {
+    step++;
+    show(step);
   }
 
   function show(i) {
@@ -499,116 +507,142 @@ window.startOnboarding = function() {
 
     const s  = steps[i];
     const el = document.getElementById(s.id);
-    if (!el) { show(i + 1); return; }
+    // ── 수정 1: ID 없으면 건너뜀 (무한루프 방지용 상한 추가)
+    if (!el) {
+      if (i < steps.length - 1) show(i + 1);
+      else { localStorage.setItem('onboardingDone', '1'); }
+      return;
+    }
 
     // 어두운 오버레이
     const ov = document.createElement('div');
     ov.id = 'ob-ov';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0);z-index:9200;pointer-events:all;';
-    ov.addEventListener('click', () => { step++; show(step); });
+    // ── 수정 4: ov 클릭은 오버레이 배경 직접 클릭 시만 다음으로 (버블링 차단)
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) next();
+    });
     document.body.appendChild(ov);
 
     // 타겟 요소 위치 계산
     const r = el.getBoundingClientRect();
     const PAD = 8;
 
-    // 하이라이트 박스 (타겟 위에 딱 맞게)
+    // 하이라이트 박스
     const box = document.createElement('div');
     box.id = 'ob-box';
     box.className = 'ob-highlight-box';
-    box.style.cssText = `
-      position: fixed;
-      left:   ${r.left   - PAD}px;
-      top:    ${r.top    - PAD}px;
-      width:  ${r.width  + PAD * 2}px;
-      height: ${r.height + PAD * 2}px;
-      z-index: 9201;
-      pointer-events: none;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.65), 0 0 0 3px #5dcaa5, 0 0 20px rgba(93,202,165,0.5);
-      border-radius: 12px;
-      animation: obBoxPulse 1.4s ease-in-out infinite;
-    `;
+    box.style.cssText = [
+      'position:fixed',
+      `left:${r.left - PAD}px`,
+      `top:${r.top - PAD}px`,
+      `width:${r.width + PAD * 2}px`,
+      `height:${r.height + PAD * 2}px`,
+      'z-index:9201',
+      'pointer-events:none',
+      'box-shadow:0 0 0 9999px rgba(0,0,0,0.65),0 0 0 3px #5dcaa5,0 0 20px rgba(93,202,165,0.5)',
+      'border-radius:12px',
+      'animation:obBoxPulse 1.4s ease-in-out infinite',
+    ].join(';');
     document.body.appendChild(box);
 
-    // 툴팁 카드 — 박스 바로 아래 (뷰포트 벗어나면 위로)
+    // 툴팁 카드
     const card = document.createElement('div');
     card.id = 'ob-card';
     card.className = 'ob-card';
 
-    const progress = Array.from({length: steps.length}, (_,k) =>
+    const progress = Array.from({length: steps.length}, (_, k) =>
       `<div class="ob-dot ${k === i ? 'ob-dot-active' : k < i ? 'ob-dot-done' : ''}"></div>`
     ).join('');
+
+    const isLast = i >= steps.length - 1;
 
     card.innerHTML = `
       <div class="ob-card-header">
         <span class="ob-card-icon">${s.icon}</span>
         <span class="ob-card-title">${s.title}</span>
-        <button class="ob-skip-btn" onclick="window.skipOnboarding()">건너뛰기</button>
+        <button class="ob-skip-btn" id="ob-skip-btn">건너뛰기</button>
       </div>
       <div class="ob-card-msg">${s.msg}</div>
       <div class="ob-card-footer">
         <div class="ob-dots">${progress}</div>
-        <button class="ob-next-btn" onclick="(function(){const s=${step+1};if(s>=${steps.length}){document.getElementById('ob-ov').click();}else{window._obStep=s;document.getElementById('ob-ov').click();}})()">
-          ${i < steps.length - 1 ? '다음 ▶' : '시작하기 ✅'}
+        <button class="ob-next-btn" id="ob-next-btn">
+          ${isLast ? '시작하기 ✅' : '다음 ▶'}
         </button>
       </div>`;
 
-    // 카드 위치: 박스 아래쪽 기본, 뷰포트 아래 벗어나면 위쪽
+    // 카드 위치
     const cardW = 280;
     let cardLeft = r.left + r.width / 2 - cardW / 2;
     cardLeft = Math.max(10, Math.min(cardLeft, window.innerWidth - cardW - 10));
     const spaceBelow = window.innerHeight - (r.bottom + PAD + 12);
-    const cardTop = spaceBelow > 140
+    const cardTop = spaceBelow > 150
       ? r.bottom + PAD + 12
-      : r.top - PAD - 12 - 130; // 위쪽 배치
+      : r.top - PAD - 12 - 140;
 
-    card.style.cssText = `
-      position: fixed;
-      left: ${cardLeft}px;
-      top:  ${cardTop}px;
-      width: ${cardW}px;
-      z-index: 9202;
-      pointer-events: all;
-    `;
+    card.style.cssText = [
+      'position:fixed',
+      `left:${cardLeft}px`,
+      `top:${Math.max(10, cardTop)}px`,
+      `width:${cardW}px`,
+      'z-index:9202',
+      'pointer-events:all',
+    ].join(';');
     document.body.appendChild(card);
 
-    // 연결선 (박스 → 카드 방향 작은 삼각형)
+    // ── 수정 4: 버튼에 addEventListener 사용 (onclick 인라인 제거 → 버블링 stopPropagation)
+    document.getElementById('ob-next-btn').addEventListener('click', function(e) {
+      e.stopPropagation(); // ov의 click 이벤트로 버블링 차단
+      next();
+    });
+    document.getElementById('ob-skip-btn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      window.skipOnboarding();
+    });
+
+    // 연결선 삼각형
     const arrowEl = document.createElement('div');
-    arrowEl.className = spaceBelow > 140 ? 'ob-connector-down' : 'ob-connector-up';
-    arrowEl.style.cssText = `
-      position: fixed;
-      left: ${r.left + r.width / 2 - 8}px;
-      top:  ${spaceBelow > 140 ? r.bottom + PAD + 4 : r.top - PAD - 18}px;
-      z-index: 9202;
-      pointer-events: none;
-    `;
+    arrowEl.id = 'ob-connector';
+    arrowEl.className = spaceBelow > 150 ? 'ob-connector-down' : 'ob-connector-up';
+    arrowEl.style.cssText = [
+      'position:fixed',
+      `left:${r.left + r.width / 2 - 8}px`,
+      `top:${spaceBelow > 150 ? r.bottom + PAD + 3 : r.top - PAD - 16}px`,
+      'z-index:9202',
+      'pointer-events:none',
+    ].join(';');
     document.body.appendChild(arrowEl);
   }
 
-  // ob-ov click 시 step 값 반영
-  const _origClick = null;
-  window._obStep = null;
-
-  // ov click 래핑 — _obStep 우선 처리
-  document.addEventListener('click', function(e) {
-    if (e.target.id === 'ob-ov') {
-      const next = window._obStep !== null ? window._obStep : step;
-      window._obStep = null;
-      step = next;
-      show(step);
-    }
-  }, true);
-
   window.skipOnboarding = function() {
-    clr(); localStorage.setItem('onboardingDone', '1');
+    clr();
+    localStorage.setItem('onboardingDone', '1');
   };
 
-  // 맵 화면이 표시될 때 시작
+  // ── 수정 2+3: MutationObserver 강화 + 중복 실행 방지
+  let _started = false;
+
+  function tryStart() {
+    if (_started) return;
+    const ge = document.getElementById('game-container');
+    if (!ge) return;
+    const d = ge.style.display;
+    // display 속성이 없거나(초기 상태) flex/block이면 표시 중으로 판단
+    if (d === '' || d === 'flex' || d === 'block') {
+      _started = true;
+      setTimeout(() => show(0), 1200);
+    }
+  }
+
   const ge = document.getElementById('game-container');
   if (ge) {
-    new MutationObserver(() => {
-      if (ge.style.display !== 'none') { setTimeout(() => show(0), 1500); }
-    }).observe(ge, { attributes: true, attributeFilter: ['style'] });
+    // ── 수정 2: style 속성 외 childList도 감시 + 초기 상태 즉시 체크
+    const obs = new MutationObserver(() => { tryStart(); });
+    obs.observe(ge, { attributes: true, attributeFilter: ['style'] });
+
+    // 이미 표시 중인 경우(재방문 유저가 skipIntro 후 바로 보이는 경우) 즉시 체크
+    tryStart();
   }
 };
+
 document.addEventListener('DOMContentLoaded', () => { setTimeout(window.startOnboarding, 500); });

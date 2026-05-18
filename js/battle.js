@@ -37,7 +37,7 @@ const bgImage = new Image();
 bgImage.src = 'images/map/205_building.jpg'; 
 
 const playerImage = new Image();
-playerImage.src = 'images/player/player_male_battle.png'; 
+playerImage.src = 'images/player/player_male_default.png'; 
 
 const collisionData =  // 격자에 대한 충돌 데이터 (56은 벽, 0은 이동 가능)
             [56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
