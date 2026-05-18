@@ -369,7 +369,7 @@ window.closeInventory = function() {
   if (tip) tip.style.display = 'none';
 };
 
-function renderInventoryOverlay() {
+window.renderInventoryOverlay = function renderInventoryOverlay() {
   const grid   = document.getElementById('inv-grid');
   const empty  = document.getElementById('inv-empty');
   const count  = document.getElementById('inv-count');
@@ -736,7 +736,7 @@ window.openProfile = function() {
     overlay.innerHTML = `
       <div class="profile-panel">
         <button class="profile-close" onclick="closeProfile()">✕</button>
-        <div class="profile-avatar">🧑‍💻</div>
+        <div class="profile-avatar" id="profile-avatar-display">🧑‍💻</div>
         <div class="profile-name" id="profile-name">탐험가</div>
         <div class="profile-title-badge" id="profile-title">신입 탐험가</div>
         <div class="profile-stats-grid" id="profile-stats"></div>
@@ -1287,7 +1287,7 @@ window.closeCompendium = function() {
   if (o) o.classList.remove('comp-open');
 };
 
-function renderCompendium() {
+window.renderCompendium = function renderCompendium() {
   const el   = document.getElementById('compendium-body');
   if (!el) return;
   const comp = JSON.parse(localStorage.getItem('monsterCompendium') || '{}');
@@ -1474,7 +1474,7 @@ window.switchLbTab = function(tab) {
   loadLeaderboard(tab);
 };
 
-async function loadLeaderboard(tab) {
+window.loadLeaderboard = async function loadLeaderboard(tab) {
   const el = document.getElementById('leaderboard-body');
   if (!el) return;
   el.innerHTML = '<div class="lb-loading">🔄 불러오는 중...</div>';
