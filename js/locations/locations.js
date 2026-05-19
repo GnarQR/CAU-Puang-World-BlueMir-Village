@@ -1558,6 +1558,7 @@ function getLibBorrowedBooks() {
 }
 function saveLibBorrowedBooks(books) {
   localStorage.setItem('libBorrowedBooks', JSON.stringify(books));
+  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
 }
 
 window.borrowBook = function(bookId) {
@@ -1685,6 +1686,7 @@ window.saveToSlot = function(slot) {
   localStorage.setItem('cau_save_slot_' + slot, JSON.stringify(saveData));
   addLabLog('[SAVE] 슬롯 ' + slot + ' "' + name + '" 저장 완료 (' + saveData.ts + ')', 'lab-log-save');
   updateLabSlotsUI();
+  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
 };
 
 window.loadFromSlot = function(slot) {
@@ -1740,6 +1742,7 @@ window.checkAchievements = function() {
     }
   }
   localStorage.setItem('labAchievements', JSON.stringify(earned));
+  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
   updateLabAchievementsUI();
   return newOnes;
 };
@@ -1875,6 +1878,7 @@ function checkGymStreak() {
   }
   localStorage.setItem('gymStreak', streak);
   localStorage.setItem('gymLastVisit', today);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
 
   if (streak > 0 && streak % 3 === 0) {
     playerStats.maxHp += 5;
@@ -2204,7 +2208,10 @@ window.checkLab2Recipes = function() {
       addLab2Log('[📖 레시피 해금!] ' + r.name + ' (' + r.desc + ')');
     }
   }
-  if (newUnlocked) localStorage.setItem('lab2UnlockedRecipes', JSON.stringify(unlocked));
+  if (newUnlocked) {
+    localStorage.setItem('lab2UnlockedRecipes', JSON.stringify(unlocked));
+    if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
+  }
   updateLab2RecipeUI();
 };
 

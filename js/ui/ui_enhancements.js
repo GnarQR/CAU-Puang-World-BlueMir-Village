@@ -1251,6 +1251,7 @@ window.registerMonsterCompendium = function(monster) {
   }
   comp[monster.id].count++;
   localStorage.setItem('monsterCompendium', JSON.stringify(comp));
+  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
   if (comp[monster.id].count === 1) {
     if (typeof showToast === 'function') showToast('📖 도감 등록! ' + monster.name, 'info', 2500);
   }
@@ -1699,6 +1700,7 @@ window.selectAvatar = function(emoji) {
   const btn = [...document.querySelectorAll('.edit-avatar-btn')].find(b => b.textContent === emoji);
   if (btn) btn.classList.add('selected');
   localStorage.setItem('playerAvatar', emoji);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
   const profileAvatar = document.getElementById('profile-avatar-emoji');
   if (profileAvatar) profileAvatar.textContent = emoji;
 };

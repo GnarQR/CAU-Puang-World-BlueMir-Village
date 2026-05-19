@@ -103,6 +103,7 @@ function _triggerFavorMilestone(level) {
 // 청룡호 잠금 해제 연출
 function _unlockBluedragonLake() {
   localStorage.setItem('lakeUnlocked', 'true');
+  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
   // placeInfo 잠금 해제
   if (typeof placeInfo !== 'undefined' && placeInfo.bluedragonlake) {
     placeInfo.bluedragonlake.locked = false;
