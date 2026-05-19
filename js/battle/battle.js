@@ -67,7 +67,9 @@ let assetsLoaded = 0;
         assetsLoaded++;
         if (assetsLoaded === 2) {
             console.log("모든 이미지 로드 완료!");
-            requestAnimationFrame(update); // 모든 이미지가 불러와지면 게임 루프 시작
+            // ★ Fix 4: requestAnimationFrame(update) 제거
+            // 루프는 startExploration() 에서만 시작 — 이미지 로드·startExploration·복귀 시
+            // 3중 루프가 동시에 돌아 캐릭터가 배속 이동하던 버그 수정
         }
     };
 });
@@ -369,7 +371,7 @@ window.initBattle = function(origin = 'map', bossId = null) {
   
   else {  // 새로 시작하는 전투일 때만 초기화
     enemyHp = currentMonster.hp;
-    battlePlayerHP = playerStats.hp;
+    battlePlayerHp = playerStats.hp;  // ★ Fix 1: 대소문자 오타 수정 (HP → Hp)
     battleTurn = 1;
   }
 
@@ -382,7 +384,7 @@ window.initBattle = function(origin = 'map', bossId = null) {
   localStorage.setItem('battleEnemyHp', enemyHp);
   localStorage.setItem('battlePlayerHp', battlePlayerHp);
   localStorage.setItem('battleTurn', battleTurn);
-  if (bossId) localStorage.setItem('bossId', bossId);
+  if (bossId) localStorage.setItem('battleBossId', bossId);  // ★ Fix 2: 'bossId' → 'battleBossId' (checkResumeBattle과 키 일치)
 
   // 4. UI 업데이트
   // 복구된 데이터를 기반으로 턴 정보 갱신
@@ -1005,8 +1007,9 @@ window.doCmd = async function(cmd) {
     else {
       addBattleLog('[결과] 탈출 실패! ' + (currentMonster ? currentMonster.name : '적') + '이(가) 가로막았다.', 'log-damage');
       document.getElementById('dice-result').textContent = '탈출 실패...';
-      await enemyTurn();  // 탈출 실패 시 즉시 적 턴으로 넘어감
+      await enemyTurn();  // 탈출 실패 시 적 턴
+      return;             // ★ Fix 3: return 추가 — 아래 await enemyTurn() 이중 호출 방지
     }
   }
-  await enemyTurn();  // 플레이어 행동 후 적 턴 자동 실행 
+  await enemyTurn();  // 플레이어 행동 후 적 턴 자동 실행
 }
