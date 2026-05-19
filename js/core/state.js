@@ -2,20 +2,28 @@
 // state.js — 전역 상태 관리
 // ================================================================
 //
-// ┌─────────────────────────────────────────────────────────────┐
-// │                    데이터 저장 구조                          │
-// ├──────────────────────┬──────────────────────────────────────┤
-// │  Firebase (영구)     │  localStorage (임시/기기별)          │
-// ├──────────────────────┼──────────────────────────────────────┤
-// │  playerStats         │  groqApiKey   ← 민감 정보            │
-// │  puangState          │  dailyUsage   ← 오늘만 유효          │
-// │  inventory           │  libStudyCount/libFocus ← 오늘만     │
-// │  achievements        │  cafVisitTotal/cafOvereat ← 오늘만   │
-// │  skills              │  inBattle/battleOrigin ← 임시 복구   │
-// │  lakeUnlocked        │  cauTheme ← 기기별 UI 설정           │
-// │  questCompleted      │  statBarCollapsed ← 기기별 UI 설정   │
-// │  saveSlots (1~3)     │  mapVisits ← 가벼운 통계             │
-// └──────────────────────┴──────────────────────────────────────┘
+// ┌──────────────────────────┬────────────────────────────────────┐
+// │  Firebase (영구)         │  localStorage (임시/기기별)        │
+// ├──────────────────────────┼────────────────────────────────────┤
+// │  playerStats             │  groqApiKey       ← 민감 정보      │
+// │  puangState              │  dailyUsage       ← 오늘만 유효    │
+// │  inventory               │  libStudyCount    ← 오늘만         │
+// │  achievements            │  libFocus         ← 오늘만         │
+// │  skills                  │  cafVisitTotal    ← 오늘만         │
+// │  lakeUnlocked            │  cafFreeTicket    ← 오늘만         │
+// │  questCompleted          │  cafOvereat       ← 오늘만         │
+// │  saveSlots (1~3)         │  festLimitedBought← 오늘만         │
+// │  gymStreak               │  festDoubleBuff   ← 만료시간       │
+// │  gymLastVisit            │  gymEventWeek     ← 이번주만       │
+// │  clinicVaccine           │  storeStock       ← 오늘만         │
+// │  clinicInsurance         │  union_booth_*    ← 오늘만         │
+// │  lab2Recipes             │  union_sale_*     ← 이번주만       │
+// │  unionClubs              │  inBattle         ← 임시 복구      │
+// │  libBorrowedBooks        │  battleOrigin     ← 임시 복구      │
+// │  playerAvatar            │  cauTheme         ← 기기별 UI      │
+// │  monsterCompendium       │  statBarCollapsed ← 기기별 UI      │
+// │  dataHistory             │  sfxEnabled       ← 기기별 UI      │
+// └──────────────────────────┴────────────────────────────────────┘
 
 // ── Groq API 키 ──
 let GROQ_API_KEY = '';
@@ -43,67 +51,65 @@ async function loadAllDataFromServer() {
     const docSnap = await getDoc(doc(db, 'gameData', GROQ_API_KEY));
 
     if (docSnap.exists()) {
-      const serverData = docSnap.data();
+      const s = docSnap.data();  // s = serverData
 
       // ── 핵심 게임 데이터 ──
-      if (serverData.playerStats) {
-        Object.assign(playerStats, serverData.playerStats);
-
-        if (serverData.playerStats.name) {
-          playerStats.name = serverData.playerStats.name;
-          localStorage.setItem('playerName', serverData.playerStats.name);
+      if (s.playerStats) {
+        Object.assign(playerStats, s.playerStats);
+        if (s.playerStats.name) {
+          playerStats.name = s.playerStats.name;
+          localStorage.setItem('playerName', s.playerStats.name);
         }
-
         // diamond → data 마이그레이션
-        if (serverData.playerStats.data !== undefined) {
-          playerStats.data = serverData.playerStats.data;
-        } else if (serverData.playerStats.diamond !== undefined) {
-          playerStats.data = serverData.playerStats.diamond;
-        } else {
-          playerStats.data = 0;
-        }
+        if (s.playerStats.data !== undefined)        playerStats.data = s.playerStats.data;
+        else if (s.playerStats.diamond !== undefined) playerStats.data = s.playerStats.diamond;
+        else                                          playerStats.data = 0;
         if (playerStats.diamond !== undefined) delete playerStats.diamond;
         localStorage.setItem('playerStats', JSON.stringify(playerStats));
       }
 
-      if (serverData.puangState) {
-        Object.assign(puangState, serverData.puangState);
+      if (s.puangState) {
+        Object.assign(puangState, s.puangState);
         localStorage.setItem('puangState', JSON.stringify(puangState));
       }
 
-      if (serverData.inventory && Array.isArray(serverData.inventory)) {
+      if (s.inventory && Array.isArray(s.inventory)) {
         inventory.length = 0;
-        serverData.inventory.forEach(item => inventory.push(item));
+        s.inventory.forEach(item => inventory.push(item));
         localStorage.setItem('cau_inventory', JSON.stringify(inventory));
       }
 
-      // ── dailyUsage: 날짜 같을 때만 복원 (다르면 초기화) ──
-      if (serverData.dailyUsage) {
+      // dailyUsage: 날짜 같을 때만 복원
+      if (s.dailyUsage) {
         const today = new Date().toDateString();
-        if (serverData.dailyUsage.date === today) {
-          Object.assign(dailyUsage, serverData.dailyUsage);
+        if (s.dailyUsage.date === today) {
+          Object.assign(dailyUsage, s.dailyUsage);
           localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage));
         }
       }
 
       // ── 영구 보존 데이터 → localStorage 복원 ──
-      if (serverData.achievements) {
-        localStorage.setItem('labAchievements', JSON.stringify(serverData.achievements));
+      if (s.achievements)       localStorage.setItem('labAchievements',     JSON.stringify(s.achievements));
+      if (s.skills)             localStorage.setItem('labSkills',           JSON.stringify(s.skills));
+      if (s.lakeUnlocked)       localStorage.setItem('lakeUnlocked',        'true');
+      if (s.questCompleted)     localStorage.setItem('questCompleted',      JSON.stringify(s.questCompleted));
+      if (s.saveSlots) {
+        if (s.saveSlots.slot1)  localStorage.setItem('cau_save_slot_1',     JSON.stringify(s.saveSlots.slot1));
+        if (s.saveSlots.slot2)  localStorage.setItem('cau_save_slot_2',     JSON.stringify(s.saveSlots.slot2));
+        if (s.saveSlots.slot3)  localStorage.setItem('cau_save_slot_3',     JSON.stringify(s.saveSlots.slot3));
       }
-      if (serverData.skills) {
-        localStorage.setItem('labSkills', JSON.stringify(serverData.skills));
-      }
-      if (serverData.lakeUnlocked) {
-        localStorage.setItem('lakeUnlocked', 'true');
-      }
-      if (serverData.questCompleted) {
-        localStorage.setItem('questCompleted', JSON.stringify(serverData.questCompleted));
-      }
-      if (serverData.saveSlots) {
-        if (serverData.saveSlots.slot1) localStorage.setItem('cau_save_slot_1', JSON.stringify(serverData.saveSlots.slot1));
-        if (serverData.saveSlots.slot2) localStorage.setItem('cau_save_slot_2', JSON.stringify(serverData.saveSlots.slot2));
-        if (serverData.saveSlots.slot3) localStorage.setItem('cau_save_slot_3', JSON.stringify(serverData.saveSlots.slot3));
-      }
+
+      // ── 추가 영구 데이터 → localStorage 복원 ──
+      if (s.gymStreak !== undefined) localStorage.setItem('gymStreak',      String(s.gymStreak));
+      if (s.gymLastVisit)            localStorage.setItem('gymLastVisit',   s.gymLastVisit);
+      if (s.clinicVaccine)           localStorage.setItem('clinicVaccine',  JSON.stringify(s.clinicVaccine));
+      if (s.clinicInsurance)         localStorage.setItem('clinicInsurance','true');
+      if (s.lab2Recipes)             localStorage.setItem('lab2UnlockedRecipes', JSON.stringify(s.lab2Recipes));
+      if (s.unionClubs)              localStorage.setItem('unionJoinedClubs',    JSON.stringify(s.unionClubs));
+      if (s.libBorrowedBooks)        localStorage.setItem('libBorrowedBooks',    JSON.stringify(s.libBorrowedBooks));
+      if (s.playerAvatar)            localStorage.setItem('playerAvatar',        s.playerAvatar);
+      if (s.monsterCompendium)       localStorage.setItem('monsterCompendium',   JSON.stringify(s.monsterCompendium));
+      if (s.dataHistory)             localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
 
       console.log('Firebase 로드 완료');
     } else {
@@ -138,34 +144,44 @@ async function saveAllDataToServer() {
         sp:                 playerStats.sp,
         maxSp:              playerStats.maxSp,
         data:               playerStats.data ?? 0,
-        ownedRoomItems:     playerStats.ownedRoomItems || [],
-        roomDecorations:    playerStats.roomDecorations || {},
-        statusEffects:      playerStats.statusEffects || [],
-        _battleWins:        playerStats._battleWins || 0,
-        _explorationCount:  playerStats._explorationCount || 0,
-        _regenPerTurn:      playerStats._regenPerTurn || 0,
+        ownedRoomItems:     playerStats.ownedRoomItems     || [],
+        roomDecorations:    playerStats.roomDecorations    || {},
+        statusEffects:      playerStats.statusEffects      || [],
+        _battleWins:        playerStats._battleWins        || 0,
+        _explorationCount:  playerStats._explorationCount  || 0,
+        _regenPerTurn:      playerStats._regenPerTurn      || 0,
         _battleBonusReward: playerStats._battleBonusReward || 0,
-        unionBonusDmg:      playerStats.unionBonusDmg || 0,
-        _slotLucky:         playerStats._slotLucky || false,
-        _libTimeBonus:      playerStats._libTimeBonus || 0,
+        unionBonusDmg:      playerStats.unionBonusDmg      || 0,
+        _slotLucky:         playerStats._slotLucky         || false,
+        _libTimeBonus:      playerStats._libTimeBonus      || 0,
       },
 
-      puangState: puangState,
-      inventory:  inventory,
-
-      // ── 일일 한도 ──
-      dailyUsage: dailyUsage,
+      puangState:  puangState,
+      inventory:   inventory,
+      dailyUsage:  dailyUsage,
 
       // ── 영구 보존 데이터 ──
-      achievements:   JSON.parse(localStorage.getItem('labAchievements') || '[]'),
-      skills:         JSON.parse(localStorage.getItem('labSkills')        || '[]'),
-      lakeUnlocked:   localStorage.getItem('lakeUnlocked') === 'true',
-      questCompleted: JSON.parse(localStorage.getItem('questCompleted')   || '{}'),
+      achievements:       JSON.parse(localStorage.getItem('labAchievements')      || '[]'),
+      skills:             JSON.parse(localStorage.getItem('labSkills')            || '[]'),
+      lakeUnlocked:       localStorage.getItem('lakeUnlocked') === 'true',
+      questCompleted:     JSON.parse(localStorage.getItem('questCompleted')       || '{}'),
       saveSlots: {
         slot1: JSON.parse(localStorage.getItem('cau_save_slot_1') || 'null'),
         slot2: JSON.parse(localStorage.getItem('cau_save_slot_2') || 'null'),
         slot3: JSON.parse(localStorage.getItem('cau_save_slot_3') || 'null'),
       },
+
+      // ── 추가 영구 데이터 ──
+      gymStreak:          parseInt(localStorage.getItem('gymStreak')              || '0'),
+      gymLastVisit:       localStorage.getItem('gymLastVisit')                    || '',
+      clinicVaccine:      JSON.parse(localStorage.getItem('clinicVaccine')        || 'null'),
+      clinicInsurance:    localStorage.getItem('clinicInsurance') === 'true',
+      lab2Recipes:        JSON.parse(localStorage.getItem('lab2UnlockedRecipes')  || '[]'),
+      unionClubs:         JSON.parse(localStorage.getItem('unionJoinedClubs')     || '[]'),
+      libBorrowedBooks:   JSON.parse(localStorage.getItem('libBorrowedBooks')     || '[]'),
+      playerAvatar:       localStorage.getItem('playerAvatar')                    || '🧑‍💻',
+      monsterCompendium:  JSON.parse(localStorage.getItem('monsterCompendium')    || '{}'),
+      dataHistory:        JSON.parse(localStorage.getItem('dataHistory')          || '[]'),
 
       lastUpdated: new Date(),
     };
@@ -251,7 +267,7 @@ const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {
   ownedRoomItems: [],
   roomDecorations: {
     background:      'default',
-    bed:             null, desk:           null, carpet:      null,
+    bed:             null, desk:           null, carpet:         null,
     bookshelf_small: null, bookshelf_big:  null,
     lamp:            null, hanging_plant:  null,
     shelf_left:      null, shelf_right:    null,
@@ -284,9 +300,9 @@ const dailyLimits = {
 
 const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
   date:      '',
-  cafeteria: 0, library: 0, gym:     0,
-  clinic:    0, festival: 0, lab2:   0,
-  union:     0, praise:   0, lab:    0,
+  cafeteria: 0, library: 0, gym:  0,
+  clinic:    0, festival: 0, lab2: 0,
+  union:     0, praise:   0, lab:  0,
 };
 
 function checkAndResetDaily() {
