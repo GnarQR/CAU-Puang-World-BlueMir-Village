@@ -8,49 +8,49 @@ const ROOM_ITEMS = {
   // ── 바닥 가구 (furniture sprite) ──
   'item_bed': {
     id: 'item_bed', slot: 'bed',
-    spriteClass: 'spr-bed', spriteSheet: 'furniture',
+    imgFile: 'bed.png',
     name: '블루 체크 침대', emoji: '🛏️', price: 20,
     desc: '포근한 블루 체크 침대'
   },
-
+ 
   'item_desk': {
     id: 'item_desk', slot: 'desk',
-    spriteClass: 'spr-desk', spriteSheet: 'furniture',
+    imgFile: 'desk.png',
     name: '달빛 컴퓨터 책상', emoji: '💻', price: 18,
     desc: '밤하늘 모니터가 있는 책상'
   },
-
+ 
   'item_carpet': {
     id: 'item_carpet', slot: 'carpet',
-    spriteClass: 'spr-carpet', spriteSheet: 'furniture',
+    imgFile: 'carpet.png',
     name: '블루 플로럴 카펫', emoji: '🟦', price: 12,
     desc: '꽃무늬 블루 카펫'
   },
-
+ 
   'item_bookshelf_small': {
     id: 'item_bookshelf_small', slot: 'bookshelf_small',
-    spriteClass: 'spr-bookshelf-small', spriteSheet: 'furniture',
+    imgFile: 'bookshelf_small.png',
     name: '작은 책장', emoji: '📚', price: 14,
     desc: '푸앙이 인형이 앉아있는 작은 책장'
   },
-
+ 
   'item_bookshelf_big': {
     id: 'item_bookshelf_big', slot: 'bookshelf_big',
-    spriteClass: 'spr-bookshelf-big', spriteSheet: 'furniture',
+    imgFile: 'bookshelf_big.png',
     name: '큰 책장', emoji: '📖', price: 22,
     desc: '책과 소품이 가득한 큰 책장'
   },
-
+ 
   'item_lamp': {
     id: 'item_lamp', slot: 'lamp',
-    spriteClass: 'spr-lamp', spriteSheet: 'furniture',
+    imgFile: 'lamp.png',
     name: '플로럴 스탠드 조명', emoji: '🌟', price: 10,
     desc: '꽃무늬 스탠드 조명'
   },
-
+ 
   'item_hanging_plant': {
     id: 'item_hanging_plant', slot: 'hanging_plant',
-    spriteClass: 'spr-hanging-plant', spriteSheet: 'furniture',
+    imgFile: 'hanging_plant.png',
     name: '행잉 화분', emoji: '🪴', price: 8,
     desc: '천장에 매달린 행잉 화분'
   },
@@ -58,56 +58,56 @@ const ROOM_ITEMS = {
   // ── 벽 장식 (wall furniture sprite) ──
   'item_shelf_left': {
     id: 'item_shelf_left', slot: 'shelf_left',
-    spriteClass: 'spr-shelf-left', spriteSheet: 'wall',
+    imgFile: 'shelf_left.png',
     name: '벽 선반 (왼쪽)', emoji: '🔖', price: 15,
     desc: '왼쪽 벽에 달린 책·화분 선반'
   },
-
+ 
   'item_shelf_right': {
     id: 'item_shelf_right', slot: 'shelf_right',
-    spriteClass: 'spr-shelf-right', spriteSheet: 'wall',
+    imgFile: 'shelf_right.png',
     name: '벽 선반 (오른쪽)', emoji: '🔖', price: 15,
     desc: '오른쪽 벽에 달린 선반'
   },
-
+ 
   'item_painting_left': {
     id: 'item_painting_left', slot: 'painting_left',
-    spriteClass: 'spr-painting-left', spriteSheet: 'wall',
+    imgFile: 'painting_left.png',
     name: '달밤 액자 (왼쪽)', emoji: '🖼️', price: 10,
     desc: '왼쪽 벽의 달밤 그림 액자'
   },
-
+ 
   'item_painting_right': {
     id: 'item_painting_right', slot: 'painting_right',
-    spriteClass: 'spr-painting-right', spriteSheet: 'wall',
+    imgFile: 'painting_right.png',
     name: '꽃 액자 (오른쪽)', emoji: '🖼️', price: 10,
     desc: '오른쪽 벽의 꽃 그림 액자'
   },
-
+ 
   'item_wall_plant': {
     id: 'item_wall_plant', slot: 'wall_plant',
-    spriteClass: 'spr-wall-plant', spriteSheet: 'wall',
+    imgFile: 'wall_plant.png',
     name: '벽 화분 장식', emoji: '🌿', price: 9,
     desc: '벽에 달린 식물 화분'
   },
-
+ 
   'item_hanging_deco': {
     id: 'item_hanging_deco', slot: 'hanging_deco',
-    spriteClass: 'spr-hanging-deco', spriteSheet: 'wall',
+    imgFile: 'hanging_deco.png',
     name: '행잉 장식', emoji: '✨', price: 11,
     desc: '달과 별 모양 행잉 장식'
   },
-
+ 
   'item_memo_poster': {
     id: 'item_memo_poster', slot: 'memo_poster',
-    spriteClass: 'spr-memo-poster', spriteSheet: 'wall',
+    imgFile: 'memo_poster.png',
     name: '메모 포스터', emoji: '📌', price: 8,
     desc: '달밤 사진 & 메모 포스터'
   },
-
+ 
   'item_dreamcatcher': {
     id: 'item_dreamcatcher', slot: 'dreamcatcher',
-    spriteClass: 'spr-dreamcatcher', spriteSheet: 'wall',
+    imgFile: 'dreamcatcher.png',
     name: '드림캐처', emoji: '🌙', price: 13,
     desc: '블루 드림캐처 장식'
   },
@@ -211,40 +211,27 @@ function renderSlot(slotId, itemId) {
   if (!el) return;
  
   if (!itemId) {
-    // 빈 슬롯 — 점선 힌트 복원 (인라인 style 위치/크기는 유지)
+    // 빈 슬롯 — 점선 힌트 복원
     el.className = 'room-slot-hint';
     el.style.backgroundImage = '';
-    el.style.backgroundPosition = '';
-    el.style.backgroundSize = '';
-    el.style.backgroundRepeat = '';
-    el.style.border = '';
+    el.style.backgroundColor = '';
     el.innerHTML = '';
     return;
   }
  
   const item = ROOM_ITEMS[itemId];
-  if (!item) return;
+  if (!item || !item.imgFile) return;
  
-  // 슬롯 div 위치/크기(인라인 style)는 유지하고 테두리만 제거 후 스프라이트 적용
+  // 슬롯 div 위치/크기(인라인 style)는 유지, img 태그로 표시
   el.className = 'room-slot-filled';
- 
-  // 임시 div로 CSS 클래스의 background 값 읽기
-  const tmpEl = document.createElement('div');
-  tmpEl.className = item.spriteSheet === 'wall'
-    ? `room-wall-deco ${item.spriteClass}`
-    : `room-furniture ${item.spriteClass}`;
-  tmpEl.style.cssText = 'visibility:hidden;position:absolute;left:-9999px;';
-  document.body.appendChild(tmpEl);
- 
-  const computed = window.getComputedStyle(tmpEl);
-  el.style.backgroundImage    = computed.backgroundImage;
-  el.style.backgroundPosition = computed.backgroundPosition;
-  el.style.backgroundSize     = computed.backgroundSize;
-  el.style.backgroundRepeat   = 'no-repeat';
-  el.style.backgroundColor    = 'transparent';
-  el.innerHTML = '';
- 
-  document.body.removeChild(tmpEl);
+  el.style.backgroundImage = '';
+  el.style.backgroundColor = 'transparent';
+  el.innerHTML = `<img
+    src="images/furniture/${item.imgFile}"
+    alt="${item.name}"
+    style="width:100%;height:100%;object-fit:contain;pointer-events:none;"
+    draggable="false"
+  >`;
 }
 
 // ── 아이템 구매 ──
