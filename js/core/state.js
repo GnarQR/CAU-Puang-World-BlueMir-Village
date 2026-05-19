@@ -1,15 +1,28 @@
 // ================================================================
 // state.js — 전역 상태 관리
-// 게임 전체에서 공유되는 변수와 localStorage 연동 함수 모음
 // ================================================================
+//
+// ┌─────────────────────────────────────────────────────────────┐
+// │                    데이터 저장 구조                          │
+// ├──────────────────────┬──────────────────────────────────────┤
+// │  Firebase (영구)     │  localStorage (임시/기기별)          │
+// ├──────────────────────┼──────────────────────────────────────┤
+// │  playerStats         │  groqApiKey   ← 민감 정보            │
+// │  puangState          │  dailyUsage   ← 오늘만 유효          │
+// │  inventory           │  libStudyCount/libFocus ← 오늘만     │
+// │  achievements        │  cafVisitTotal/cafOvereat ← 오늘만   │
+// │  skills              │  inBattle/battleOrigin ← 임시 복구   │
+// │  lakeUnlocked        │  cauTheme ← 기기별 UI 설정           │
+// │  questCompleted      │  statBarCollapsed ← 기기별 UI 설정   │
+// │  saveSlots (1~3)     │  mapVisits ← 가벼운 통계             │
+// └──────────────────────┴──────────────────────────────────────┘
 
 // ── Groq API 키 ──
 let GROQ_API_KEY = '';
-let serverDataLoaded = false; // 서버 데이터 로드 완료 전 저장 방지
+let serverDataLoaded = false;
 
 // ================================================================
-// ★ Fix: 디바운싱 — 1.5초 내 중복 saveAllDataToServer 호출을 1번으로 압축
-// 한 번의 게임 액션에서 Firebase write가 여러 번 발생하던 문제 해결
+// 디바운싱 — 1.5초 내 중복 Firebase write를 1번으로 압축
 // ================================================================
 let _saveDebounceTimer = null;
 function debouncedSave() {
@@ -21,12 +34,7 @@ function debouncedSave() {
 }
 
 // ================================================================
-// 1. 서버에서 모든 데이터를 한꺼번에 불러오기
-// ★ Fix: docSnap.exists() 괄호 추가 (compat SDK는 함수로 호출해야 함)
-// ★ Fix: 로드 중 savePuangState/saveDailyUsage → localStorage만 백업
-//         (serverDataLoaded = false 상태에서 saveAllDataToServer가 호출되어
-//          타이밍에 따라 로드 직후 데이터가 덮어써지는 버그 방지)
-// ★ Fix: 신규 유저(문서 없음)도 serverDataLoaded = true 처리
+// 1. Firebase → 로컬 데이터 로드
 // ================================================================
 async function loadAllDataFromServer() {
   if (!GROQ_API_KEY) return;
@@ -34,19 +42,10 @@ async function loadAllDataFromServer() {
   try {
     const docSnap = await getDoc(doc(db, 'gameData', GROQ_API_KEY));
 
-    if (docSnap.exists()) {                      // ★ Fix: () 추가
+    if (docSnap.exists()) {
       const serverData = docSnap.data();
 
-      if (serverData.puangState) {
-        Object.assign(puangState, serverData.puangState);
-        localStorage.setItem('puangState', JSON.stringify(puangState)); // ★ Fix: localStorage만
-      }
-
-      if (serverData.dailyUsage) {
-        Object.assign(dailyUsage, serverData.dailyUsage);
-        localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage)); // ★ Fix: localStorage만
-      }
-
+      // ── 핵심 게임 데이터 ──
       if (serverData.playerStats) {
         Object.assign(playerStats, serverData.playerStats);
 
@@ -55,7 +54,7 @@ async function loadAllDataFromServer() {
           localStorage.setItem('playerName', serverData.playerStats.name);
         }
 
-        // diamond → data 마이그레이션 유지
+        // diamond → data 마이그레이션
         if (serverData.playerStats.data !== undefined) {
           playerStats.data = serverData.playerStats.data;
         } else if (serverData.playerStats.diamond !== undefined) {
@@ -63,9 +62,13 @@ async function loadAllDataFromServer() {
         } else {
           playerStats.data = 0;
         }
-
         if (playerStats.diamond !== undefined) delete playerStats.diamond;
         localStorage.setItem('playerStats', JSON.stringify(playerStats));
+      }
+
+      if (serverData.puangState) {
+        Object.assign(puangState, serverData.puangState);
+        localStorage.setItem('puangState', JSON.stringify(puangState));
       }
 
       if (serverData.inventory && Array.isArray(serverData.inventory)) {
@@ -74,26 +77,117 @@ async function loadAllDataFromServer() {
         localStorage.setItem('cau_inventory', JSON.stringify(inventory));
       }
 
-      console.log('서버 데이터 로드 완료');
+      // ── dailyUsage: 날짜 같을 때만 복원 (다르면 초기화) ──
+      if (serverData.dailyUsage) {
+        const today = new Date().toDateString();
+        if (serverData.dailyUsage.date === today) {
+          Object.assign(dailyUsage, serverData.dailyUsage);
+          localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage));
+        }
+      }
+
+      // ── 영구 보존 데이터 → localStorage 복원 ──
+      if (serverData.achievements) {
+        localStorage.setItem('labAchievements', JSON.stringify(serverData.achievements));
+      }
+      if (serverData.skills) {
+        localStorage.setItem('labSkills', JSON.stringify(serverData.skills));
+      }
+      if (serverData.lakeUnlocked) {
+        localStorage.setItem('lakeUnlocked', 'true');
+      }
+      if (serverData.questCompleted) {
+        localStorage.setItem('questCompleted', JSON.stringify(serverData.questCompleted));
+      }
+      if (serverData.saveSlots) {
+        if (serverData.saveSlots.slot1) localStorage.setItem('cau_save_slot_1', JSON.stringify(serverData.saveSlots.slot1));
+        if (serverData.saveSlots.slot2) localStorage.setItem('cau_save_slot_2', JSON.stringify(serverData.saveSlots.slot2));
+        if (serverData.saveSlots.slot3) localStorage.setItem('cau_save_slot_3', JSON.stringify(serverData.saveSlots.slot3));
+      }
+
+      console.log('Firebase 로드 완료');
     } else {
-      // ★ Fix: 신규 유저 — 문서 없어도 serverDataLoaded = true 처리
       console.log('신규 유저 — 기본값으로 시작');
     }
 
-    // ★ Fix: 기존/신규 유저 모두 여기서 true (try 블록 안에서 처리)
     serverDataLoaded = true;
     if (typeof updateMapStats === 'function') updateMapStats();
 
   } catch (e) {
-    serverDataLoaded = true; // 실패해도 저장은 허용
+    serverDataLoaded = true;
     console.error('데이터 로드 실패:', e);
     if (typeof showToast === 'function') showToast('⚠️ 서버 로드 실패 — 로컬 데이터로 시작합니다.', 'warning', 3500);
   }
 }
 
 // ================================================================
-// 데이터를 변경한 후 호출할 통합 업데이트 함수
-// ★ Fix: await 제거 + debouncedSave 사용 (즉각 UI 반영, 저장은 디바운싱)
+// 2. 로컬 데이터 → Firebase 저장
+// ================================================================
+async function saveAllDataToServer() {
+  if (!GROQ_API_KEY) return;
+  if (!serverDataLoaded) return;
+
+  try {
+    const dataToSave = {
+
+      // ── 핵심 게임 데이터 ──
+      playerStats: {
+        name:               playerStats.name || localStorage.getItem('playerName') || '탐험가',
+        hp:                 playerStats.hp,
+        maxHp:              playerStats.maxHp,
+        sp:                 playerStats.sp,
+        maxSp:              playerStats.maxSp,
+        data:               playerStats.data ?? 0,
+        ownedRoomItems:     playerStats.ownedRoomItems || [],
+        roomDecorations:    playerStats.roomDecorations || {},
+        statusEffects:      playerStats.statusEffects || [],
+        _battleWins:        playerStats._battleWins || 0,
+        _explorationCount:  playerStats._explorationCount || 0,
+        _regenPerTurn:      playerStats._regenPerTurn || 0,
+        _battleBonusReward: playerStats._battleBonusReward || 0,
+        unionBonusDmg:      playerStats.unionBonusDmg || 0,
+        _slotLucky:         playerStats._slotLucky || false,
+        _libTimeBonus:      playerStats._libTimeBonus || 0,
+      },
+
+      puangState: puangState,
+      inventory:  inventory,
+
+      // ── 일일 한도 ──
+      dailyUsage: dailyUsage,
+
+      // ── 영구 보존 데이터 ──
+      achievements:   JSON.parse(localStorage.getItem('labAchievements') || '[]'),
+      skills:         JSON.parse(localStorage.getItem('labSkills')        || '[]'),
+      lakeUnlocked:   localStorage.getItem('lakeUnlocked') === 'true',
+      questCompleted: JSON.parse(localStorage.getItem('questCompleted')   || '{}'),
+      saveSlots: {
+        slot1: JSON.parse(localStorage.getItem('cau_save_slot_1') || 'null'),
+        slot2: JSON.parse(localStorage.getItem('cau_save_slot_2') || 'null'),
+        slot3: JSON.parse(localStorage.getItem('cau_save_slot_3') || 'null'),
+      },
+
+      lastUpdated: new Date(),
+    };
+
+    // localStorage도 동시에 최신화
+    localStorage.setItem('playerStats',   JSON.stringify(dataToSave.playerStats));
+    localStorage.setItem('playerName',    dataToSave.playerStats.name);
+    localStorage.setItem('puangState',    JSON.stringify(dataToSave.puangState));
+    localStorage.setItem('dailyUsage',    JSON.stringify(dataToSave.dailyUsage));
+    localStorage.setItem('cau_inventory', JSON.stringify(dataToSave.inventory));
+
+    await setDoc(doc(db, 'gameData', GROQ_API_KEY), dataToSave);
+    console.log('Firebase 저장 완료');
+
+  } catch (e) {
+    console.error('서버 저장 실패:', e);
+    if (typeof showToast === 'function') showToast('⚠️ 서버 저장 실패 — 데이터는 로컬에 보관됩니다.', 'warning', 4000);
+  }
+}
+
+// ================================================================
+// 통합 업데이트 함수 — 데이터 변경 후 항상 이걸 호출
 // ================================================================
 function syncAndSave() {
   updateMapStats();
@@ -101,7 +195,9 @@ function syncAndSave() {
 }
 window.syncAndSave = syncAndSave;
 
-// ── 맵 상단 스탯 바 업데이트 ──
+// ================================================================
+// 맵 상단 스탯 바 업데이트
+// ================================================================
 let _prevData = null;
 
 window.updateMapStats = function() {
@@ -143,56 +239,10 @@ window.updateMapStats = function() {
 document.addEventListener('DOMContentLoaded', () => { window.updateMapStats(); });
 
 // ================================================================
-// 2. 서버에 통합 데이터 저장
-// ★ Fix: 저장 실패 시 토스트 알림 추가
+// 전역 변수 — localStorage 초기값 로드
 // ================================================================
-async function saveAllDataToServer() {
-  if (!GROQ_API_KEY) return;
-  if (!serverDataLoaded) return;
 
-  try {
-    const dataToSave = {
-      puangState:  puangState,
-      dailyUsage:  dailyUsage,
-      playerStats: {
-        name:               playerStats.name || localStorage.getItem('playerName') || '탐험가',
-        hp:                 playerStats.hp,
-        maxHp:              playerStats.maxHp,
-        sp:                 playerStats.sp,
-        maxSp:              playerStats.maxSp,
-        data:               playerStats.data ?? 0,
-        ownedRoomItems:     playerStats.ownedRoomItems || [],
-        roomDecorations:    playerStats.roomDecorations || {},
-        statusEffects:      playerStats.statusEffects || [],
-        _battleWins:        playerStats._battleWins || 0,
-        _explorationCount:  playerStats._explorationCount || 0,
-        _regenPerTurn:      playerStats._regenPerTurn || 0,
-        _battleBonusReward: playerStats._battleBonusReward || 0,
-        unionBonusDmg:      playerStats.unionBonusDmg || 0,
-        _slotLucky:         playerStats._slotLucky || false,
-        _libTimeBonus:      playerStats._libTimeBonus || 0,
-      },
-      inventory:   inventory,
-      lastUpdated: new Date(),
-    };
-
-    // localStorage 최신화
-    localStorage.setItem('playerStats',   JSON.stringify(dataToSave.playerStats));
-    localStorage.setItem('playerName',    dataToSave.playerStats.name);
-    localStorage.setItem('dailyUsage',    JSON.stringify(dataToSave.dailyUsage));
-    localStorage.setItem('puangState',    JSON.stringify(dataToSave.puangState));
-    localStorage.setItem('cau_inventory', JSON.stringify(dataToSave.inventory));
-
-    await setDoc(doc(db, 'gameData', GROQ_API_KEY), dataToSave);
-    console.log('Firebase 저장 완료');
-  } catch (e) {
-    console.error('서버 저장 실패:', e);
-    // ★ Fix: 저장 실패 시 유저에게 알림
-    if (typeof showToast === 'function') showToast('⚠️ 서버 저장 실패 — 데이터는 로컬에 보관됩니다.', 'warning', 4000);
-  }
-}
-
-// ── 전역 게임 스탯 ──
+// ── 플레이어 스탯 ──
 const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {
   name:    localStorage.getItem('playerName') || '',
   hp: 60,  maxHp: 60,
@@ -200,15 +250,15 @@ const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {
   data: 0,
   ownedRoomItems: [],
   roomDecorations: {
-    background: 'default',
-    bed: null, desk: null, carpet: null,
-    bookshelf_small: null, bookshelf_big: null,
-    lamp: null, hanging_plant: null,
-    shelf_left: null, shelf_right: null,
-    painting_left: null, painting_right: null,
-    wall_plant: null, hanging_deco: null,
-    memo_poster: null, dreamcatcher: null,
-    costume: null,
+    background:      'default',
+    bed:             null, desk:           null, carpet:      null,
+    bookshelf_small: null, bookshelf_big:  null,
+    lamp:            null, hanging_plant:  null,
+    shelf_left:      null, shelf_right:    null,
+    painting_left:   null, painting_right: null,
+    wall_plant:      null, hanging_deco:   null,
+    memo_poster:     null, dreamcatcher:   null,
+    costume:         null,
   },
 };
 
@@ -220,24 +270,23 @@ const puangState = JSON.parse(localStorage.getItem('puangState')) || {
   moodDate:       '',
 };
 
-// ★ Fix: savePuangState — Firebase 직접 호출 대신 debouncedSave 사용
 window.savePuangState = function() {
   localStorage.setItem('puangState', JSON.stringify(puangState));
   debouncedSave();
 };
 
-// ── 일일 한도 시스템 ──
+// ── 일일 한도 ──
 const dailyLimits = {
-  cafeteria: 3, library: 5, gym: 3,
-  clinic: 1,    festival: 5, lab2: 3,
-  union: 2,     praise: 2,   lab: 2,
+  cafeteria: 3, library: 5, gym:  3,
+  clinic:    1, festival: 5, lab2: 3,
+  union:     2, praise:   2, lab:  2,
 };
 
 const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
-  date: '',
-  cafeteria: 0, library: 0, gym: 0,
-  clinic: 0,    festival: 0, lab2: 0,
-  union: 0,     praise: 0,   lab: 0,
+  date:      '',
+  cafeteria: 0, library: 0, gym:     0,
+  clinic:    0, festival: 0, lab2:   0,
+  union:     0, praise:   0, lab:    0,
 };
 
 function checkAndResetDaily() {
@@ -252,7 +301,6 @@ function checkAndResetDaily() {
   });
 }
 
-// ★ Fix: saveDailyUsage — Firebase 직접 호출 대신 debouncedSave 사용
 window.saveDailyUsage = function() {
   localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage));
   debouncedSave();
@@ -274,7 +322,6 @@ function remainDaily(key) {
 // ── 인벤토리 ──
 const inventory = JSON.parse(localStorage.getItem('cau_inventory')) || [];
 
-// ★ Fix: saveInventory — Firebase 직접 호출 대신 debouncedSave 사용
 window.saveInventory = function() {
   localStorage.setItem('cau_inventory', JSON.stringify(inventory));
   debouncedSave();
