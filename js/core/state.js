@@ -44,28 +44,11 @@ function debouncedSave() {
 // ================================================================
 // 1. Firebase → 로컬 데이터 로드
 // ================================================================
-// ★ Fix #10 (보안 주의): 현재 Groq API 키(gsk_...)를 Firestore 문서 ID로 직접 사용 중.
-//   Firebase 콘솔 접근 권한이 있거나 보안 규칙이 열려 있으면 API 키가 노출됩니다.
-//   아래 _getDocId() 헬퍼를 통해 키를 해시 처리하여 저장합니다.
-//   (SubtleCrypto API는 모든 모던 브라우저에서 지원됩니다)
-async function _getDocId(apiKey) {
-  try {
-    const enc = new TextEncoder().encode(apiKey);
-    const hashBuf = await crypto.subtle.digest('SHA-256', enc);
-    const hashArr = Array.from(new Uint8Array(hashBuf));
-    return hashArr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 40);
-  } catch(e) {
-    // SubtleCrypto 미지원 환경 폴백 (구형 브라우저): 기존 방식 유지
-    return apiKey;
-  }
-}
-
 async function loadAllDataFromServer() {
   if (!GROQ_API_KEY) return;
 
   try {
-    const docId = await _getDocId(GROQ_API_KEY); // ★ Fix #10: 해시된 ID 사용
-    const docSnap = await getDoc(doc(db, 'gameData', docId));
+    const docSnap = await getDoc(doc(db, 'gameData', GROQ_API_KEY));
 
     if (docSnap.exists()) {
       const s = docSnap.data();  // s = serverData
@@ -163,8 +146,6 @@ async function saveAllDataToServer() {
   if (!serverDataLoaded) return;
 
   try {
-    const docId = await _getDocId(GROQ_API_KEY); // ★ Fix #10: 해시된 ID 사용
-
     const dataToSave = {
 
       // ── 핵심 게임 데이터 ──
@@ -224,7 +205,7 @@ async function saveAllDataToServer() {
     localStorage.setItem('dailyUsage',    JSON.stringify(dataToSave.dailyUsage));
     localStorage.setItem('cau_inventory', JSON.stringify(dataToSave.inventory));
 
-    await setDoc(doc(db, 'gameData', docId), dataToSave); // ★ Fix #10: 해시된 docId 사용
+    await setDoc(doc(db, 'gameData', GROQ_API_KEY), dataToSave);
     console.log('Firebase 저장 완료');
 
   } catch (e) {
