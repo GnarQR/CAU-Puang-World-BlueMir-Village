@@ -906,7 +906,6 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 12px;
-  overflow: hidden; /* ★ 버그수정: 모바일에서 맵 버튼 삐져나옴 방지 */
 }
 @media (max-width: 768px) { .map-container { max-width: 100%; } }
 

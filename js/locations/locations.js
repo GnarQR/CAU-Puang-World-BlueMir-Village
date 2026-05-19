@@ -107,9 +107,6 @@ window.orderFood = function(id) {
     addCafLog('[❌] 오늘은 더 이상 주문할 수 없어요! (일일 3회 한도)', 'caf-log-err');
     const el = document.getElementById('caf-npc-text');
     if (el) el.textContent = '오늘 한도를 다 채우셨어요~ 내일 또 오세요! 😅';
-    // ★ 버그수정: 한도 초과 시 남은 횟수 표시 갱신
-    const remEl = document.getElementById('caf-remain');
-    if (remEl) remEl.textContent = remainDaily('cafeteria');
     return;
   }
   const item = cafMenu[id];
