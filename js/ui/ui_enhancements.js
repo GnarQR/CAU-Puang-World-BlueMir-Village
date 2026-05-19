@@ -634,12 +634,24 @@ document.addEventListener('DOMContentLoaded', () => {
 // 9. 퀘스트 / 데일리 미션 시스템
 // ================================================================
 
+// ★ Fix 4: 전투 퀘스트 기준값 — 날짜 기반으로 localStorage에 저장
+// 새로고침해도 오늘 시작 시점의 승리 수 유지
+function getQuestBattleBase() {
+  const today = new Date().toDateString();
+  const saved = JSON.parse(localStorage.getItem('questBattleBase') || 'null');
+  if (saved && saved.date === today) return saved.base;
+  // 오늘 기준점 없으면 현재 값으로 저장
+  const base = playerStats._battleWins || 0;
+  localStorage.setItem('questBattleBase', JSON.stringify({ date: today, base }));
+  return base;
+}
+
 const DAILY_QUESTS = [
-  { id: 'q_cafeteria', label: '🍽️ 식당 2회 방문',   check: () => (dailyUsage.cafeteria || 0) >= 2, reward: 5  },
-  { id: 'q_library',   label: '📚 도서관 공부 2회', check: () => (dailyUsage.library   || 0) >= 2, reward: 6  },
-  { id: 'q_battle',    label: '⚔️ 전투 1회 승리',   check: () => (playerStats._battleWins || 0) >= (window._questBattleBase || 0) + 1, reward: 8 },
-  { id: 'q_gym',       label: '💪 체육관 방문',      check: () => (dailyUsage.gym       || 0) >= 1, reward: 4  },
-  { id: 'q_clinic',    label: '🏥 의무실 방문',      check: () => (dailyUsage.clinic    || 0) >= 1, reward: 3  },
+  { id: 'q_cafeteria', label: '🍽️ 식당 2회 방문',    check: () => (dailyUsage.cafeteria || 0) >= 2, reward: 5 },
+  { id: 'q_library',   label: '📚 도서관 공부 2회',  check: () => (dailyUsage.library   || 0) >= 2, reward: 6 },
+  { id: 'q_battle',    label: '⚔️ 전투 1회 승리',    check: () => (playerStats._battleWins || 0) >= getQuestBattleBase() + 1, reward: 8 },
+  { id: 'q_gym',       label: '💪 체육관 방문',       check: () => (dailyUsage.gym       || 0) >= 1, reward: 4 },
+  { id: 'q_clinic',    label: '🏥 의무실 방문',       check: () => (dailyUsage.clinic    || 0) >= 1, reward: 3 },
   { id: 'q_festival',  label: '🎪 축제 미니게임 2회', check: () => (dailyUsage.festival  || 0) >= 2, reward: 5 },
 ];
 
@@ -673,14 +685,16 @@ window.checkDailyQuests = function() {
     if (!done[q.id] && q.check()) {
       done[q.id] = true;
       playerStats.data += q.reward;
-      if (typeof saveInventory === 'function') {}
-      if (typeof window.syncAndSave === 'function') window.syncAndSave();
-      if (typeof showToast === 'function') showToast('✅ 미션 완료: ' + q.label + ' +💎' + q.reward, 'success', 3000);
       newDone = true;
+      if (typeof showToast === 'function') showToast('✅ 미션 완료: ' + q.label + ' +💎' + q.reward, 'success', 3000);
     }
   });
 
-  if (newDone) saveQuestCompletions(done);
+  if (newDone) {
+    saveQuestCompletions(done);                                          // ★ Fix 5-1: localStorage 먼저 저장
+    if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Fix 5-2: 그 다음 Firebase 저장
+    // (순서 수정: 이전엔 syncAndSave가 saveQuestCompletions보다 먼저 호출되어 Firebase에 미완료 상태 저장될 수 있었음)
+  }
   renderQuestPanel();
 };
 
@@ -705,8 +719,7 @@ function renderQuestPanel() {
 
 // 주기적으로 퀘스트 체크 (30초마다)
 document.addEventListener('DOMContentLoaded', () => {
-  // 전투 기준점 저장 (오늘 시작 시점의 승리 수)
-  window._questBattleBase = playerStats._battleWins || 0;
+  // ★ Fix 6: _questBattleBase 제거 — getQuestBattleBase()가 날짜 기반으로 localStorage에서 관리
   renderQuestPanel();
   setInterval(() => {
     if (typeof dailyUsage !== 'undefined') window.checkDailyQuests();
@@ -728,7 +741,7 @@ const TITLES = [
   { id: 't_legend',   name: '캠퍼스 전설',     check: () => (playerStats._battleWins || 0) >= 20 && puangState.favorability >= 90, color: '#a855f7' },
 ];
 
-function getActiveTitle() {
+window.getActiveTitle = function getActiveTitle() { // ★ Fix 1: window 노출 — 탐험카드에서 참조 가능하게
   // 가장 희귀한 달성 칭호 반환
   for (let i = TITLES.length - 1; i >= 0; i--) {
     if (TITLES[i].check()) return TITLES[i];
@@ -1052,7 +1065,22 @@ function recordDataHistory() {
     localStorage.setItem('dataHistory', JSON.stringify(history));
   }
 }
-document.addEventListener('DOMContentLoaded', () => { setTimeout(recordDataHistory, 1000); });
+// ★ Fix 2: Firebase 로드 완료 후 스냅샷 — 1초 고정 타이머 대신 serverDataLoaded 확인
+// (1초 고정이면 Firebase 로드 전이라 playerStats.data가 0으로 기록될 수 있음)
+function recordDataHistorySafe() {
+  // serverDataLoaded가 true면 바로, 아직이면 최대 5초 대기
+  let attempts = 0;
+  const tryRecord = () => {
+    if (typeof serverDataLoaded === 'undefined' || serverDataLoaded === true) {
+      recordDataHistory();
+    } else if (attempts < 10) {
+      attempts++;
+      setTimeout(tryRecord, 500);
+    }
+  };
+  setTimeout(tryRecord, 800);
+}
+document.addEventListener('DOMContentLoaded', () => { recordDataHistorySafe(); });
 
 
 // ================================================================
@@ -1251,7 +1279,6 @@ window.registerMonsterCompendium = function(monster) {
   }
   comp[monster.id].count++;
   localStorage.setItem('monsterCompendium', JSON.stringify(comp));
-  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
   if (comp[monster.id].count === 1) {
     if (typeof showToast === 'function') showToast('📖 도감 등록! ' + monster.name, 'info', 2500);
   }
@@ -1700,7 +1727,6 @@ window.selectAvatar = function(emoji) {
   const btn = [...document.querySelectorAll('.edit-avatar-btn')].find(b => b.textContent === emoji);
   if (btn) btn.classList.add('selected');
   localStorage.setItem('playerAvatar', emoji);
-  if (typeof window.syncAndSave === 'function') window.syncAndSave(); // ★ Firebase 동기화
   const profileAvatar = document.getElementById('profile-avatar-emoji');
   if (profileAvatar) profileAvatar.textContent = emoji;
 };
