@@ -81,7 +81,7 @@ function draw() {
     const ctx = canvas.getContext('2d');
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);  // 1. 배경 지우기
-    ctx.drawImage(bgImage, 0, 0, 1024, 598);  // 2. 도서관 배경 그리기 (JSON 상 가로 1024, 세로 598 크기)
+    ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);  // 2. 배경 그리기 ★ Fix 6: 고정 1024→canvas.width/height (그림 잘림 방지)
 
     // 3. 캐릭터 그 위에 얹기
     // player.x와 player.y는 '스르륵' 로직으로 변하는 실시간 좌표입니다.
@@ -145,7 +145,34 @@ window.confirmExitExploration = function() {
 // ── 탐험 모드 시작 함수 ──
 window.startExploration = function() {
     console.log("이면 세계 탐험 시작");
-    
+
+    // ★ Fix 3: 이미지 로드 전 진입 시 검은 화면 방지
+    // 이미지가 아직 로드 중이면 로드 완료 후 재시도
+    if (assetsLoaded < 2) {
+        console.log("이미지 로드 중... 대기");
+        const checkReady = setInterval(() => {
+            if (assetsLoaded >= 2) {
+                clearInterval(checkReady);
+                window.startExploration();
+            }
+        }, 100);
+        return;
+    }
+
+    // ★ Fix 6: 캔버스 해상도를 컨테이너 실제 크기에 맞게 설정 (그림 잘림 방지)
+    // CSS로 건드리지 않고 canvas.width/height를 직접 설정해야 해상도 불일치 없음
+    const canvas = document.getElementById('map-canvas');
+    const container = document.getElementById('explore-container');
+    if (canvas && container) {
+        const w = container.clientWidth  || 1024;
+        const h = container.clientHeight || 598;
+        // 실제 픽셀 해상도 설정 (이걸 안 하면 위쪽 절반만 보이고 아래 검은색)
+        canvas.width  = w;
+        canvas.height = h;
+        canvas.style.width  = w + 'px';
+        canvas.style.height = h + 'px';
+    }
+
     // 플레이어 초기 위치 설정
     player.gridX = 2;
     player.gridY = 10;
@@ -203,10 +230,10 @@ function update() {
       if (player.x === targetX && player.y === targetY) {
         player.isMoving = false;
         
-        // 1. 방 이동(포탈) 체크
+        // 1. 방 이동(포탈) 체크 — 포탈 내부에서 전투 발생 시 return되므로 중복 없음
         checkRoomPortal();
 
-        // 2. 전투 발생 체크
+        // 2. 전투 발생 체크 (포탈에서 triggerBattle → return이므로 여기까지 안 옴)
         if (Math.random() < 0.1) {  // 이동할 때마다 10% 확률로 전투 발생 (조정 가능)
           triggerBattle();
           return; // 전투로 넘어가므로 더 이상 업데이트하지 않음
@@ -270,6 +297,7 @@ function checkRoomPortal() {
         // 방을 옮겼을 때는 30%의 높은 확률로 전투 발생
         if (Math.random() < 0.3) {
             triggerBattle();
+            return; // ★ Fix 4: 포탈 전투 발생 시 return — update()의 10% 전투와 중복 방지
         }
     }
 }
@@ -346,7 +374,14 @@ window.initBattle = function(origin = 'map', bossId = null) {
   } 
   
   else {
-    currentMonster = window.getRandomMonster();  // 몬스터 데이터베이스에서 랜덤 몬스터 선택 
+    // ★ Fix 5: 새로고침 복구 시 저장된 몬스터 ID가 있으면 그 몬스터로 복구
+    const savedMonsterId = localStorage.getItem('battleMonsterId');
+    const savedInBattle  = localStorage.getItem('inBattle') === 'true';
+    if (savedInBattle && savedMonsterId && window.MONSTERS && window.MONSTERS[savedMonsterId]) {
+      currentMonster = window.MONSTERS[savedMonsterId];
+    } else {
+      currentMonster = window.getRandomMonster();  // 새 전투 — 랜덤 몬스터 선택
+    }
   }
 
   // ERROR 체크: 몬스터 데이터가 제대로 로드되지 않았을 때 대비
@@ -385,6 +420,8 @@ window.initBattle = function(origin = 'map', bossId = null) {
   localStorage.setItem('battlePlayerHp', battlePlayerHp);
   localStorage.setItem('battleTurn', battleTurn);
   if (bossId) localStorage.setItem('battleBossId', bossId);  // ★ Fix 2: 'bossId' → 'battleBossId' (checkResumeBattle과 키 일치)
+  // ★ Fix 5: 일반 몬스터 ID 저장 — 새로고침 복구 시 같은 몬스터 유지
+  if (!bossId && currentMonster) localStorage.setItem('battleMonsterId', currentMonster.id);
 
   // 4. UI 업데이트
   // 복구된 데이터를 기반으로 턴 정보 갱신
@@ -578,7 +615,8 @@ window._cancelItemSelect = function(oldHtml) {
 function clearBattleState() {
   localStorage.removeItem('inBattle');
   localStorage.removeItem('battleOrigin');
-  localStorage.removeItem('bossId');
+  localStorage.removeItem('battleBossId');    // ★ Fix 2: 구버전 'bossId' → 'battleBossId'로 통일
+  localStorage.removeItem('battleMonsterId'); // ★ Fix 5: 일반 몬스터 ID도 삭제
   localStorage.removeItem('battleEnemyHp');
   localStorage.removeItem('battlePlayerHp');
   localStorage.removeItem('battleTurn');
