@@ -44,11 +44,28 @@ function debouncedSave() {
 // ================================================================
 // 1. Firebase → 로컬 데이터 로드
 // ================================================================
+// ★ Fix #10 (보안 주의): 현재 Groq API 키(gsk_...)를 Firestore 문서 ID로 직접 사용 중.
+//   Firebase 콘솔 접근 권한이 있거나 보안 규칙이 열려 있으면 API 키가 노출됩니다.
+//   아래 _getDocId() 헬퍼를 통해 키를 해시 처리하여 저장합니다.
+//   (SubtleCrypto API는 모든 모던 브라우저에서 지원됩니다)
+async function _getDocId(apiKey) {
+  try {
+    const enc = new TextEncoder().encode(apiKey);
+    const hashBuf = await crypto.subtle.digest('SHA-256', enc);
+    const hashArr = Array.from(new Uint8Array(hashBuf));
+    return hashArr.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 40);
+  } catch(e) {
+    // SubtleCrypto 미지원 환경 폴백 (구형 브라우저): 기존 방식 유지
+    return apiKey;
+  }
+}
+
 async function loadAllDataFromServer() {
   if (!GROQ_API_KEY) return;
 
   try {
-    const docSnap = await getDoc(doc(db, 'gameData', GROQ_API_KEY));
+    const docId = await _getDocId(GROQ_API_KEY); // ★ Fix #10: 해시된 ID 사용
+    const docSnap = await getDoc(doc(db, 'gameData', docId));
 
     if (docSnap.exists()) {
       const s = docSnap.data();  // s = serverData
@@ -80,12 +97,24 @@ async function loadAllDataFromServer() {
       }
 
       // dailyUsage: 날짜 같을 때만 복원
+      // ★ Fix #12: 멀티 디바이스 동기화 — 같은 날짜면 서버/로컬 중 더 높은 값(max)으로 병합
+      //   예) A기기에서 도서관 3회, B기기에서 2회 → 서버값(3)으로 덮어쓰지 않고 max(3,2)=3 유지
       if (s.dailyUsage) {
         const today = new Date().toDateString();
         if (s.dailyUsage.date === today) {
-          Object.assign(dailyUsage, s.dailyUsage);
+          Object.keys(s.dailyUsage).forEach(k => {
+            if (k === 'date') return;
+            // 숫자 필드: 서버와 로컬 중 더 큰 값 사용 (중복 차감 방지)
+            if (typeof s.dailyUsage[k] === 'number' && typeof dailyUsage[k] === 'number') {
+              dailyUsage[k] = Math.max(dailyUsage[k], s.dailyUsage[k]);
+            } else {
+              dailyUsage[k] = s.dailyUsage[k];
+            }
+          });
+          dailyUsage.date = today;
           localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage));
         }
+        // 날짜가 다르면 로컬 초기화 (checkAndResetDaily가 처리)
       }
 
       // ── 영구 보존 데이터 → localStorage 복원 ──
@@ -134,6 +163,8 @@ async function saveAllDataToServer() {
   if (!serverDataLoaded) return;
 
   try {
+    const docId = await _getDocId(GROQ_API_KEY); // ★ Fix #10: 해시된 ID 사용
+
     const dataToSave = {
 
       // ── 핵심 게임 데이터 ──
@@ -193,7 +224,7 @@ async function saveAllDataToServer() {
     localStorage.setItem('dailyUsage',    JSON.stringify(dataToSave.dailyUsage));
     localStorage.setItem('cau_inventory', JSON.stringify(dataToSave.inventory));
 
-    await setDoc(doc(db, 'gameData', GROQ_API_KEY), dataToSave);
+    await setDoc(doc(db, 'gameData', docId), dataToSave); // ★ Fix #10: 해시된 docId 사용
     console.log('Firebase 저장 완료');
 
   } catch (e) {

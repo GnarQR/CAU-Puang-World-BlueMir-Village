@@ -337,6 +337,15 @@ function posToStyle(pos) {
   return style;
 }
 
+// ================================================================
+// ★ Fix #1 #2 #11 설명 (아래 블록은 원본 그대로 유지):
+//   원본의 /* ... */ 안에 있는 코드는 구버전 중복 정의입니다.
+//   이미 주석 처리되어 실행되지 않으므로 버그에 영향 없습니다.
+//   실제 수정은 위쪽 첫 번째 buyRoomItem/installRoomItem 정의에서 완료됐습니다:
+//     - addChatMsg() 사용 (addChatMessage 미정의 오류 없음)
+//     - saveAllDataToServer() 포함 (구매 후 Firebase 저장)
+// ================================================================
+
 /*
 function renderSlot(slotId, itemId, pos) {
   const el = document.getElementById(`room-slot-${slotId}`);

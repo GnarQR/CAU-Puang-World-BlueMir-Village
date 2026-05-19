@@ -407,8 +407,14 @@ window.enterRoom = function() {
   document.getElementById('room-talk-btn-wrap').style.display = 'flex';
 
   applyRoomDecorations();
+
+  // ★ Fix #15: game-container 숨기기 중복 호출 제거 (아래에서 한 번만)
+  // ★ Fix #16: display와 visible 클래스를 일관되게 한 곳에서 처리
   document.getElementById('game-container').style.display = 'none';
-  document.getElementById('puang-room').classList.add('visible');
+
+  const roomEl = document.getElementById('puang-room');
+  roomEl.style.display = 'flex';
+  roomEl.classList.add('visible'); // ★ Fix #16: display와 클래스 한 번에 처리
 
   // 날짜가 바뀌었으면 기분 + 아이템 카운트 초기화
   if (puangState.moodDate !== today) {
@@ -419,10 +425,6 @@ window.enterRoom = function() {
   }
   
   updateRoomUI();
-  document.getElementById('game-container').style.display = 'none';
-  const roomEl = document.getElementById('puang-room');
-  roomEl.style.display = 'flex';  // 명시적으로 flex로 변경 (호출 방식 안 꼬이도록)
-  roomEl.classList.add('visible');
 }
 
 // ── 방 퇴장 ──
@@ -432,6 +434,7 @@ window.leaveRoom = function() {
   const roomCont = document.getElementById('puang-room');
   if (roomCont) {
     roomCont.style.display = 'none';
+    roomCont.classList.remove('visible'); // ★ Fix #16: visible 클래스도 제거하여 display/class 상태 일관화
   }
 
   // 2. 메인 맵 컨테이너를 보여줍니다.

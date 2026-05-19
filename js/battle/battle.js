@@ -11,7 +11,9 @@ let battlePlayerHp    = 80;     // 현재 플레이어 HP
 let battlePlayerMaxHp = 100;    // 플레이어 최대 HP
 let battlePlayerSp    = 40;     // ★ 현재 플레이어 SP
 let battlePlayerMaxSp = 40;     // ★ 플레이어 최대 SP
+// ★ Fix #5: battleOrigin을 window에도 노출 — map.js의 returnToGame에서 window.battleOrigin으로 안전하게 참조 가능
 let battleOrigin      = 'map';  // 전투 시작 시 위치 (205관, 청룡산 등), 'map' | 'mountain'
+window.battleOrigin   = battleOrigin; // ★ Fix #5 추가
 let currentMonster    = null;   // 현재 전투 중인 몬스터 데이터 (MONSTERS 또는 BOSSES에서 가져옴)
 let enemyHp           = 60;     // 현재 적 HP  (나중에는 몬스터에 따라 값 변경)
 let enemyMaxHp        = 60;     // 적 최대 HP
@@ -164,13 +166,15 @@ window.startExploration = function() {
     const canvas = document.getElementById('map-canvas');
     const container = document.getElementById('explore-container');
     if (canvas && container) {
-        const w = container.clientWidth  || 1024;
-        const h = container.clientHeight || 598;
-        // 실제 픽셀 해상도 설정 (이걸 안 하면 위쪽 절반만 보이고 아래 검은색)
-        canvas.width  = w;
-        canvas.height = h;
-        canvas.style.width  = w + 'px';
-        canvas.style.height = h + 'px';
+    // ★ Fix #6: 모바일에서 container.clientWidth가 0일 때 window.innerWidth로 폴백
+    //   (1024 고정 폴백은 모바일에서 가로 스크롤 및 좌표 어긋남 유발)
+    const w = container.clientWidth  || window.innerWidth  || 1024;
+    const h = container.clientHeight || window.innerHeight || 598;
+    // 실제 픽셀 해상도 설정 (이걸 안 하면 위쪽 절반만 보이고 아래 검은색)
+    canvas.width  = w;
+    canvas.height = h;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
     }
 
     // 플레이어 초기 위치 설정
@@ -179,6 +183,22 @@ window.startExploration = function() {
     player.x = player.gridX * 32;
     player.y = player.gridY * 32;
     player.isMoving = false;
+
+    // ★ Fix #7: 창 크기 변경 시 탐험 캔버스도 리사이즈
+    //   기존에는 resize 핸들러가 없어 브라우저 창 조절 시 캔버스가 잘리거나 늘어남
+    if (!window._exploreResizeHandler) {
+      window._exploreResizeHandler = function() {
+        const cv = document.getElementById('map-canvas');
+        const ct = document.getElementById('explore-container');
+        if (!cv || !ct || ct.style.display === 'none') return;
+        const nw = ct.clientWidth  || window.innerWidth  || 1024;
+        const nh = ct.clientHeight || window.innerHeight || 598;
+        cv.width  = nw; cv.height  = nh;
+        cv.style.width  = nw + 'px';
+        cv.style.height = nh + 'px';
+      };
+      window.addEventListener('resize', window._exploreResizeHandler);
+    }
 
     // 애니메이션 루프 시작
     requestAnimationFrame(update);
@@ -330,6 +350,7 @@ function triggerBattle() {
 window.initBattle = function(origin = 'map', bossId = null) {
   // 1. 전역 변수 설정
   battleOrigin = origin;
+  window.battleOrigin = origin; // ★ Fix #5: window에도 동기화
   battleBusy = false;
   battlePlayerHp    = playerStats.hp;
   battlePlayerMaxHp = playerStats.maxHp;
@@ -402,6 +423,11 @@ window.initBattle = function(origin = 'map', bossId = null) {
     enemyHp = parseInt(savedEnemyHp);
     battlePlayerHp = parseInt(savedPlayerHP);
     battleTurn = parseInt(savedTurn) || 1;
+    // ★ Fix #4: SP도 복구 (저장된 값이 있으면 사용, 없으면 playerStats.sp 사용)
+    const savedSp = localStorage.getItem('battlePlayerSp');
+    if (savedSp !== null) {
+      battlePlayerSp = parseInt(savedSp);
+    }
   } 
   
   else {  // 새로 시작하는 전투일 때만 초기화
@@ -418,6 +444,7 @@ window.initBattle = function(origin = 'map', bossId = null) {
   localStorage.setItem('battleOrigin', battleOrigin);
   localStorage.setItem('battleEnemyHp', enemyHp);
   localStorage.setItem('battlePlayerHp', battlePlayerHp);
+  localStorage.setItem('battlePlayerSp', battlePlayerSp); // ★ Fix #4: SP도 저장 (새로고침 복구 시 SP 복원)
   localStorage.setItem('battleTurn', battleTurn);
   if (bossId) localStorage.setItem('battleBossId', bossId);  // ★ Fix 2: 'bossId' → 'battleBossId' (checkResumeBattle과 키 일치)
   // ★ Fix 5: 일반 몬스터 ID 저장 — 새로고침 복구 시 같은 몬스터 유지
@@ -492,6 +519,7 @@ window.initBattle = function(origin = 'map', bossId = null) {
 // 기존 battle-container를 재활용하되 보스 스펙으로 덮어씀
 window.initBossBattle = function(boss) {
   battleOrigin = 'mountain';  // 전투 시작 위치
+  window.battleOrigin = 'mountain'; // ★ Fix #5: window에도 동기화
   const monsterId = Object.keys(BOSSES).find(k => BOSSES[k].name === boss.name);
   const monster   = monsterId ? BOSSES[monsterId] : {
     ...boss, level: '?', image: 'images/monster/F-ghost.png',
@@ -604,9 +632,19 @@ window._useBattleItem = function(idx) {
   if (typeof setBattleButtons === 'function') setBattleButtons(false);
 };
 
-window._cancelItemSelect = function(oldHtml) {
+window._cancelItemSelect = function() {
+  // ★ Fix #8: old_html 문자열 복원 방식 제거 (특수문자·XSS 취약)
+  //   버튼들을 원래 cmd-btn 구조로 재렌더링
   const grid = document.querySelector('.cmd-grid');
-  if (grid) grid.innerHTML = oldHtml;
+  if (grid) {
+    grid.innerHTML =
+      `<button class="cmd-btn" onclick="doCmd('attack')">⚔️ 벡터 캐논</button>` +
+      `<button class="cmd-btn" onclick="doCmd('rag')">💚 RAG 리커버리</button>` +
+      `<button class="cmd-btn" onclick="doCmd('hyper')">⚡ 하이퍼 프롬프트</button>` +
+      `<button class="cmd-btn special" onclick="doCmd('special')">🔥 데이터 서지</button>` +
+      `<button class="cmd-btn" onclick="doCmd('item')">🎒 아이템</button>` +
+      `<button class="cmd-btn" onclick="doCmd('run')">🏃 도망</button>`;
+  }
   document.getElementById('dice-result').textContent = '커맨드를 선택하세요';
   if (typeof setBattleButtons === 'function') setBattleButtons(false);
 };
@@ -693,10 +731,15 @@ async function enemyTurn() {
     updateBattleBars();
   }
 
-  const roll = Math.floor(Math.random() * 12) + 1;
+  // ★ Fix #9: 적 공격력을 몬스터 데이터의 attackMin/attackMax로 계산
+  //   기존: 항상 Math.random()*12+1 고정 → 모든 몬스터가 동일한 공격력
+  //   수정: currentMonster의 attackMin~attackMax 범위 내 랜덤값 사용
+  const atkMin = (currentMonster && currentMonster.attackMin != null) ? currentMonster.attackMin : 1;
+  const atkMax = (currentMonster && currentMonster.attackMax != null) ? currentMonster.attackMax : 12;
+  const roll   = Math.floor(Math.random() * (atkMax - atkMin + 1)) + atkMin;
   // 과식 패널티 (+2)
   const overeatAdd = (typeof window.getCafOvereatPenalty === 'function' && window.getCafOvereatPenalty()) ? 2 : 0;
-  let dmg = Math.max(1, roll - 5 + overeatAdd);  // 몹 딜량
+  let dmg = Math.max(1, roll + overeatAdd);  // 몹 딜량 (Fix #9: roll-5 제거, 범위값 그대로 사용)
 
   addBattleLog('[룰 판정] ' + (currentMonster ? currentMonster.name : '적') + ' 공격! 주사위: ' + (roll + overeatAdd), 'log-dice');
   await sleepMs(400);
@@ -918,6 +961,7 @@ window.doCmd = async function(cmd) {
     }
     battlePlayerSp -= spCost;
     playerStats.sp = battlePlayerSp;
+    localStorage.setItem('battlePlayerSp', battlePlayerSp); // ★ Fix #4: SP 변경 시 저장
     updateBattleBars();
 
     document.getElementById('dice-result').textContent = 'd12 굴리는 중...';
@@ -1000,10 +1044,10 @@ window.doCmd = async function(cmd) {
     // 선택 버튼 동적 생성
     const grid = document.querySelector('.cmd-grid');
     if (grid) {
-      const old_html = grid.innerHTML;
+      // ★ Fix #8: old_html 방식 제거 → _cancelItemSelect()가 직접 버튼 재생성
       grid.innerHTML = usable.map((it, i) =>
         `<button class="cmd-btn" style="font-size:11px;" onclick="window._useBattleItem(${inv.indexOf(it)})">${it.icon} ${it.name}<br><span style="font-size:10px;color:#888;">${it.desc || ''}</span></button>`
-      ).join('') + `<button class="cmd-btn" onclick="window._cancelItemSelect('${old_html.replace(/'/g, "\'")}')">취소</button>`;
+      ).join('') + `<button class="cmd-btn" onclick="window._cancelItemSelect()">취소</button>`;
     }
 
     battleBusy = false;

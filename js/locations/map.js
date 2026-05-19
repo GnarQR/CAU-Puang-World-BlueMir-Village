@@ -60,6 +60,8 @@ window.enterPlace = function(placeId) {
   });
 
   // 2. 이면 세계 (탐험) 진입
+  // ★ Fix #3: setTimeout 콜백 내 return은 outer 함수를 종료하지 못하므로
+  //   블록 바깥에 return을 추가해 아래 if문들이 연달아 실행되는 버그 수정
   if (placeId === 'battle') {
     showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 균열 속으로 뛰어듭니다...');
     setTimeout(() => {
@@ -69,9 +71,9 @@ window.enterPlace = function(placeId) {
 
       // 탐험 로직 및 루프 시작
       if (typeof startExploration === 'function') startExploration();
-      return;
     });
-  };
+    return; // ★ Fix #3: 여기서 함수 종료 — 아래 if문 실행 방지
+  }
 
   // 각 장소 진입 함수 연결
   if (placeId === 'dormitory') { enterRoom();       return; }
@@ -112,19 +114,27 @@ window.returnToGame = function() {
     battleCont.style.display = 'none';
   }
 
+  // ★ Fix #5: battleOrigin은 battle.js의 let 변수이므로 window.battleOrigin으로 안전 참조
+  //   (파일 로드 순서나 스코프 변경에도 깨지지 않도록)
+  const origin = (typeof window.battleOrigin !== 'undefined')
+    ? window.battleOrigin
+    : (typeof battleOrigin !== 'undefined' ? battleOrigin : 'other');
+
   // 2. 복귀 위치 분기 처리
-  if (battleOrigin === 'map'){
+  if (origin === 'map'){
     // 205관 탐험 맵으로 복귀
     const exploreCont = document.getElementById('explore-container');
     if (exploreCont) exploreCont.style.display = 'block';
 
     // 🌟 중요: 이동 잠금 해제 및 좌표 동기화
-    player.isMoving = false;
-    player.x = player.gridX * 32;
-    player.y = player.gridY * 32;
+    if (typeof player !== 'undefined') {
+      player.isMoving = false;
+      player.x = player.gridX * 32;
+      player.y = player.gridY * 32;
+    }
 
     // 🌟 루프 재실행
-    requestAnimationFrame(update);
+    if (typeof update === 'function') requestAnimationFrame(update);
   } 
   
   else {
@@ -152,7 +162,8 @@ function updateDatetime() {
 }
 
 // ── 툴팁 호버 이벤트 등록 ──
-// 맵 버튼에 마우스를 올리면 장소 설명 툴팁 표시 (모바일에서는 미지원)
+// 맵 버튼에 마우스를 올리면 장소 설명 툴팁 표시
+// ★ Fix #14: 모바일(touch) 지원 추가 — touchstart로 툴팁 표시, touchend로 숨김
 document.addEventListener('DOMContentLoaded', () => {
     // 1분마다 시간 갱신
     updateDatetime();
@@ -161,14 +172,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.map-spot').forEach(btn => {
         const place = btn.getAttribute('onclick').match(/'(\w+)'/)[1];
         const tip   = document.getElementById('map-tooltip');
-        btn.addEventListener('mouseenter', () => {
+
+        function showTip(e) {
             tip.textContent = placeInfo[place].desc;
             const bRect = btn.getBoundingClientRect();
             const mRect = document.getElementById('map-bg').getBoundingClientRect();
             tip.style.left    = (bRect.left - mRect.left + bRect.width / 2) + 'px';
             tip.style.top     = (bRect.bottom - mRect.top + 8) + 'px';
             tip.style.opacity = '1';
-        });
-        btn.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+        }
+        function hideTip() { tip.style.opacity = '0'; }
+
+        // 데스크탑
+        btn.addEventListener('mouseenter', showTip);
+        btn.addEventListener('mouseleave', hideTip);
+
+        // ★ Fix #14: 모바일 터치
+        btn.addEventListener('touchstart', (e) => {
+            showTip(e);
+            // 1.5초 후 자동으로 숨기기 (터치는 mouseleave 없음)
+            clearTimeout(btn._tipTimer);
+            btn._tipTimer = setTimeout(hideTip, 1500);
+        }, { passive: true });
+        btn.addEventListener('touchend', () => {
+            clearTimeout(btn._tipTimer);
+            btn._tipTimer = setTimeout(hideTip, 800);
+        }, { passive: true });
   });
 });

@@ -157,8 +157,13 @@ let _dpadIv4=null;
 window.dpadPress = function(dir) {
   const m={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
   const [dx,dy]=m[dir]||[0,0];
-  if (typeof movePlayer==='function') movePlayer(dx,dy);
-  _dpadIv4=setInterval(()=>{ if(typeof movePlayer==='function') movePlayer(dx,dy); },180);
+  // ★ Fix #13: player.isMoving 체크 추가 — 이동 애니메이션 완료 전 중복 호출 방지
+  if (typeof movePlayer==='function' && typeof player!=='undefined' && !player.isMoving) movePlayer(dx,dy);
+  if (_dpadIv4) clearInterval(_dpadIv4); // 이전 인터벌 정리
+  _dpadIv4=setInterval(()=>{
+    // ★ Fix #13: setInterval 내부에서도 isMoving 체크
+    if(typeof movePlayer==='function' && typeof player!=='undefined' && !player.isMoving) movePlayer(dx,dy);
+  },180);
 };
 window.dpadRelease = function() { if (_dpadIv4){clearInterval(_dpadIv4);_dpadIv4=null;} };
 
