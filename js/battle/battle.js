@@ -800,6 +800,9 @@ async function enemyTurn() {
     addBattleLog('[SYSTEM] 플레이어가 쓰러졌다... 3초 후 복귀합니다.', 'log-damage');
     document.getElementById('dice-result').textContent = '전투 패배...';
     if (typeof showToast === 'function') showToast('💀 전투 패배...', 'error', 3000);
+    // ★ 버그수정: 패배 후 HP 최소 1 복원 + 저장 (HP 0인 채로 맵 복귀 방지)
+    playerStats.hp = Math.max(1, battlePlayerHp);
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
     await sleepMs(3000);
     if (typeof returnToGame === 'function') returnToGame();
     return;
@@ -916,6 +919,8 @@ window.doCmd = async function(cmd) {
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof window.updateDailyBadges === 'function') window.updateDailyBadges();
       if (typeof showToast === 'function') showToast('⚔️ 전투 승리! 💎 +' + reward, 'success', 3000);
+      // ★ 버그수정: 승리 후 즉시 저장 (새로고침 시 보상 손실 방지)
+      if (typeof window.syncAndSave === 'function') window.syncAndSave();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;
@@ -1009,6 +1014,8 @@ window.doCmd = async function(cmd) {
       updateMapStats();
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof showToast === 'function') showToast('⚡ 서지로 승리! 💎 +' + reward, 'success', 3000);
+      // ★ 버그수정: 승리 후 즉시 저장
+      if (typeof window.syncAndSave === 'function') window.syncAndSave();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;

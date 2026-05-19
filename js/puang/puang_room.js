@@ -1,3 +1,14 @@
+// ★ 버그수정: addChatMessage shim
+// 두 번째 buyRoomItem 정의에서 호출하는 함수 — 정의가 없어 TypeError 발생하던 버그 수정
+// 기존 puang.js의 addChatMsg와 연결, 없으면 콘솔 출력으로 폴백
+function addChatMessage(who, text) {
+  if (typeof addChatMsg === 'function') {
+    addChatMsg('puang', text, 0);
+  } else {
+    console.log('[Room System] ' + text);
+  }
+}
+
 // =============================================
 // puang_room.js — 푸앙이의 방 (쿼터뷰)
 // =============================================
@@ -385,6 +396,9 @@ function renderSlot(slotId, itemId, pos) {
   }
 }
 
+/* ★ 버그수정: 두 번째 buyRoomItem 정의 비활성화
+   이유: saveAllDataToServer 없고 addChatMessage 미정의로 TypeError 발생
+   첫 번째 정의(saveAllDataToServer 포함)가 올바른 버전
 // ── 아이템 구매 ──
 window.buyRoomItem = function(itemId) {
   const item = ROOM_ITEMS[itemId];
@@ -409,6 +423,8 @@ window.buyRoomItem = function(itemId) {
   updateMapStats();
   return true;
 }
+
+*/
 
 // ── 아이템 설치 ──
 window.installRoomItem = function(itemId) {
