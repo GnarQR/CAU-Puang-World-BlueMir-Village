@@ -10,30 +10,27 @@ window.checkResumeBattle = function() {
     const origin = localStorage.getItem('battleOrigin') || 'map';
     const bossId = localStorage.getItem('battleBossId');
 
-    console.log("전투 복구 시도:", { origin, bossId });
-    
-    // 🌟 약간의 지연을 주어 다른 데이터(playerStats 등)가 로드된 후 실행
+    console.log('전투 복구 시도:', { origin, bossId });
+
+    // serverDataLoaded 완료 후 실행되도록 지연
     setTimeout(() => {
       if (typeof window.initBattle === 'function') {
         window.initBattle(origin, bossId);
       }
-    }, 100); 
+    }, 100);
   }
 };
 
 // ── 인트로 스킵 ──
-// Firebase에 키+닉네임이 이미 있으면 인트로 전체를 건너뜀 (재방문 유저)
-// DOMContentLoaded 이벤트에서 자동 호출됨
 window.skipIntro = function() {
   document.getElementById('intro-overlay').classList.add('hidden');
-  // 맵 상단 스탯 바로 이동해서 초기값 표시
-  if (typeof updateMapStats === 'function') updateMapStats();  
-}
+  if (typeof updateMapStats === 'function') updateMapStats();
+};
 
 // ── 1단계: API 키 제출 ──
-// gsk_ 로 시작하는지 검증 후 localStorage에 저장
-// 유효하면 스토리 단계로 전환
-window.submitApiKey = function() {
+// ★ Fix: async 추가 + await loadAllDataFromServer()
+//        로드 완료 후 화면 전환하여 serverDataLoaded = true 보장
+window.submitApiKey = async function() {
   const key = document.getElementById('api-key-input').value.trim();
 
   if (!key.startsWith('gsk_')) {
@@ -42,21 +39,19 @@ window.submitApiKey = function() {
   }
 
   localStorage.setItem('groqApiKey', key);
-  GROQ_API_KEY = key;  // 키 저장
+  GROQ_API_KEY = key;
 
-  // Firebase에서 기존 데이터 불러오기 시도
+  // ★ Fix: await로 로드 완료까지 대기 (이전엔 await 없이 바로 화면 전환)
   if (typeof loadAllDataFromServer === 'function') {
-    loadAllDataFromServer(); 
+    await loadAllDataFromServer();
   }
 
-  switchStep('step-api', 'step-story');  // 화면 전환
+  switchStep('step-api', 'step-story');
   startStoryTyping();
-}
+};
 
 // ── 2단계: 스토리 타이핑 ──
-// 한 글자씩 타이핑 효과로 출력
-// 다 출력되면 '계속 ▶' 버튼이 나타남
-const STORY_TEXT =  // 스토리 내용 변경 시 STORY_TEXT 수정
+const STORY_TEXT =
   `2026년, 중앙대학교.\n\n` +
   `캠퍼스 어딘가에 균열이 생겼다.\n` +
   `겉으로 보기엔 평범한 건물들.\n` +
@@ -66,7 +61,7 @@ const STORY_TEXT =  // 스토리 내용 변경 시 STORY_TEXT 수정
   `중앙대 마스코트 푸앙이만이 이 세계의 비밀을 알고 있다.\n\n` +
   `이제 선택받은 당신이 그 문을 열 차례다.`;
 
-function startStoryTyping() { 
+function startStoryTyping() {
   const element = document.getElementById('story-text');
   const nextBtn = document.getElementById('story-next-btn');
   element.textContent = '';
@@ -77,9 +72,7 @@ function startStoryTyping() {
       element.textContent += STORY_TEXT[i];
       i++;
       setTimeout(step, i < 60 ? 40 : 28);
-    } 
-    
-    else {
+    } else {
       nextBtn.style.display = 'block';
     }
   }
@@ -89,29 +82,28 @@ function startStoryTyping() {
 // ── 3단계: 닉네임 입력으로 이동 ──
 window.goToNameStep = function() {
   switchStep('step-story', 'step-name');
-}
+};
 
 // ── 닉네임 제출 ──
-window.submitName = async function() {  // Firebase에 저장 후 오버레이 페이드아웃
+window.submitName = async function() {
   const nameInput = document.getElementById('name-input');
   const name = nameInput.value.trim();
-  
+
   if (!name) {
     if (typeof shakeInput === 'function') shakeInput('name-input');
     return;
   }
 
-  // 닉네임 저장 (로컬 + 서버)
   localStorage.setItem('playerName', name);
 
-  // 서버 저장 (비동기)
   if (typeof playerStats !== 'undefined') {
     playerStats.name = name;
     localStorage.setItem('playerStats', JSON.stringify(playerStats));
   }
 
+  // ★ Fix: serverDataLoaded가 true인 상태에서 저장 (submitApiKey에서 await 보장됨)
   if (typeof saveAllDataToServer === 'function') {
-    await saveAllDataToServer(); 
+    await saveAllDataToServer();
   }
 
   const overlay = document.getElementById('intro-overlay');
@@ -124,16 +116,15 @@ window.submitName = async function() {  // Firebase에 저장 후 오버레이 �
       window.playIntroVideo();
     }
   }, 600);
-}
+};
 
 // ── 단계 전환 헬퍼 ──
-function switchStep(fromId, toId) {  // fromId 단계를 숨기고 toId 단계를 표시
+function switchStep(fromId, toId) {
   document.getElementById(fromId).classList.add('hidden');
   document.getElementById(toId).classList.remove('hidden');
 }
 
 // ── 입력 오류 시 흔들기 ──
-// API 키나 닉네임 검증 실패 시 시각적 피드백
 function shakeInput(id) {
   const element = document.getElementById(id);
   element.style.borderColor = '#f09595';
@@ -147,94 +138,91 @@ function shakeInput(id) {
   }, 10);
 }
 
-// 1. 유저가 화면을 클릭하면 실행됨
+// ── 인트로 영상 클릭 시작 ──
 window.startIntroVideo = function() {
   const startOverlay = document.getElementById('video-start-overlay');
   if (startOverlay) {
     startOverlay.classList.add('hidden');
     startOverlay.style.display = 'none';
   }
-  
-  // 🌟 클릭을 통해 브라우저의 '재생 허용' 권한을 얻은 상태에서 영상 실행
   if (typeof window.playIntroVideo === 'function') {
     window.playIntroVideo();
   }
 };
 
-// 실제 비디오 재생 로직
+// ── 실제 비디오 재생 ──
 window.playIntroVideo = function() {
-    const videoCont = document.getElementById('video-container');
-    const video = document.getElementById('intro-video');
-    if (!videoCont || !video) return;  // 이미 이번 세션에 영상을 봤다면 바로 종료 처리
+  const videoCont = document.getElementById('video-container');
+  const video = document.getElementById('intro-video');
+  if (!videoCont || !video) return;
 
-    videoCont.classList.remove('hidden');
-    videoCont.style.display = 'flex';
-    
-    video.currentTime = 0;
-    video.play().catch(e => {
-        console.warn("재생 실패:", e);
-        finishVideo(); 
-    });
+  videoCont.classList.remove('hidden');
+  videoCont.style.display = 'flex';
 
-    video.onended = finishVideo;  
+  video.currentTime = 0;
+  video.play().catch(e => {
+    console.warn('재생 실패:', e);
+    finishVideo();
+  });
+
+  video.onended = finishVideo;
 };
 
-// 영상을 종료하고 메인 게임을 보여주는 함수
+// ── 영상 종료 후 메인 게임 표시 ──
 window.finishVideo = function() {
-    const videoCont = document.getElementById('video-container');
-    const video = document.getElementById('intro-video');
-    
-    if (video) video.pause();
-    if (videoCont) {
-      videoCont.classList.add('hidden');
-      videoCont.style.display = 'none';
-    }
-    
-    // 영상 재생 완료 상태를 세션에 저장 (새로고침 시 무시용)
-    sessionStorage.setItem('introVideoPlayed', 'true');
+  const videoCont = document.getElementById('video-container');
+  const video = document.getElementById('intro-video');
 
-    // 맵 화면 표시
-    const gameCont = document.getElementById('game-container');
-    if (gameCont) gameCont.style.display = 'flex';
+  if (video) video.pause();
+  if (videoCont) {
+    videoCont.classList.add('hidden');
+    videoCont.style.display = 'none';
+  }
+
+  sessionStorage.setItem('introVideoPlayed', 'true');
+
+  const gameCont = document.getElementById('game-container');
+  if (gameCont) gameCont.style.display = 'flex';
 };
 
 // ── DOMContentLoaded: 초기화 ──
-// 페이지 로드 시 재방문 유저면 인트로 스킵
-// Enter 키로 각 입력창 제출 가능하도록 이벤트 등록
-document.addEventListener('DOMContentLoaded', () => {
+// ★ Fix: 재방문 유저도 loadAllDataFromServer() 호출하여 serverDataLoaded = true 보장
+document.addEventListener('DOMContentLoaded', async () => {
   const savedKey  = localStorage.getItem('groqApiKey');
   const savedName = localStorage.getItem('playerName');
 
   if (savedKey && savedName) {
     GROQ_API_KEY = savedKey;
 
-    // 1. 로그인/이름 입력창(인트로 오버레이)은 안 보이게 치웁니다.
-    if (typeof window.skipIntro === 'function') window.skipIntro(); 
-    
-    // 2. 세션 체크 : 새로고침 여부 확인 (영상 재생 결정)
+    // ★ Fix: 재방문 유저도 서버 로드 (이전엔 로드 없이 skipIntro만 했음)
+    if (typeof loadAllDataFromServer === 'function') {
+      await loadAllDataFromServer();
+    }
+
+    // 인트로 오버레이 숨기기
+    if (typeof window.skipIntro === 'function') window.skipIntro();
+
+    // 영상 재생 여부 결정
     if (sessionStorage.getItem('introVideoPlayed') !== 'true') {
-      // 바로 틀지 않고 클릭 대기 레이어 보여주기 (자동 재생 차단 대비)
       const startOverlay = document.getElementById('video-start-overlay');
       if (startOverlay) {
         startOverlay.classList.remove('hidden');
         startOverlay.style.display = 'flex';
+      } else {
+        document.getElementById('game-container').style.display = 'flex';
       }
+    }
 
-      else {
-        document.getElementById('game-container').style.display = 'flex';  
-      }
-    } 
-    
-    // 3. 전투 데이터 이어하기 확인
+    // 전투 복구 (로드 완료 후 실행)
     if (typeof window.checkResumeBattle === 'function') window.checkResumeBattle();
   }
 
-  // 버튼 클릭 이벤트 등록
-  document.getElementById('api-key-btn').onclick = () => window.submitApiKey();
+  // 버튼 이벤트 등록
+  document.getElementById('api-key-btn').onclick      = () => window.submitApiKey();
   document.getElementById('name-confirm-btn').onclick = () => window.submitName();
 
   document.getElementById('api-key-input')
-    ?.addEventListener('keydown', e => { if (e.key === 'Enter') submitApiKey(); });
+    ?.addEventListener('keydown', e => { if (e.key === 'Enter') window.submitApiKey(); });
   document.getElementById('name-input')
-    ?.addEventListener('keydown', e => { if (e.key === 'Enter') submitName(); });
+    ?.addEventListener('keydown', e => { if (e.key === 'Enter') window.submitName(); });
 });
