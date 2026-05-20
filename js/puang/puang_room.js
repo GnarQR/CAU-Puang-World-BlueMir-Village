@@ -12,42 +12,42 @@ const ROOM_ITEMS = {
     name: '블루 체크 침대', emoji: '🛏️', price: 20,
     desc: '포근한 블루 체크 침대'
   },
- 
+
   'item_desk': {
     id: 'item_desk', slot: 'desk',
     imgFile: 'desk.png',
     name: '달빛 컴퓨터 책상', emoji: '💻', price: 18,
     desc: '밤하늘 모니터가 있는 책상'
   },
- 
+
   'item_carpet': {
     id: 'item_carpet', slot: 'carpet',
     imgFile: 'carpet.png',
     name: '블루 플로럴 카펫', emoji: '🟦', price: 12,
     desc: '꽃무늬 블루 카펫'
   },
- 
+
   'item_bookshelf_small': {
     id: 'item_bookshelf_small', slot: 'bookshelf_small',
     imgFile: 'bookshelf_small.png',
     name: '작은 책장', emoji: '📚', price: 14,
     desc: '푸앙이 인형이 앉아있는 작은 책장'
   },
- 
+
   'item_bookshelf_big': {
     id: 'item_bookshelf_big', slot: 'bookshelf_big',
     imgFile: 'bookshelf_big.png',
     name: '큰 책장', emoji: '📖', price: 22,
     desc: '책과 소품이 가득한 큰 책장'
   },
- 
+
   'item_lamp': {
     id: 'item_lamp', slot: 'lamp',
     imgFile: 'lamp.png',
     name: '플로럴 스탠드 조명', emoji: '🌟', price: 10,
     desc: '꽃무늬 스탠드 조명'
   },
- 
+
   'item_hanging_plant': {
     id: 'item_hanging_plant', slot: 'hanging_plant',
     imgFile: 'hanging_plant.png',
@@ -62,49 +62,49 @@ const ROOM_ITEMS = {
     name: '벽 선반 (왼쪽)', emoji: '🔖', price: 15,
     desc: '왼쪽 벽에 달린 책·화분 선반'
   },
- 
+
   'item_shelf_right': {
     id: 'item_shelf_right', slot: 'shelf_right',
     imgFile: 'shelf_right.png',
     name: '벽 선반 (오른쪽)', emoji: '🔖', price: 15,
     desc: '오른쪽 벽에 달린 선반'
   },
- 
+
   'item_painting_left': {
     id: 'item_painting_left', slot: 'painting_left',
     imgFile: 'painting_left.png',
     name: '달밤 액자 (왼쪽)', emoji: '🖼️', price: 10,
     desc: '왼쪽 벽의 달밤 그림 액자'
   },
- 
+
   'item_painting_right': {
     id: 'item_painting_right', slot: 'painting_right',
     imgFile: 'painting_right.png',
     name: '꽃 액자 (오른쪽)', emoji: '🖼️', price: 10,
     desc: '오른쪽 벽의 꽃 그림 액자'
   },
- 
+
   'item_wall_plant': {
     id: 'item_wall_plant', slot: 'wall_plant',
     imgFile: 'wall_plant.png',
     name: '벽 화분 장식', emoji: '🌿', price: 9,
     desc: '벽에 달린 식물 화분'
   },
- 
+
   'item_hanging_deco': {
     id: 'item_hanging_deco', slot: 'hanging_deco',
     imgFile: 'hanging_deco.png',
     name: '행잉 장식', emoji: '✨', price: 11,
     desc: '달과 별 모양 행잉 장식'
   },
- 
+
   'item_memo_poster': {
     id: 'item_memo_poster', slot: 'memo_poster',
     imgFile: 'memo_poster.png',
     name: '메모 포스터', emoji: '📌', price: 8,
     desc: '달밤 사진 & 메모 포스터'
   },
- 
+
   'item_dreamcatcher': {
     id: 'item_dreamcatcher', slot: 'dreamcatcher',
     imgFile: 'dreamcatcher.png',
@@ -148,21 +148,21 @@ function buildRoomHTML() {
   return `
     <div id="puang-room-scene" class="theme-default">
       <!-- 가구 슬롯들 (구매 시 표시됨) -->
-      <div id="room-slot-bed"            class="room-slot-hint" style="right:8%;top:38%;width:179px;height:144px;z-index:8;"></div>
-      <div id="room-slot-desk"           class="room-slot-hint" style="left:8%;top:42%;width:169px;height:144px;z-index:8;"></div>
-      <div id="room-slot-carpet"         class="room-slot-hint" style="left:26%;top:60%;width:189px;height:144px;z-index:5;"></div>
+      <div id="room-slot-bed"             class="room-slot-hint" style="right:8%;top:38%;width:179px;height:144px;z-index:8;"></div>
+      <div id="room-slot-desk"            class="room-slot-hint" style="left:8%;top:42%;width:169px;height:144px;z-index:8;"></div>
+      <div id="room-slot-carpet"          class="room-slot-hint" style="left:26%;top:60%;width:189px;height:144px;z-index:5;"></div>
       <div id="room-slot-bookshelf_small" class="room-slot-hint" style="right:28%;top:22%;width:93px;height:144px;z-index:7;"></div>
-      <div id="room-slot-bookshelf_big"  class="room-slot-hint" style="right:1%;top:28%;width:109px;height:192px;z-index:7;"></div>
-      <div id="room-slot-lamp"           class="room-slot-hint" style="right:22%;top:52%;width:60px;height:80px;z-index:9;"></div>
-      <div id="room-slot-hanging_plant"  class="room-slot-hint" style="right:5%;top:3%;width:77px;height:160px;z-index:6;"></div>
-      <div id="room-slot-shelf_left"     class="room-slot-hint" style="left:12%;top:15%;width:173px;height:173px;z-index:6;"></div>
-      <div id="room-slot-shelf_right"    class="room-slot-hint" style="right:14%;top:12%;width:151px;height:108px;z-index:6;"></div>
-      <div id="room-slot-painting_left"  class="room-slot-hint" style="left:14%;top:10%;width:193px;height:173px;z-index:6;"></div>
-      <div id="room-slot-painting_right" class="room-slot-hint" style="right:5%;top:18%;width:229px;height:97px;z-index:6;"></div>
-      <div id="room-slot-wall_plant"     class="room-slot-hint" style="left:16%;top:30%;width:108px;height:152px;z-index:6;"></div>
-      <div id="room-slot-hanging_deco"   class="room-slot-hint" style="left:38%;top:5%;width:122px;height:152px;z-index:6;"></div>
-      <div id="room-slot-memo_poster"    class="room-slot-hint" style="left:20%;top:35%;width:144px;height:152px;z-index:6;"></div>
-      <div id="room-slot-dreamcatcher"   class="room-slot-hint" style="right:8%;top:8%;width:139px;height:152px;z-index:6;"></div>
+      <div id="room-slot-bookshelf_big"   class="room-slot-hint" style="right:1%;top:28%;width:109px;height:192px;z-index:7;"></div>
+      <div id="room-slot-lamp"            class="room-slot-hint" style="right:22%;top:52%;width:60px;height:80px;z-index:9;"></div>
+      <div id="room-slot-hanging_plant"   class="room-slot-hint" style="right:5%;top:3%;width:77px;height:160px;z-index:6;"></div>
+      <div id="room-slot-shelf_left"      class="room-slot-hint" style="left:12%;top:15%;width:173px;height:173px;z-index:6;"></div>
+      <div id="room-slot-shelf_right"     class="room-slot-hint" style="right:14%;top:12%;width:151px;height:108px;z-index:6;"></div>
+      <div id="room-slot-painting_left"   class="room-slot-hint" style="left:14%;top:10%;width:193px;height:173px;z-index:6;"></div>
+      <div id="room-slot-painting_right"  class="room-slot-hint" style="right:5%;top:18%;width:229px;height:97px;z-index:6;"></div>
+      <div id="room-slot-wall_plant"      class="room-slot-hint" style="left:16%;top:30%;width:108px;height:152px;z-index:6;"></div>
+      <div id="room-slot-hanging_deco"    class="room-slot-hint" style="left:38%;top:5%;width:122px;height:152px;z-index:6;"></div>
+      <div id="room-slot-memo_poster"     class="room-slot-hint" style="left:20%;top:35%;width:144px;height:152px;z-index:6;"></div>
+      <div id="room-slot-dreamcatcher"    class="room-slot-hint" style="right:8%;top:8%;width:139px;height:152px;z-index:6;"></div>
  
       <!-- 푸앙이 캐릭터 -->
       <div id="room-puang-char">
@@ -210,8 +210,7 @@ function renderSlot(slotId, itemId) {
   const el = document.getElementById(`room-slot-${slotId}`);
   if (!el) return;
  
-  if (!itemId) {
-    // 빈 슬롯 — 점선 힌트 복원
+  if (!itemId) {  // 빈 슬롯 — 점선 힌트 복원
     el.className = 'room-slot-hint';
     el.style.backgroundImage = '';
     el.style.backgroundColor = '';
@@ -226,10 +225,14 @@ function renderSlot(slotId, itemId) {
   el.className = 'room-slot-filled';
   el.style.backgroundImage = '';
   el.style.backgroundColor = 'transparent';
+  
+  // 완성본 방향(좌향)에 맞게 좌우 반전할 가구 모음
+  const flipStyle = (slotId === 'bed') ? 'transform:scaleX(-1);' : '';  // 침대
+  
   el.innerHTML = `<img
     src="images/furniture/${item.imgFile}"
     alt="${item.name}"
-    style="width:100%;height:100%;object-fit:contain;pointer-events:none;"
+    style="width:100%;height:100%;object-fit:contain;pointer-events:none;${flipStyle}"
     draggable="false"
   >`;
 }
