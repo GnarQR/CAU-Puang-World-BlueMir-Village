@@ -143,35 +143,6 @@ const ROOM_ITEMS = {
   'skin_robot':  { id: 'skin_robot',  slot: 'costume', sprite: 'none', name: '이면세계 로봇',   emoji: '🤖', price: 22, desc: '이면세계 로봇 코스튬' },
 };
 
-// ── HTML 생성 ──
-function buildRoomHTML() {
-  return `
-    <div id="puang-room-scene" class="theme-default">
-      <!-- 가구 슬롯들 (구매 시 표시됨) -->
-      <div id="room-slot-bed"             class="room-slot-hint" style="right:8%;top:38%;width:179px;height:144px;z-index:8;"></div>
-      <div id="room-slot-desk"            class="room-slot-hint" style="left:8%;top:42%;width:169px;height:144px;z-index:8;"></div>
-      <div id="room-slot-carpet"          class="room-slot-hint" style="left:26%;top:60%;width:189px;height:144px;z-index:5;"></div>
-      <div id="room-slot-bookshelf_small" class="room-slot-hint" style="right:28%;top:22%;width:93px;height:144px;z-index:7;"></div>
-      <div id="room-slot-bookshelf_big"   class="room-slot-hint" style="right:1%;top:28%;width:109px;height:192px;z-index:7;"></div>
-      <div id="room-slot-lamp"            class="room-slot-hint" style="right:22%;top:52%;width:60px;height:80px;z-index:9;"></div>
-      <div id="room-slot-hanging_plant"   class="room-slot-hint" style="right:5%;top:3%;width:77px;height:160px;z-index:6;"></div>
-      <div id="room-slot-shelf_left"      class="room-slot-hint" style="left:12%;top:15%;width:173px;height:173px;z-index:6;"></div>
-      <div id="room-slot-shelf_right"     class="room-slot-hint" style="right:14%;top:12%;width:151px;height:108px;z-index:6;"></div>
-      <div id="room-slot-painting_left"   class="room-slot-hint" style="left:14%;top:10%;width:193px;height:173px;z-index:6;"></div>
-      <div id="room-slot-painting_right"  class="room-slot-hint" style="right:5%;top:18%;width:229px;height:97px;z-index:6;"></div>
-      <div id="room-slot-wall_plant"      class="room-slot-hint" style="left:16%;top:30%;width:108px;height:152px;z-index:6;"></div>
-      <div id="room-slot-hanging_deco"    class="room-slot-hint" style="left:38%;top:5%;width:122px;height:152px;z-index:6;"></div>
-      <div id="room-slot-memo_poster"     class="room-slot-hint" style="left:20%;top:35%;width:144px;height:152px;z-index:6;"></div>
-      <div id="room-slot-dreamcatcher"    class="room-slot-hint" style="right:8%;top:8%;width:139px;height:152px;z-index:6;"></div>
- 
-      <!-- 푸앙이 캐릭터 -->
-      <div id="room-puang-char">
-        <img src="images/puang/puang_normal.png" alt="푸앙이" style="width:80px;height:80px;object-fit:contain;">
-      </div>
-    </div>
-  `;
-}
-
 // ── 아이템 렌더링 ──
 window.applyRoomDecorations = function() {
   const scene = document.getElementById('puang-room-scene');
@@ -227,7 +198,8 @@ function renderSlot(slotId, itemId) {
   el.style.backgroundColor = 'transparent';
   
   // 완성본 방향(좌향)에 맞게 좌우 반전할 가구 모음
-  const flipStyle = (slotId === 'bed') ? 'transform:scaleX(-1);' : '';  // 침대
+  const flipStyle = (['bed', 'shelf_right', 'memo_poster', 'dreamcatcher'].includes(slotId)) ? 'transform:scaleX(-1);' : '';
+  
   
   el.innerHTML = `<img
     src="images/furniture/${item.imgFile}"
