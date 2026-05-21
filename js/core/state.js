@@ -33,7 +33,15 @@ let serverDataLoaded = false;
 // 디바운싱 — 1.5초 내 중복 Firebase write를 1번으로 압축
 // ================================================================
 let _saveDebounceTimer = null;
+// ★ Fix 구멍3: serverDataLoaded 전 debouncedSave 호출 시 저장이 조용히 무시되는 문제
+//   기존: saveAllDataToServer 첫 줄에서 !serverDataLoaded면 그냥 return
+//   수정: 로드 전이면 _pendingSave 플래그를 세워두고 로드 완료 후 자동 1회 저장
+let _pendingSave = false;
 function debouncedSave() {
+  if (!serverDataLoaded) {
+    _pendingSave = true; // 로드 완료 후 저장하도록 예약
+    return;
+  }
   if (_saveDebounceTimer) clearTimeout(_saveDebounceTimer);
   _saveDebounceTimer = setTimeout(() => {
     _saveDebounceTimer = null;
@@ -123,12 +131,36 @@ async function loadAllDataFromServer() {
       if (s.monsterCompendium)       localStorage.setItem('monsterCompendium',   JSON.stringify(s.monsterCompendium));
       if (s.dataHistory)             localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
 
+      // ★ Fix 구멍2: libStudyCount / libFocus 복원
+      //   날짜가 같을 때만 복원 (날짜 바뀌면 locations.js의 enterLibrary에서 초기화)
+      if (s.libStudyCount !== undefined || s.libFocus !== undefined) {
+        const today = new Date().toDateString();
+        const savedLibDate = localStorage.getItem('libDate');
+        if (savedLibDate === today) {
+          // 같은 날짜면 서버/로컬 중 더 큰 값 사용 (멀티 디바이스 보호)
+          if (s.libStudyCount !== undefined) {
+            const localCount = parseInt(localStorage.getItem('libStudyCount') || '0');
+            localStorage.setItem('libStudyCount', String(Math.max(localCount, s.libStudyCount)));
+          }
+          if (s.libFocus !== undefined) {
+            const localFocus = parseInt(localStorage.getItem('libFocus') || '100');
+            // libFocus는 낮을수록 더 공부한 것 — 더 낮은 값(더 많이 공부한 기기) 사용
+            localStorage.setItem('libFocus', String(Math.min(localFocus, s.libFocus)));
+          }
+        }
+      }
+
       console.log('Firebase 로드 완료');
     } else {
       console.log('신규 유저 — 기본값으로 시작');
     }
 
     serverDataLoaded = true;
+    // ★ Fix 구멍3: 로드 전에 예약된 저장이 있으면 즉시 실행
+    if (_pendingSave) {
+      _pendingSave = false;
+      saveAllDataToServer();
+    }
     // ★ Fix #13: 서버 로드 완료 후 _prevData를 현재 data값으로 맞춰
     //   이유: loadAllDataFromServer 완료 후 updateMapStats 재호출 시 _prevData=null(초기값)이고
     //   서버 data가 양수이면 "💎 +N 획득" 팝업이 오발됨 — 실제 획득이 아님에도 표시
@@ -138,6 +170,8 @@ async function loadAllDataFromServer() {
 
   } catch (e) {
     serverDataLoaded = true;
+    // ★ Fix 구멍3: 로드 실패해도 예약된 저장 처리 (로컬 데이터라도 보존)
+    if (_pendingSave) { _pendingSave = false; saveAllDataToServer(); }
     console.error('데이터 로드 실패:', e);
     if (typeof showToast === 'function') showToast('⚠️ 서버 로드 실패 — 로컬 데이터로 시작합니다.', 'warning', 3500);
   }
@@ -169,6 +203,7 @@ async function saveAllDataToServer() {
         _regenPerTurn:      playerStats._regenPerTurn      || 0,
         _battleBonusReward: playerStats._battleBonusReward || 0,
         unionBonusDmg:      playerStats.unionBonusDmg      || 0,
+        unionBonusStudy:    playerStats.unionBonusStudy    || 0,  // ★ Fix 구멍1: 집중력 교재 효과 Firebase 저장
         _slotLucky:         playerStats._slotLucky         || false,
         _libTimeBonus:      playerStats._libTimeBonus      || 0,
       },
@@ -199,6 +234,11 @@ async function saveAllDataToServer() {
       playerAvatar:       localStorage.getItem('playerAvatar')                    || '🧑‍💻',
       monsterCompendium:  JSON.parse(localStorage.getItem('monsterCompendium')    || '{}'),
       dataHistory:        JSON.parse(localStorage.getItem('dataHistory')          || '[]'),
+
+      // ★ Fix 구멍2: libStudyCount / libFocus를 Firebase에도 저장
+      //   기존: localStorage에만 저장 → 다른 기기 접속 시 초기화, 업적 달성 누락
+      libStudyCount:      parseInt(localStorage.getItem('libStudyCount') || '0'),
+      libFocus:           parseInt(localStorage.getItem('libFocus')      || '100'),
 
       lastUpdated: new Date(),
     };

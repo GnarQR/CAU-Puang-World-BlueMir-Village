@@ -344,6 +344,14 @@ function finishLibTyping() {
   else if (libTypingCorrect >= 3)  reward = 3;
   else if (libTypingCorrect >= 1)  reward = 1;
 
+  // ★ Fix 구멍1: unionBonusStudy(집중력 교재/컴퓨터학회) 도서관 보상 적용
+  //   기존: unionBonusStudy 변수가 증가해도 reward 계산에 전혀 반영 안 됨
+  //   수정: reward > 0일 때 unionBonusStudy만큼 추가
+  if (reward > 0 && (unionBonusStudy || 0) > 0) {
+    reward += unionBonusStudy;
+    addLibLog('[📚 공부 버프] 집중력 교재 효과 +' + unionBonusStudy + '💎', 'lib-log-reward');
+  }
+
   // ★ Fix 5: _libStudyIsDouble (화요일 도서관 2× 요일 보너스)
   if (reward > 0 && window._libStudyIsDouble) {
     reward *= 2;
@@ -1185,7 +1193,7 @@ window.buyUnion = function(id) {
 
   if      (id === 'puang_doll') { changeFavor(20);    addUnionLog('[✅ 승인] 푸앙이 인형 구매! 호감도 +20', 'union-log-ok'); }
   else if (id === 'hp_max')     { playerStats.maxHp += 30; addUnionLog('[✅ 승인] 생명력 결정 구매! 최대 HP +30 → ' + playerStats.maxHp, 'union-log-ok'); }
-  else if (id === 'exp_boost')  { unionBonusStudy++;  addUnionLog('[✅ 승인] 집중력 교재 구매! 도서관 보상 +1', 'union-log-ok'); }
+  else if (id === 'exp_boost')  { unionBonusStudy++;  playerStats.unionBonusStudy = unionBonusStudy; addUnionLog('[✅ 승인] 집중력 교재 구매! 도서관 보상 +1', 'union-log-ok'); }
   else if (id === 'battle_str') { 
     unionBonusDmg += 3; 
     playerStats.unionBonusDmg = unionBonusDmg;      // playerStats에 저장
@@ -2424,7 +2432,7 @@ window.buyUnionSale = function() {
 
 // 동아리 가입 (한 번만 가입 가능)
 const UNION_CLUBS = {
-  cs_club:     { name: '컴퓨터학회', icon: '💻', cost: 15, buff: '공부 보상 +1, 전투 리젠 +2',   apply: () => { unionBonusStudy++; playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 2; } },
+  cs_club:     { name: '컴퓨터학회', icon: '💻', cost: 15, buff: '공부 보상 +1, 전투 리젠 +2',   apply: () => { unionBonusStudy++; playerStats.unionBonusStudy = unionBonusStudy; playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 2; } },
   sports_club: { name: '스포츠부',   icon: '🏃', cost: 15, buff: '최대 HP +20, 체육관 비용 -1',  apply: () => { playerStats.maxHp += 20; playerStats._gymDiscount = (playerStats._gymDiscount || 0) + 1; } },
   art_club:    { name: '예술부',     icon: '🎨', cost: 15, buff: '푸앙 호감도 +10, 축제 보상 +2', apply: () => { puangState.favorability = Math.min(100, puangState.favorability + 10); savePuangState(); playerStats._festBonus = (playerStats._festBonus || 0) + 2; } },
 };
