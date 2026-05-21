@@ -11,6 +11,12 @@
 // 청룡산 입장
 window.enterMountain = function() {
   document.getElementById('game-container').style.display = 'none';
+  // ★ Fix #9: 이전 전투 화면이 남아있으면 mountain-container와 겹침 — battle-container도 숨기기
+  const prevBattle = document.getElementById('battle-container');
+  if (prevBattle) {
+    prevBattle.style.display = 'none';
+    prevBattle.classList.remove('visible');
+  }
   document.getElementById('mountain-container').style.display = 'flex';
   document.getElementById('mtn-hp-val').textContent = playerStats.hp;
 }

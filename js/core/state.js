@@ -129,6 +129,11 @@ async function loadAllDataFromServer() {
     }
 
     serverDataLoaded = true;
+    // ★ Fix #13: 서버 로드 완료 후 _prevData를 현재 data값으로 맞춰
+    //   이유: loadAllDataFromServer 완료 후 updateMapStats 재호출 시 _prevData=null(초기값)이고
+    //   서버 data가 양수이면 "💎 +N 획득" 팝업이 오발됨 — 실제 획득이 아님에도 표시
+    //   해결: updateMapStats 호출 전 _prevData를 현재 data로 동기화해 diff=0 으로 만듦
+    _prevData = playerStats.data;
     if (typeof updateMapStats === 'function') updateMapStats();
 
   } catch (e) {
@@ -354,3 +359,9 @@ window.saveInventory = function() {
   localStorage.setItem('cau_inventory', JSON.stringify(inventory));
   debouncedSave();
 };
+
+// ★ Fix #2: loadAllDataFromServer / saveAllDataToServer를 window에 명시 노출
+//   기존: 일반 async function 선언 → 타 파일에서 스코프 격리 시 접근 불가 위험
+//   수정: window에 붙여 어느 파일에서든 typeof 체크 없이 안전하게 호출 가능
+window.loadAllDataFromServer = loadAllDataFromServer;
+window.saveAllDataToServer   = saveAllDataToServer;

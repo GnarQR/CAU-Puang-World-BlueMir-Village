@@ -250,10 +250,12 @@ function update() {
       if (player.x === targetX && player.y === targetY) {
         player.isMoving = false;
         
-        // 1. 방 이동(포탈) 체크 — 포탈 내부에서 전투 발생 시 return되므로 중복 없음
-        checkRoomPortal();
+        // 1. 방 이동(포탈) 체크
+        // ★ Fix #8: checkRoomPortal()이 true를 반환하면 이미 전투 진입 → 10% 전투 체크 건너뜀
+        const portalTriggeredBattle = checkRoomPortal();
+        if (portalTriggeredBattle) return; // 포탈에서 전투 발생 → 루프 종료
 
-        // 2. 전투 발생 체크 (포탈에서 triggerBattle → return이므로 여기까지 안 옴)
+        // 2. 전투 발생 체크 (포탈에서 전투 미발생 시에만 진입)
         if (Math.random() < 0.1) {  // 이동할 때마다 10% 확률로 전투 발생 (조정 가능)
           triggerBattle();
           return; // 전투로 넘어가므로 더 이상 업데이트하지 않음
@@ -317,9 +319,12 @@ function checkRoomPortal() {
         // 방을 옮겼을 때는 30%의 높은 확률로 전투 발생
         if (Math.random() < 0.3) {
             triggerBattle();
-            return; // ★ Fix 4: 포탈 전투 발생 시 return — update()의 10% 전투와 중복 방지
+            // ★ Fix #8: 포탈에서 전투 발생 시 true 반환 — update()가 이를 받아 10% 전투 체크를 건너뜀
+            return true; // ★ Fix 4 유지 + Fix #8: 반환값으로 전투 발생 여부 전파
         }
     }
+    // ★ Fix #8: 전투 미발생 시 false 반환
+    return false;
 }
 
 // 탐험 중 전투 발생 시 호출
@@ -340,7 +345,7 @@ function triggerBattle() {
 
   // 3. 전투 시스템 초기화
   if (typeof window.initBattle === 'function') {
-    window.initBattle('map', bossId = null); // 일반 몬스터 전투로 초기화
+    window.initBattle('map', null); // 일반 몬스터 전투로 초기화 // ★ Fix #4: bossId = null → null (전역 변수 오염 방지)
   }
 }
 
@@ -436,7 +441,7 @@ window.initBattle = function(origin = 'map', bossId = null) {
     battleTurn = 1;
   }
 
-  enemyMaxHp = currentMonster.hp;
+  // ★ Fix #5: enemyMaxHp 이중 초기화 제거 — 위(412줄)에서 이미 설정됨. 중복 할당 시 복구된 enemyHp와 비율 불일치 발생
   battlePlayerMaxHp = playerStats.maxHp;
 
   // 현재 전투 상태를 localStorage에 동기화
@@ -520,8 +525,9 @@ window.initBattle = function(origin = 'map', bossId = null) {
 window.initBossBattle = function(boss) {
   battleOrigin = 'mountain';  // 전투 시작 위치
   window.battleOrigin = 'mountain'; // ★ Fix #5: window에도 동기화
-  const monsterId = Object.keys(BOSSES).find(k => BOSSES[k].name === boss.name);
-  const monster   = monsterId ? BOSSES[monsterId] : {
+  // ★ Fix #7: BOSSES → window.BOSSES (monsters.js는 window.BOSSES로만 노출하므로 직접 참조 시 ReferenceError 위험)
+  const monsterId = Object.keys(window.BOSSES).find(k => window.BOSSES[k].name === boss.name);
+  const monster   = monsterId ? window.BOSSES[monsterId] : {
     ...boss, level: '?', image: 'images/monster/F-ghost.png',
     weakness: '알 수 없음', intro: boss.name + ' 등장!',
     attackMin: 3, attackMax: 18, isBoss: true,
@@ -532,7 +538,21 @@ window.initBossBattle = function(boss) {
   enemyMaxHp = monster.hp;
   battleTurn = 1; buffActive = false; battleBusy = false;
 
-  applyMonsterUI(monster);
+  // ★ Fix #1: applyMonsterUI()가 전체 코드베이스에 미정의 → 직접 UI 업데이트로 대체
+  //   (기존 applyMonsterUI 호출 줄을 제거하고 동일 동작을 인라인으로 구현)
+  const enemyNameEl2 = document.getElementById('enemy-name');
+  if (enemyNameEl2) enemyNameEl2.textContent = monster.name + ' (Lv.' + (monster.level || '?') + ')';
+  const enemyImgEl2 = document.getElementById('enemy-img');
+  if (enemyImgEl2) {
+    enemyImgEl2.src = monster.image;
+    enemyImgEl2.style.display = 'block';
+    enemyImgEl2.onerror = () => { enemyImgEl2.src = 'images/monster/default.png'; };
+  }
+  const hpValEl2 = document.getElementById('enemy-hp-val');
+  const hpMaxEl2 = document.getElementById('enemy-hp-max');
+  if (hpValEl2) hpValEl2.textContent = enemyHp;
+  if (hpMaxEl2) hpMaxEl2.textContent = enemyMaxHp;
+
   updateBattleBars();
   document.getElementById('turn-display').textContent    = '턴 1';
   document.getElementById('dice-display').textContent    = '🎲';
@@ -633,17 +653,18 @@ window._useBattleItem = function(idx) {
 };
 
 window._cancelItemSelect = function() {
-  // ★ Fix #8: old_html 문자열 복원 방식 제거 (특수문자·XSS 취약)
-  //   버튼들을 원래 cmd-btn 구조로 재렌더링
+  // ★ Fix #6: _useBattleItem 성공 후 복원 HTML과 구조 통일
+  //   기존: 단순 텍스트 버튼 → 취소 후 cmd-name/cmd-desc span이 없어 스타일 깨짐
+  //   수정: _useBattleItem의 복원 HTML과 동일한 구조로 재렌더링
   const grid = document.querySelector('.cmd-grid');
   if (grid) {
     grid.innerHTML =
-      `<button class="cmd-btn" onclick="doCmd('attack')">⚔️ 벡터 캐논</button>` +
-      `<button class="cmd-btn" onclick="doCmd('rag')">💚 RAG 리커버리</button>` +
-      `<button class="cmd-btn" onclick="doCmd('hyper')">⚡ 하이퍼 프롬프트</button>` +
-      `<button class="cmd-btn special" onclick="doCmd('special')">🔥 데이터 서지</button>` +
-      `<button class="cmd-btn" onclick="doCmd('item')">🎒 아이템</button>` +
-      `<button class="cmd-btn" onclick="doCmd('run')">🏃 도망</button>`;
+      `<button class="cmd-btn attack" onclick="doCmd('attack')"><span class="cmd-name">벡터 캐논</span><span class="cmd-desc">물리 공격 · 데미지 d20 [1]</span></button>` +
+      `<button class="cmd-btn" onclick="doCmd('rag')"><span class="cmd-name">RAG 리커버리</span><span class="cmd-desc">HP 회복 · 회복량 d10 [2]</span></button>` +
+      `<button class="cmd-btn attack" onclick="doCmd('hyper')"><span class="cmd-name">하이퍼 프롬프트</span><span class="cmd-desc">버프 · 다음 턴 데미지 2배 [3]</span></button>` +
+      `<button class="cmd-btn special" onclick="doCmd('special')"><span class="cmd-name">⚡ 데이터 서지</span><span class="cmd-desc">SP 15 소모 · 강력 공격+회복 [4]</span></button>` +
+      `<button class="cmd-btn" onclick="doCmd('run')"><span class="cmd-name">이면 세계 탈출</span><span class="cmd-desc">전투 종료 · 50% 확률 [5]</span></button>` +
+      `<button class="cmd-btn" onclick="doCmd('item')"><span class="cmd-name">🎒 아이템</span><span class="cmd-desc">인벤토리 사용 [6]</span></button>`;
   }
   document.getElementById('dice-result').textContent = '커맨드를 선택하세요';
   if (typeof setBattleButtons === 'function') setBattleButtons(false);
@@ -800,6 +821,11 @@ async function enemyTurn() {
     addBattleLog('[SYSTEM] 플레이어가 쓰러졌다... 3초 후 복귀합니다.', 'log-damage');
     document.getElementById('dice-result').textContent = '전투 패배...';
     if (typeof showToast === 'function') showToast('💀 전투 패배...', 'error', 3000);
+    // ★ Fix #10: 패배 시 hp가 음수 그대로 저장되는 버그 방지 — 최소 1로 보정
+    playerStats.hp = Math.max(1, battlePlayerHp);
+    battlePlayerHp = playerStats.hp;
+    // ★ Fix #3: 패배 시에도 clearBattleState 호출 — 미호출 시 새로고침마다 전투 복구 루프
+    clearBattleState();
     await sleepMs(3000);
     if (typeof returnToGame === 'function') returnToGame();
     return;
@@ -916,6 +942,8 @@ window.doCmd = async function(cmd) {
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof window.updateDailyBadges === 'function') window.updateDailyBadges();
       if (typeof showToast === 'function') showToast('⚔️ 전투 승리! 💎 +' + reward, 'success', 3000);
+      // ★ Fix #3: 승리 시 clearBattleState — 미호출 시 inBattle=true 잔류 → 새로고침마다 전투 루프 재진입
+      clearBattleState();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;
@@ -1009,6 +1037,8 @@ window.doCmd = async function(cmd) {
       updateMapStats();
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof showToast === 'function') showToast('⚡ 서지로 승리! 💎 +' + reward, 'success', 3000);
+      // ★ Fix #3: 서지 승리 시에도 clearBattleState — inBattle 잔류 방지
+      clearBattleState();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;
