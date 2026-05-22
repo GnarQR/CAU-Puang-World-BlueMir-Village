@@ -533,6 +533,9 @@ window.answerLabQuiz = function(idx, ans) {
     addLabLog('[QUIZ] 오답! 연구가 취소됐어요. 데이터 조각은 소모되지 않았어요.', 'lab-log-warning');
     // 한도 복구
     if (dailyUsage['lab'] > 0) dailyUsage['lab']--;
+    // ★ NewBugFix N-11: 한도 복구 후 saveDailyUsage() 미호출 → 새로고침 시 복구 안 되던 버그
+    //   사이드이펙트: 없음 — localStorage 저장 + debouncedSave만 호출하는 순수 저장 함수
+    if (typeof saveDailyUsage === 'function') saveDailyUsage();
     updateLabBadge();
   }
   labPendingAction = null;
@@ -2850,7 +2853,19 @@ window.sendLakeChat = function() {
   input.value = '';
   addLakeMsg('puang', '...');
 
-  if (!GROQ_API_KEY) { const log = document.getElementById('lake-chat-log'); if (log && log.lastChild) log.lastChild.textContent = '미안 푸앙, 지금 말 못 해 푸앙...'; return; }
+  // ★ NewBugFix N-10: addLakeMsg('puang','...') 직후 lastChild를 변수에 고정
+  //   기존: .then()/.catch()에서 log.lastChild 참조 → 응답 대기 중 새 메시지가 추가되면
+  //   lastChild가 바뀌어 엉뚱한 메시지가 삭제되는 레이스 컨디션 발생
+  //   수정: 임시 '...' DOM 노드를 미리 캡처해두어 항상 올바른 노드를 삭제
+  //   사이드이펙트: 없음 — 참조 고정만, 기존 동작 변경 없음
+  const lakeLog = document.getElementById('lake-chat-log');
+  const pendingMsg = lakeLog ? lakeLog.lastChild : null;
+
+  if (!GROQ_API_KEY) {
+    // 원본: if (log && log.lastChild) log.lastChild.textContent = '미안 푸앙...';
+    if (pendingMsg) pendingMsg.textContent = '미안 푸앙, 지금 말 못 해 푸앙...';
+    return;
+  }
 
   fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -2866,12 +2881,12 @@ window.sendLakeChat = function() {
     })
   }).then(r => r.json()).then(d => {
     const parsed = JSON.parse(d.choices[0].message.content);
-    const log = document.getElementById('lake-chat-log');
-    if (log && log.lastChild) { log.lastChild.textContent = ''; log.lastChild.remove(); }
+    // 원본: const log = ...; if (log && log.lastChild) { log.lastChild.textContent = ''; log.lastChild.remove(); }
+    if (pendingMsg && pendingMsg.parentNode) { pendingMsg.textContent = ''; pendingMsg.remove(); }
     addLakeMsg('puang', parsed.dialog);
   }).catch(() => {
-    const log = document.getElementById('lake-chat-log');
-    if (log && log.lastChild) log.lastChild.textContent = '잠깐 멍했어 푸앙... 다시 말해줘 푸앙';
+    // 원본: const log = ...; if (log && log.lastChild) log.lastChild.textContent = '잠깐 멍했어...';
+    if (pendingMsg) pendingMsg.textContent = '잠깐 멍했어 푸앙... 다시 말해줘 푸앙';
   });
 };
 
