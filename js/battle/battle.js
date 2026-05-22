@@ -95,6 +95,28 @@ function draw() {
       ctx.drawImage(playerImage, drawX, drawY, 64, 64);  // 이미지가 완전히 로드된 경우에만 그리기
     } 
 
+    // 클릭 목표 지점 표시 (원 이펙트, 서서히 사라짐)
+    if (_clickTarget && _clickAnim > 0) {
+      const alpha  = _clickAnim / 25;
+      const radius = 6 + (1 - alpha) * 10; // 커지면서 사라짐
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#5dcaa5';
+      ctx.lineWidth   = 2;
+      ctx.beginPath();
+      ctx.arc(_clickTarget.x, _clickTarget.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      // 십자 표시
+      ctx.beginPath();
+      ctx.moveTo(_clickTarget.x - 5, _clickTarget.y);
+      ctx.lineTo(_clickTarget.x + 5, _clickTarget.y);
+      ctx.moveTo(_clickTarget.x, _clickTarget.y - 5);
+      ctx.lineTo(_clickTarget.x, _clickTarget.y + 5);
+      ctx.stroke();
+      ctx.restore();
+      _clickAnim--;
+    }
+
     // [디버깅용] 벽 위치 눈으로 확인하기 
     /*
     collisionData.forEach((val, i) => {
@@ -216,14 +238,15 @@ function movePlayer(dx, dy) {
     const nextIdx = nextGridY * MAP_WIDTH_TILES + nextGridX;
 
     // 데이터 보호: 인덱스 범위를 벗어나는지 확인
-    if (nextIdx >= collisionData.length) return;
+    if (nextIdx >= collisionData.length || collisionData[nextIdx] === 56) return;
 
     // 56(빨간 칸)이면 이동하지 않고 리턴
-    if (collisionData[nextIdx] === 56) {
-        console.log("벽에 부딪혔습니다!", nextGridX, nextGridY);
-        return;
+    if (dx !== 0 && dy !== 0) {
+      const sideX = player.gridY * MAP_WIDTH_TILES + nextGridX; // 수평 이동 시 체크할 칸
+      const sideY = nextGridY * MAP_WIDTH_TILES + player.gridX; // 수직 이동 시 체크할 칸
+      if (collisionData[sideX] === 56 && collisionData[sideY] === 56) return;
     }
-
+    
     // 3. 이동 가능한 곳(0)이면 좌표 갱신
     player.gridX = nextGridX;
     player.gridY = nextGridY;
@@ -236,36 +259,110 @@ function update() {
     if (!exploreCont || exploreCont.style.display === 'none') return; // 탐험 화면이 보이지 않으면 업데이트 중지
 
     if (player.isMoving) {
-      let targetX = player.gridX * 32;
-      let targetY = player.gridY * 32;
+      let targetX = player.gridX * TILE_SIZE;
+      let targetY = player.gridY * TILE_SIZE;
 
       // 목표 지점까지 스르륵 이동하는 효과
-      if (player.x < targetX) player.x += player.speed;
-      else if (player.x > targetX) player.x -= player.speed;
+      if (player.x < targetX) player.x = Math.min(player.x + player.speed, targetX);
+      else if (player.x > targetX) player.x = Math.max(player.x - player.speed, targetX);
+      if (player.y < targetY) player.y = Math.min(player.y + player.speed, targetY);
+      else if (player.y > targetY) player.y = Math.max(player.y - player.speed, targetY);
 
-      if (player.y < targetY) player.y += player.speed;
-      else if (player.y > targetY) player.y -= player.speed;
-
-      // 도착 확인
+      // 한 칸 도착
       if (player.x === targetX && player.y === targetY) {
         player.isMoving = false;
         
         // 1. 방 이동(포탈) 체크
         // ★ Fix #8: checkRoomPortal()이 true를 반환하면 이미 전투 진입 → 10% 전투 체크 건너뜀
         const portalTriggeredBattle = checkRoomPortal();
-        if (portalTriggeredBattle) return; // 포탈에서 전투 발생 → 루프 종료
+        if (portalTriggeredBattle) { _clickPath = []; return; } // 포탈에서 전투 발생 → 루프 종료
 
         // 2. 전투 발생 체크 (포탈에서 전투 미발생 시에만 진입)
-        if (Math.random() < 0.1) {  // 이동할 때마다 10% 확률로 전투 발생 (조정 가능)
-          triggerBattle();
-          return; // 전투로 넘어가므로 더 이상 업데이트하지 않음
+        // 이동할 때마다 10% 확률로 전투 발생 (조정 가능)
+        if (Math.random() < 0.1) { triggerBattle(); _clickPath = []; return; }
+
+        // ★ 클릭 경로 다음 칸으로 이동
+        if (_clickPath.length > 0) {
+          const next = _clickPath.shift();
+          player.gridX = next.x;
+          player.gridY = next.y;
+          player.isMoving = true;
         }
       }
+    }
+
+    else if (_clickPath.length > 0) {  // 정지 상태에서 경로가 남아있으면 다음 칸 시작
+      const next = _clickPath.shift();
+      player.gridX = next.x;
+      player.gridY = next.y;
+      player.isMoving = true;
     }
     draw();  // 매 프레임마다 그리기 함수 호출
     requestAnimationFrame(update);  // 루프 지속
 }
 
+// ── 마우스 클릭 이동 시스템 ──
+// BFS로 클릭 지점까지 경로 탐색 후 자동 이동
+
+let _clickPath   = [];   // 이동할 그리드 좌표 배열 [{x,y}, ...]
+let _clickTarget = null; // 클릭 목표 픽셀 좌표 — 클릭 표시용
+let _clickAnim   = 0;    // 클릭 표시 애니메이션 프레임 카운터
+
+// BFS 경로 탐색
+function findPath(fromX, fromY, toX, toY) {
+  if (collisionData[toY * MAP_WIDTH_TILES + toX] === 56) return [];
+  const visited = new Uint8Array(MAP_WIDTH_TILES * MAP_HEIGHT_TILES);
+  const queue   = [{ x: fromX, y: fromY, path: [] }];
+  visited[fromY * MAP_WIDTH_TILES + fromX] = 1;
+  const dirs = [[0,-1],[0,1],[-1,0],[1,0], [-1,-1],[1,-1],[-1,1],[1,1]];
+  while (queue.length) {
+    const { x, y, path } = queue.shift();
+    if (x === toX && y === toY) return path;
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || nx >= MAP_WIDTH_TILES || ny < 0 || ny >= MAP_HEIGHT_TILES) continue;
+      const idx = ny * MAP_WIDTH_TILES + nx;
+      if (visited[idx] || collisionData[idx] === 56) continue;
+      visited[idx] = 1;
+      queue.push({ x: nx, y: ny, path: [...path, { x: nx, y: ny }] });
+    }
+  }
+  return [];
+}
+
+// 캔버스 클릭 이벤트 등록
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('map-canvas');
+  if (!canvas) return;
+
+  canvas.addEventListener('click', (e) => {
+    const exploreCont = document.getElementById('explore-container');
+    if (!exploreCont || exploreCont.style.display === 'none') return;
+
+    // 캔버스 내 클릭 좌표 → 그리드 좌표 변환 (CSS 스케일 보정)
+    const rect   = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const px     = (e.clientX - rect.left) * scaleX;
+    const py     = (e.clientY - rect.top)  * scaleY;
+    const gx     = Math.floor(px / TILE_SIZE);
+    const gy     = Math.floor(py / TILE_SIZE);
+
+    // 범위/벽 체크
+    const idx = gy * MAP_WIDTH_TILES + gx;
+    if (gx < 0 || gx >= MAP_WIDTH_TILES || gy < 0 || gy >= MAP_HEIGHT_TILES) return;
+    if (idx < 0 || idx >= collisionData.length || collisionData[idx] === 56) return;
+
+    // 클릭 표시 (원 이펙트)
+    _clickTarget = { x: gx * TILE_SIZE + TILE_SIZE / 2, y: gy * TILE_SIZE + TILE_SIZE / 2 };
+    _clickAnim   = 25;
+
+    // BFS로 경로 계산 후 저장
+    _clickPath = findPath(player.gridX, player.gridY, gx, gy);
+  });
+});
+
+/*
 // 방향키 입력 활성화
 document.addEventListener('keydown', (e) => {  
   // 탐험 컨테이너가 보일 때만 작동
@@ -285,6 +382,7 @@ document.addEventListener('keydown', (e) => {
     movePlayer(dx, dy);
   }
 });
+*/
 
 // 방 이동 로직 함수 (연출 변경 가능)
 function checkRoomPortal() {
