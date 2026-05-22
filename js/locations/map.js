@@ -5,10 +5,11 @@
 
 // ── 계절별 맵 이미지 ──
 const SEASON_MAPS = {
-  spring: 'images/cau_map_spring.png',  // 3~5월
-  summer: 'images/cau_map_summer.png',  // 6~8월
-  autumn: 'images/cau_map_autmn.png',   // 9~11월 (파일명 오타 그대로 유지)
-  winter: 'images/cau_map_winter.png',  // 12~2월
+
+  spring: 'images/map/cau_map_spring.png',  // 3~5월
+  summer: 'images/map/cau_map_summer.png',  // 6~8월
+  autumn: 'images/map/cau_map_autmn.png',   // 9~11월 (파일명 오타 그대로 유지)
+  winter: 'images/map/cau_map_winter.png',  // 12~2월
 };
 
 const SEASON_LABELS = {
