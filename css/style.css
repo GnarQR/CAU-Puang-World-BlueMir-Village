@@ -1733,7 +1733,7 @@ h1 {
     flex-direction: column;
     gap: 14px;
     /* 배경 이미지 */
-    background-color: #fef3e2;
+    background: rgba(0, 0, 0, 0.6);
     background-image: url('images/cafeteria.png');
     background-size: cover;
     background-position: center top;
@@ -1748,7 +1748,7 @@ h1 {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(254, 243, 226, 0.88);
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     pointer-events: none;
     z-index: 0;
@@ -2074,7 +2074,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: #f5efe0;
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 4px 20px rgba(92,51,23,0.15);
@@ -2368,7 +2368,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: #020802;
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     border: 1px solid #1a3a1a;
@@ -2855,7 +2855,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: #0a0a0a;
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     border: 2px solid #1a1a1a;
@@ -3071,7 +3071,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: #f0f9ff;
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 4px 20px rgba(14,165,233,0.1);
@@ -3253,7 +3253,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: #f8faff;
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 4px 20px rgba(30,64,175,0.08);
@@ -3413,7 +3413,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: #fff5f5;
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 4px 20px rgba(220,38,38,0.1);
@@ -3545,7 +3545,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: linear-gradient(145deg, #fdf4ff, #fff7ed);
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 4px 20px rgba(168,85,247,0.1);
@@ -3714,7 +3714,7 @@ h1 {
     max-width: 960px;
     flex-direction: column;
     gap: 14px;
-    background: linear-gradient(145deg, #0f0c29, #1a1035);
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 16px;
     padding: 16px;
     border: 1px solid #4c1d95;
@@ -6412,6 +6412,11 @@ body.light-theme .onboard-tip{background:#f8faff;border-color:#1d4ed8;}
 body.light-theme .onboard-msg{color:#1e3a8a;}
 body.light-theme .onboard-arrow{border-color:#1d4ed8;}
 body.light-theme .explore-hud-floor{background:rgba(240,244,255,.9);border-color:#dc2626;color:#dc2626;}
+
+/* ── 청룡산 인라인 배경 제거 ── */
+#mountain-container {
+  background: rgba(0, 0, 0, 0.6) !important;
+}
 
 /* ── 장소별 body 배경 이미지 ── */
 body { transition: background-image 0.4s ease; }
