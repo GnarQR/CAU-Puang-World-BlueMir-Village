@@ -454,7 +454,6 @@ window.initBattle = function(origin = 'map', bossId = null) {
   // 1. 전역 변수 설정
   battleOrigin = origin;
   window.battleOrigin = origin; // ★ Fix #5: window에도 동기화
-  if (typeof window.setPlaceBg==='function') window.setPlaceBg(origin==='mountain'?'mountain':'battle');
   battleBusy = false;
   battlePlayerHp    = playerStats.hp;
   battlePlayerMaxHp = playerStats.maxHp;
@@ -820,23 +819,48 @@ async function animateDice(sides, ignoreGold = false) {
     element.style.transform = 'scale(1.3)';
   }
 
-  // 주사위 굴리는 애니메이션 연출
-  element.classList.add('rolling');  // CSS의 diceShake 애니메이션 시작 (주사위가 흔들림)
-  for (let i = 0; i < 8; i++) {
-    // ⚀⚁⚂⚃⚄⚅ 중 랜덤으로 골라서 화면에 표시
+  // 주사위 굴리는 애니메이션 연출 — 점점 느려지는 슬로우 롤링
+  element.classList.add('rolling');
+  const delays = [50, 50, 60, 80, 100, 130, 170, 220];  // 점점 느려짐
+  for (let i = 0; i < delays.length; i++) {
     element.textContent = faces[Math.floor(Math.random() * faces.length)];
-    await sleepMs(50);  // 50ms 대기 → 다시 2번 반복 (총 8번)
-  }  // 결과: 주사위 눈이 50ms마다 빠르게 바뀌는 것처럼 보임
-  element.classList.remove('rolling');  // 흔들림 애니메이션 종료
+    await sleepMs(delays[i]);
+  }
+  element.classList.remove('rolling');
 
   // 황금 주사위는 최소 4 보장 (변경 가능)
-  const result = isPuangMode  // 조건: 황금 주사위 모드인가?
-    ? Math.max(4, Math.floor(Math.random() * sides) + 1)  // true  → 황금 주사위 (최소 4 보장)
-    : Math.floor(Math.random() * sides) + 1;              // false → 일반 주사위
+  const result = isPuangMode
+    ? Math.max(4, Math.floor(Math.random() * sides) + 1)
+    : Math.floor(Math.random() * sides) + 1;
 
-  element.textContent = faces[Math.min(result - 1, 5)];  // 주사위 결과값을 화면에 표시 (d20이어도 1~6으로 표시)
+  // 결과값 표시 + bouncing 애니메이션
+  element.textContent = faces[Math.min(result - 1, 5)];
+  element.classList.add('dice-bounce');
+  setTimeout(() => element.classList.remove('dice-bounce'), 500);
 
-  if (isPuangMode) {  // 황금 주사위 모드일 때 500ms 후에 주사위를 원래 모습으로 되돌리는 코드
+  // 결과값에 따라 dice-result 색상 변경 + 크리티컬/펌블 텍스트
+  const resultEl = document.getElementById('dice-result');
+  if (resultEl) {
+    if (result === sides) {  // 최대값 — 크리티컬
+      resultEl.style.color = '#4dff88';
+      resultEl.textContent = '🎯 CRITICAL!';
+      setTimeout(() => { resultEl.style.color = ''; resultEl.textContent = ''; }, 1200);
+    } else if (result === 1) {  // 최솟값 — 펌블
+      resultEl.style.color = '#f09595';
+      resultEl.textContent = '💀 FUMBLE...';
+      setTimeout(() => { resultEl.style.color = ''; resultEl.textContent = ''; }, 1200);
+    } else if (result >= sides * 0.75) {  // 상위 25% — 초록
+      resultEl.style.color = '#5dcaa5';
+      setTimeout(() => { resultEl.style.color = ''; }, 1000);
+    } else if (result <= sides * 0.25) {  // 하위 25% — 빨강
+      resultEl.style.color = '#f09595';
+      setTimeout(() => { resultEl.style.color = ''; }, 1000);
+    } else {
+      resultEl.style.color = '';
+    }
+  }
+
+  if (isPuangMode) {
     setTimeout(() => { element.style.filter = ''; element.style.transform = ''; }, 500);
   }
 
@@ -1234,7 +1258,6 @@ window.doCmd = async function(cmd) {
           if (el) el.style.display = 'none';
         });
         document.getElementById('mountain-container').style.display = 'flex';
-        if (typeof window.setPlaceBg==='function') window.setPlaceBg('mountain');
       }
 
       else {  //그 외에는 일반 탐험 화면으로 복귀
