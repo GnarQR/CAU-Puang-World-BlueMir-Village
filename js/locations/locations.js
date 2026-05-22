@@ -599,10 +599,18 @@ window.doLabAction = function(action) {
     if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
   }
   else if (action === 'upgrade-atk') {
-    if (typeof unionBonusDmg !== 'undefined') unionBonusDmg += 5;
-    playerStats.unionBonusDmg = unionBonusDmg;  // playerStats에 저장
-    syncLabStats(); 
-    if (typeof window.syncAndSave === 'function') window.syncAndSave(); 
+    // ★ NewBugFix N-6: 기존 코드는 지역변수 unionBonusDmg를 수정 후 playerStats에 반영
+    //   하지만 지역변수가 선언되는 위치(1154번줄)보다 이 함수가 위에 있어
+    //   TDZ 이슈가 없어도 지역변수와 playerStats가 분리되어 동기화 누락 위험 있음
+    //   수정: playerStats.unionBonusDmg를 직접 수정하고, 지역변수도 함께 동기화
+    //   원본 코드 보존 ↓ (주석)
+    // if (typeof unionBonusDmg !== 'undefined') unionBonusDmg += 5;
+    // playerStats.unionBonusDmg = unionBonusDmg;
+    playerStats.unionBonusDmg = (playerStats.unionBonusDmg || 0) + 5;
+    // 지역변수도 동기화 (다른 코드에서 지역변수를 참조할 경우 대비)
+    if (typeof unionBonusDmg !== 'undefined') unionBonusDmg = playerStats.unionBonusDmg;
+    syncLabStats();
+    if (typeof window.syncAndSave === 'function') window.syncAndSave();
   }
   else if (action === 'upgrade-regen') {
     playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 5;
@@ -678,6 +686,9 @@ window.doGymRest = function() {
   playerStats.sp = playerStats.maxSp;
   updateMapStats();
   addGymLog('[💤 휴식] HP/SP 완전 회복!', '#a0c4ff');
+  // ★ NewBugFix N-2: 체육관 휴식 HP/SP 회복 후 Firebase 저장 누락
+  //   사이드이펙트: 없음 — 기존 코드 뒤에 추가만
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 }
 
 window.startGymGame = function(mode) {
@@ -844,6 +855,9 @@ window.clinicTreat = function(type) {
   }
 
   syncClinicStats(); updateMapStats();
+  // ★ NewBugFix N-1: 치료 후 Firebase 저장 누락 — 탭 종료 시 치료 효과/데이터 차감이 사라지던 버그
+  //   사이드이펙트: 없음 — 기존 syncClinicStats/updateMapStats 뒤에 추가만
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
 }
 
 // ================================================================
@@ -1145,6 +1159,10 @@ async function spinSlot() {
   addFestivalLog('[슬롯] ' + results.join(' ') + ' → ' + msg, reward > 0 ? '#5dcaa5' : '#f09595');
   btn.disabled = false;
 }
+// ★ NewBugFix N-3: spinSlot이 async function으로 선언돼 window에 자동 노출 안 됨
+//   HTML onclick="spinSlot()" 호출 시 "spinSlot is not defined" 오류 발생
+//   사이드이펙트: 없음 — window 참조만 추가
+window.spinSlot = spinSlot;
 
 // ================================================================
 // 학생회관
@@ -1511,11 +1529,19 @@ function checkCafCombo(orderedId) {
 // 기존 orderFood를 감싸서 세트/단골 체크 주입 (원본 함수는 그대로)
 const _origOrderFood = window.orderFood;
 window.orderFood = function(id) {
+  // ★ NewBugFix N-4: 원본 _origOrderFood 실패(데이터 부족·한도 초과) 시에도
+  //   addCafVisitTotal()이 호출되어 단골 카드가 부당하게 쌓이던 버그 수정
+  //   해결: 구매 전후 data 차이로 실제 구매 성공 여부를 판단
+  //   사이드이펙트: 없음 — 래퍼 로직만 변경, 원본 함수 호출은 유지
+  const dataBefore = playerStats.data;
   _origOrderFood(id);
-  checkCafCombo(id);
-  const total = addCafVisitTotal();
-  checkCafFreeTicket(total);
-  updateCafLoyaltyUI();
+  const purchased = playerStats.data < dataBefore; // 실제로 data가 줄었으면 구매 성공
+  if (purchased) {
+    checkCafCombo(id);
+    const total = addCafVisitTotal();
+    checkCafFreeTicket(total);
+    updateCafLoyaltyUI();
+  }
 };
 
 // 단골 카드 UI 갱신
@@ -1670,8 +1696,14 @@ function updateLibBorrowUI() {
 function checkLibraryFull() {
   if (Math.random() < 0.15) {
     addLibLog('[😤 열람실 만석!] 오늘은 자리가 없어요... 야외 공부로 대신합니다. 보상 -1', 'lib-log-info');
-    // 야외 공부: 보상 절반, 횟수는 소모
-    if (!useDaily('library')) return false;
+    // ★ NewBugFix N-5: useDaily 한도 초과 시 false 반환 → 만석도 아닌데 공부도 안 되던 버그
+    //   기존: !useDaily() → return false → _origStartStudy2가 또 useDaily 시도 → 한도 초과 메시지
+    //   수정: 한도 초과면 조용히 true 반환해 정규 공부 루프를 막음 (어차피 useDaily가 막을 것)
+    //   사이드이펙트: 없음 — 만석 발생 시 경우의 수만 명확화
+    if (!useDaily('library')) {
+      addLibLog('[❌] 오늘 공부는 충분히 했어요! (야외도 자리 없음)', 'lib-log-info');
+      return true; // 정규 공부 진행 차단 (한도 이미 소모됨)
+    }
     const reward = 1;
     playerStats.data += reward;
     if (typeof window.syncAndSave === 'function') window.syncAndSave();
