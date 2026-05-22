@@ -660,7 +660,7 @@ function getTodayQuests() {
   // 매일 3개 랜덤 선택 (시드 기반)
   const shuffled = [...DAILY_QUESTS].sort((a, b) => {
     const ha = (seed * a.id.length) % 100;
-    const hb = (seed * b.id.label.length) % 100;
+    const hb = (seed * b.label.length) % 100;
     return ha - hb;
   });
   return shuffled.slice(0, 3);

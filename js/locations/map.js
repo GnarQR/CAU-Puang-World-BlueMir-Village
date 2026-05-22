@@ -139,6 +139,18 @@ window.returnToGame = function() {
   
   else {
     // 일반 전체 맵(청룡산 등)으로 복귀
+    // ★ Fix: battle-container visible 클래스까지 제거 + 모든 장소 컨테이너 숨기기
+    const bc = document.getElementById('battle-container');
+    if (bc) { bc.classList.remove('visible'); bc.style.display = 'none'; }
+    
+    ['mountain-container', 'cafeteria-container', 'library-container',
+     'lab-container', 'gym-container', 'clinic-container', 'lab2-container',
+     'festival-container', 'union-container', 'store-container', 'puang-room'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+
     document.getElementById('game-container').style.display = 'flex';
   }
 }

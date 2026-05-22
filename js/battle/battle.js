@@ -829,6 +829,7 @@ async function enemyTurn() {
       updateBattleBars();
       addBattleLog('[🛡️ 보험 발동!] HP 30으로 부활! 보험이 소모되었습니다.', 'log-success');
       if (typeof showToast === 'function') showToast('🛡️ 의료보험 발동! 부활!', 'warning', 3000);
+      if (typeof setBattleButtons === 'function') setBattleButtons(false);  // 부활 시 버튼 비활성화 해제
       battleBusy = false;
       return;
     }
@@ -1125,6 +1126,15 @@ window.doCmd = async function(cmd) {
 
       // 전투 시작 지점(battleOrigin)에 따라 복귀 장소 결정
       if (battleOrigin === 'mountain') {  // 청룡산 화면으로 복귀
+        // ★ Fix: returnToGame() 통해 game-container 숨기고 mountain만 표시
+        ['game-container','cafeteria-container','library-container',
+         'lab-container','gym-container','clinic-container','lab2-container',
+         'festival-container','union-container','store-container','puang-room'
+        ].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        console.trace('battle.js 1137 mountain flex');
         document.getElementById('mountain-container').style.display = 'flex';
       }
 

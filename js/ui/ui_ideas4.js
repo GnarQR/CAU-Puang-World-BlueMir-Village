@@ -474,8 +474,6 @@ if (_origLL4) window.loadLeaderboard = async function(tab) {
       // 첫 공백 이후를 suffix로 (예: " / 100", " 💎", " 승")
       const suffix = spaceIdx !== -1? text.slice(spaceIdx) : '';
       if (n > 0 && suffix) {
-        // window.animateCount(e,0,n,900); 일단 오류 수정할 때까진 사용 X
-        // setTimeout(()=>{ e.textContent = n.toLocaleString() + suffix; }, 950);
         const dur = 900;
         const t0 = performance.now();
         (function step(now) {

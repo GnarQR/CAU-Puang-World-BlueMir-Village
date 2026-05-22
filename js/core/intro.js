@@ -29,7 +29,18 @@ window.checkResumeBattle = function() {
             if (exploreCont) exploreCont.style.display = 'none';
             window.initBattle(origin, bossId);
           }, 50);
-        } else {
+        } 
+        
+        else {
+          // ★ Fix: mountain 복구 시 모든 컨테이너 먼저 숨기기
+          ['mountain-container','game-container','cafeteria-container',
+           'library-container','lab-container','gym-container','clinic-container',
+           'lab2-container','festival-container','union-container',
+           'store-container','puang-room'
+          ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+          });
           window.initBattle(origin, bossId);
         }
       }
@@ -40,6 +51,7 @@ window.checkResumeBattle = function() {
 // ── 인트로 스킵 ──
 window.skipIntro = function() {
   document.getElementById('intro-overlay').classList.add('hidden');
+  // ★ Fix: 전투 복구 중이면 updateMapStats만 호출, game-container 표시는 스킵
   if (typeof updateMapStats === 'function') updateMapStats();
 };
 
@@ -197,8 +209,22 @@ window.finishVideo = function() {
 
   sessionStorage.setItem('introVideoPlayed', 'true');
 
-  const gameCont = document.getElementById('game-container');
-  if (gameCont) gameCont.style.display = 'flex';
+  // ★ Fix: game-container 열기 전 모든 컨테이너 숨기기
+  ['mountain-container','cafeteria-container','library-container',
+   'lab-container','gym-container','clinic-container','lab2-container',
+   'festival-container','union-container','store-container','puang-room',
+   'battle-container','explore-container'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.classList.remove('visible'); }
+  });
+
+  // ★ Fix: 전투 복구 중이면 game-container 표시 스킵 (checkResumeBattle이 처리)
+  const inBattle = localStorage.getItem('inBattle') === 'true';
+  if (!inBattle) {
+    const gameCont = document.getElementById('game-container');
+    if (gameCont) gameCont.style.display = 'flex';
+  }
 };
 
 // ── DOMContentLoaded: 초기화 ──
@@ -217,14 +243,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 인트로 오버레이 숨기기
     if (typeof window.skipIntro === 'function') window.skipIntro();
+    
+    const inBattle = localStorage.getItem('inBattle') === 'true';
 
-    // 영상 재생 여부 결정
-    if (sessionStorage.getItem('introVideoPlayed') !== 'true') {
-      const startOverlay = document.getElementById('video-start-overlay');
-      if (startOverlay) {
-        startOverlay.classList.remove('hidden');
-        startOverlay.style.display = 'flex';
-      } else {
+    // // ★ Fix: 전투 복구 중이면 영상/game-container 표시 스킵
+    if (!inBattle) {
+      if (sessionStorage.getItem('introVideoPlayed') !== 'true') {
+        const startOverlay = document.getElementById('video-start-overlay');
+        if (startOverlay) {
+          startOverlay.classList.remove('hidden');
+          startOverlay.style.display = 'flex';
+        }
+      } 
+      else {
         document.getElementById('game-container').style.display = 'flex';
       }
     }

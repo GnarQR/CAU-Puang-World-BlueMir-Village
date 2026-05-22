@@ -21,7 +21,7 @@ window.MONSTERS = {
     name:      '학점귀신',
     level:     7,
     hp:        60,
-    attackMin: 1, attackMax: 12,
+    attackMin: 1, attackMax: 8,   // 12 → 8 (평균 4.5)
     reward:    5,
     image:     'images/monster/normal/F_ghost.png',
     weakness:  '집중력 속성',
@@ -29,13 +29,12 @@ window.MONSTERS = {
     isBoss:    false,
     spawnRate: 40,
   },
-  // ★ 신규 일반 몹
   assignment_demon: {
     id:        'assignment_demon',
     name:      '과제악마',
     level:     9,
     hp:        75,
-    attackMin: 2, attackMax: 14,
+    attackMin: 2, attackMax: 10,  // 14 → 10 (평균 6)
     reward:    7,
     image:     'images/monster/normal/F_ghost.png',
     weakness:  '시간 관리 속성',
@@ -48,7 +47,7 @@ window.MONSTERS = {
     name:      '수강신청봇',
     level:     11,
     hp:        50,
-    attackMin: 3, attackMax: 16,
+    attackMin: 3, attackMax: 9,   // 16 → 9 (평균 6)
     reward:    9,
     image:     'images/monster/normal/F_ghost.png',
     weakness:  '빠른 손가락 속성',
@@ -61,7 +60,7 @@ window.MONSTERS = {
     name:      '족보귀신',
     level:     13,
     hp:        90,
-    attackMin: 4, attackMax: 15,
+    attackMin: 3, attackMax: 11,  // 4~15 → 3~11 (평균 7)
     reward:    11,
     image:     'images/monster/normal/F_ghost.png',
     weakness:  '족보 수집 속성',
@@ -74,7 +73,7 @@ window.MONSTERS = {
     name:      '졸음유령',
     level:     5,
     hp:        40,
-    attackMin: 1, attackMax: 8,
+    attackMin: 1, attackMax: 6,   // 8 → 6 (평균 3.5, 입문 몹)
     reward:    4,
     image:     'images/monster/normal/F_ghost.png',
     weakness:  '카페인 속성',
@@ -91,7 +90,7 @@ window.BOSSES = {
     name:      '데드라인 악령',
     level:     15,
     hp:        120,
-    attackMin: 3, attackMax: 18,
+    attackMin: 3, attackMax: 10,  // 18 → 10 (평균 6.5, 입문 보스)
     reward:    20,
     image:     'images/monster/boss/deadline_ghost.png',
     weakness:  '시간 관리 속성',
@@ -103,20 +102,19 @@ window.BOSSES = {
     name:      '족보없는 교수',
     level:     20,
     hp:        200,
-    attackMin: 5, attackMax: 22,
+    attackMin: 5, attackMax: 14,  // 22 → 14 (평균 9.5)
     reward:    35,
     image:     'images/monster/boss/random_professor.png',
     weakness:  '족보 수집 속성',
     intro:     '족보없는 교수가 등장했다!',
     isBoss:    true,
   },
-  // ★ 신규 보스
   registrar: {
     id:        'registrar',
     name:      '행정처 망령',
     level:     18,
     hp:        160,
-    attackMin: 4, attackMax: 20,
+    attackMin: 4, attackMax: 12,  // 20 → 12 (평균 8, 중간 난이도)
     reward:    28,
     image:     'images/monster/boss/deadline_ghost.png',
     weakness:  '서류 제출 속성',
