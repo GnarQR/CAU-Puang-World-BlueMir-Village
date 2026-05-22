@@ -1757,6 +1757,57 @@
   <div id="toast-container" style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
   <div id="place-transition-overlay" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:8000;transition:opacity 0.3s ease;"></div>
 
+
+  <script>
+  // ── 장소 배경 제어 (body 클래스 방식) ──
+  const _PLACE_BG_CLASSES = [
+    'place-dormitory','place-cafeteria','place-library','place-lab',
+    'place-gym','place-clinic','place-lab2','place-festival',
+    'place-union','place-store','place-mountain','place-battle',
+    'place-explore','place-bluedragonlake'
+  ];
+  window.setPlaceBg = function(id) {
+    _PLACE_BG_CLASSES.forEach(c => document.body.classList.remove(c));
+    if (id) document.body.classList.add('place-' + id);
+  };
+  window.clearPlaceBg = function() {
+    _PLACE_BG_CLASSES.forEach(c => document.body.classList.remove(c));
+  };
+
+  // enterPlace 후킹 — 원본 로드 후 덮어씌우기
+  document.addEventListener('DOMContentLoaded', function() {
+    const _origEnterPlace = window.enterPlace;
+    window.enterPlace = function(placeId) {
+      const map = {
+        dormitory: 'dormitory', cafeteria: 'cafeteria', library: 'library',
+        lab: 'lab', clinic: 'clinic', lab2: 'lab2', festival: 'festival',
+        union: 'union', mountain: 'mountain', gym: 'gym', store: 'store',
+        battle: 'explore', bluedragonlake: 'bluedragonlake'
+      };
+      if (map[placeId]) window.setPlaceBg(map[placeId]);
+      if (_origEnterPlace) _origEnterPlace(placeId);
+    };
+
+    // returnToGame 후킹
+    const _origReturnToGame = window.returnToGame;
+    window.returnToGame = function() {
+      window.clearPlaceBg();
+      if (_origReturnToGame) _origReturnToGame();
+    };
+
+    // 각 leaveXxx 후킹
+    ['leaveCafeteria','leaveLibrary','leaveLab','leaveGym','leaveClinic',
+     'leaveLab2','leaveFestival','leaveUnion','leaveMountain','leaveStore',
+     'leaveRoom','leaveBluedragonLake'].forEach(function(fn) {
+      const orig = window[fn];
+      window[fn] = function() {
+        window.clearPlaceBg();
+        if (orig) orig.apply(this, arguments);
+      };
+    });
+  });
+  </script>
+
 </body>
 
 </html>

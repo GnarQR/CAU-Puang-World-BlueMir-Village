@@ -454,6 +454,7 @@ window.initBattle = function(origin = 'map', bossId = null) {
   // 1. 전역 변수 설정
   battleOrigin = origin;
   window.battleOrigin = origin; // ★ Fix #5: window에도 동기화
+  if (typeof window.setPlaceBg==='function') window.setPlaceBg(origin==='mountain'?'mountain':'battle');
   battleBusy = false;
   battlePlayerHp    = playerStats.hp;
   battlePlayerMaxHp = playerStats.maxHp;
@@ -1233,6 +1234,7 @@ window.doCmd = async function(cmd) {
           if (el) el.style.display = 'none';
         });
         document.getElementById('mountain-container').style.display = 'flex';
+        if (typeof window.setPlaceBg==='function') window.setPlaceBg('mountain');
       }
 
       else {  //그 외에는 일반 탐험 화면으로 복귀

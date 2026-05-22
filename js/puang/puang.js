@@ -430,6 +430,7 @@ window.enterRoom = function() {
 // ── 방 퇴장 ──
 // 푸앙이 방을 닫고 맵으로 복귀
 window.leaveRoom = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   // 1. 푸앙이 방 컨테이너(puang-room)를 완전히 숨깁니다.
   const roomCont = document.getElementById('puang-room');
   if (roomCont) {

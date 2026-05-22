@@ -6412,3 +6412,28 @@ body.light-theme .onboard-tip{background:#f8faff;border-color:#1d4ed8;}
 body.light-theme .onboard-msg{color:#1e3a8a;}
 body.light-theme .onboard-arrow{border-color:#1d4ed8;}
 body.light-theme .explore-hud-floor{background:rgba(240,244,255,.9);border-color:#dc2626;color:#dc2626;}
+
+/* ── 장소별 body 배경 이미지 ── */
+body { transition: background-image 0.4s ease; }
+
+body[class*="place-"] {
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-attachment: fixed !important;
+}
+
+body.place-dormitory      { background-image: url('../images/background/bluemirHall.png') !important; }
+body.place-cafeteria      { background-image: url('../images/background/cafeteria.png') !important; }
+body.place-library        { background-image: url('../images/background/library.png') !important; }
+body.place-lab            { background-image: url('../images/background/institute.png') !important; }
+body.place-gym            { background-image: url('../images/background/gym.png') !important; }
+body.place-clinic         { background-image: url('../images/background/Hospital.png') !important; }
+body.place-lab2           { background-image: url('../images/background/Lab.png') !important; }
+body.place-festival       { background-image: url('../images/background/concerthall.png') !important; }
+body.place-union          { background-image: url('../images/background/univClass.png') !important; }
+body.place-store          { background-image: url('../images/background/itemstore.png') !important; }
+body.place-mountain       { background-image: url('../images/background/moutain.png') !important; }
+body.place-battle,
+body.place-explore        { background-image: url('../images/background/InnerSpace.png') !important; }
+body.place-bluedragonlake { background-image: url('../images/background/Lake_.png') !important; }

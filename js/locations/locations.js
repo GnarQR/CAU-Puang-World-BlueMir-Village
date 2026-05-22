@@ -27,6 +27,7 @@ window.enterMountain = function() {
 
 // 청룡산 퇴장
 window.leaveMountain = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   document.getElementById('mountain-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -91,6 +92,7 @@ window.enterCafeteria = function() {
 }
 
 window.leaveCafeteria = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   document.getElementById('cafeteria-container').classList.remove('visible');
   document.getElementById('cafeteria-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
@@ -227,6 +229,7 @@ window.enterLibrary = function() {
 }
 
 window.leaveLibrary = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   if (libTypingTimer) { clearInterval(libTypingTimer); libTypingTimer = null; }
   libBusy = false;
   document.getElementById('library-container').classList.remove('visible');
@@ -431,6 +434,7 @@ window.enterLab = function() {
 
 // 연구실 퇴장
 window.leaveLab = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   // 310관 컨테이너를 숨김
   const labCont = document.getElementById('lab-container');
   if (labCont) {
@@ -665,6 +669,7 @@ window.enterGym = function() {
 }
 
 window.leaveGym = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   const gymEl = document.getElementById('gym-container');
   gymEl.classList.remove('visible');
   gymEl.style.display = 'none';
@@ -801,6 +806,7 @@ window.enterClinic = function() {
 
 // 의무실 퇴장
 window.leaveClinic = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   const clinicEl2 = document.getElementById('clinic-container');
   clinicEl2.style.display = 'none';
   clinicEl2.classList.remove('visible');
@@ -884,6 +890,7 @@ window.enterLab2 = function() {
 }
 
 window.leaveLab2 = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   document.getElementById('lab2-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
 }
@@ -999,6 +1006,7 @@ window.enterFestival = function() {
 
 // 축제 퇴장
 window.leaveFestival = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   const festEl2 = document.getElementById('festival-container');
   festEl2.style.display = 'none';
   festEl2.classList.remove('visible');
@@ -1193,6 +1201,7 @@ window.enterUnion = function() {
 }
 
 window.leaveUnion = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   document.getElementById('union-container').classList.remove('visible');
   document.getElementById('union-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
@@ -1341,6 +1350,7 @@ window.enterStore = function() {
 }
 
 window.leaveStore = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   document.getElementById('store-container').classList.remove('visible');
   document.getElementById('store-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
@@ -2789,10 +2799,12 @@ window.enterBluedragonLake = function() {
 
   const lakeCont = document.getElementById('bluedragonlake-container');
   if (lakeCont) lakeCont.style.display = 'flex';
+  if (typeof window.setPlaceBg==='function') window.setPlaceBg('bluedragonlake');
   _initLake();
 };
 
 window.leaveBluedragonLake = function() {
+  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   const el = document.getElementById('bluedragonlake-container');
   if (el) el.style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';

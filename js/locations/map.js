@@ -76,6 +76,21 @@ const placeInfo = {
   gym:            { label: '체육관',        desc: '훈련으로 최대 HP/SP 영구 증가!',                   locked: false },
 };
 
+// ── body 배경 테마 제어 ──
+const PLACE_BG_CLASSES = [
+  'place-dormitory','place-cafeteria','place-library','place-lab',
+  'place-gym','place-clinic','place-lab2','place-festival',
+  'place-union','place-store','place-mountain','place-battle',
+  'place-explore','place-bluedragonlake'
+];
+window.setPlaceBg = function(id) {
+  PLACE_BG_CLASSES.forEach(c => document.body.classList.remove(c));
+  if (id) document.body.classList.add('place-' + id);
+};
+window.clearPlaceBg = function() {
+  PLACE_BG_CLASSES.forEach(c => document.body.classList.remove(c));
+};
+
 // ── 장소 진입 함수 ──
 // 맵 버튼 클릭 시 호출, 잠금 여부 확인 후 해당 화면으로 전환
 window.enterPlace = function(placeId) {
@@ -117,6 +132,7 @@ window.enterPlace = function(placeId) {
   // ★ Fix #3: setTimeout 콜백 내 return은 outer 함수를 종료하지 못하므로
   //   블록 바깥에 return을 추가해 아래 if문들이 연달아 실행되는 버그 수정
   if (placeId === 'battle') {
+    window.setPlaceBg('explore');
     showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 균열 속으로 뛰어듭니다...');
     setTimeout(() => {
       // 탐험 컨테이너 표시
@@ -130,17 +146,17 @@ window.enterPlace = function(placeId) {
   }
 
   // 각 장소 진입 함수 연결
-  if (placeId === 'dormitory') { enterRoom();       return; }
-  if (placeId === 'cafeteria') { enterCafeteria();  return; }
-  if (placeId === 'library')   { enterLibrary();    return; }
-  if (placeId === 'lab')       { enterLab();        return; }
-  if (placeId === 'clinic')    { enterClinic();     return; }
-  if (placeId === 'lab2')      { enterLab2();       return; }
-  if (placeId === 'festival')  { enterFestival();   return; }
-  if (placeId === 'union')     { enterUnion();      return; }
-  if (placeId === 'mountain')  { enterMountain();   return; }
-  if (placeId === 'gym')       { enterGym();        return; }
-  if (placeId === 'store')     { enterStore();      return; }
+  if (placeId === 'dormitory') { window.setPlaceBg('dormitory'); enterRoom();      return; }
+  if (placeId === 'cafeteria') { window.setPlaceBg('cafeteria'); enterCafeteria(); return; }
+  if (placeId === 'library')   { window.setPlaceBg('library');   enterLibrary();   return; }
+  if (placeId === 'lab')       { window.setPlaceBg('lab');       enterLab();       return; }
+  if (placeId === 'clinic')    { window.setPlaceBg('clinic');    enterClinic();    return; }
+  if (placeId === 'lab2')      { window.setPlaceBg('lab2');      enterLab2();      return; }
+  if (placeId === 'festival')  { window.setPlaceBg('festival');  enterFestival();  return; }
+  if (placeId === 'union')     { window.setPlaceBg('union');     enterUnion();     return; }
+  if (placeId === 'mountain')  { window.setPlaceBg('mountain');  enterMountain();  return; }
+  if (placeId === 'gym')       { window.setPlaceBg('gym');       enterGym();       return; }
+  if (placeId === 'store')     { window.setPlaceBg('store');     enterStore();     return; }
 
   // 미구현 장소는 툴팁으로 안내
   showSystemMsgOnMap('[' + info.label + '] ' + info.desc + ' (추후 구현 예정)');
@@ -161,6 +177,7 @@ function showSystemMsgOnMap(msg) {
 // ── 맵으로 복귀 ──
 // 전투/장소 화면에서 맵으로 돌아올 때 공통으로 사용
 window.returnToGame = function() {
+  window.clearPlaceBg();
   // 1. 모든 전투 화면 정리
   const battleCont = document.getElementById('battle-container');
   if (battleCont) {
