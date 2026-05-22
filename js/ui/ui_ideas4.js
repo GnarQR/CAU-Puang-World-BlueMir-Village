@@ -463,10 +463,30 @@ if(_origRC4) window.renderCompendium=function(){
 // 14. 리더보드 숫자 롤링
 // ================================================================
 
-const _origLL4=window.loadLeaderboard;
-if(_origLL4) window.loadLeaderboard=async function(tab){
+const _origLL4 = window.loadLeaderboard;
+if (_origLL4) window.loadLeaderboard = async function(tab) {
   await _origLL4(tab);
-  setTimeout(()=>{ document.querySelectorAll('.lb-val').forEach(e=>{ const n=parseInt(e.textContent.replace(/[^0-9]/g,''))||0; if(n>0) window.animateCount(e,0,n,900); }); },200);
+  setTimeout(()=>{ 
+    document.querySelectorAll('.lb-val').forEach(e => { 
+      const text = e.textContent.trim();
+      const n = parseInt(text) || 0;
+      const spaceIdx = text.indexOf(' ');
+      // 첫 공백 이후를 suffix로 (예: " / 100", " 💎", " 승")
+      const suffix = spaceIdx !== -1? text.slice(spaceIdx) : '';
+      if (n > 0 && suffix) {
+        // window.animateCount(e,0,n,900); 일단 오류 수정할 때까진 사용 X
+        // setTimeout(()=>{ e.textContent = n.toLocaleString() + suffix; }, 950);
+        const dur = 900;
+        const t0 = performance.now();
+        (function step(now) {
+          const p = Math.min((now - t0) / dur, 1);
+          const v = Math.round(n * (1 - Math.pow(1 - p, 3)));
+          e.textContent = v + suffix;  // 매 프레임마다 suffix 포함
+          if (p < 1) requestAnimationFrame(step);
+          })(t0);
+      }
+    }); 
+  },200);
 };
 
 // ================================================================

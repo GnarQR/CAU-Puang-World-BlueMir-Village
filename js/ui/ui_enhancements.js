@@ -797,7 +797,7 @@ function renderProfile() {
     { icon:'💎', label:'데이터',   val: playerStats.data + '개' },
     { icon:'⚔️', label:'전투 승리', val: (playerStats._battleWins || 0) + '회' },
     { icon:'🗺️', label:'탐험 수',  val: (playerStats._explorationCount || 0) + '회' },
-    { icon:'🐉', label:'호감도',   val: puangState.favorability + '/100' },
+    { icon:'🐉', label:'호감도',   val: puangState.favorability + '/ 100' },  // 랭킹 호감도 '/' 표시 안 되는 것 UI 수정 완료
   ].map(s => `
     <div class="profile-stat-card">
       <div class="profile-stat-icon">${s.icon}</div>
@@ -1530,7 +1530,7 @@ window.loadLeaderboard = async function loadLeaderboard(tab) {
       const name = d.playerStats?.name || '탐험가';
       let val;
       if (tab === 'data')   val = (d.playerStats?.data || 0) + ' 💎';
-      if (tab === 'favor')  val = (d.puangState?.favorability || 0) + ' / 100';
+      if (tab === 'favor')  val = Number(d.puangState?.favorability || 0) + ' / 100';  // 호감도 랭킹 '/' 표시 안 되는 것 수정 완료
       if (tab === 'battle') val = (d.playerStats?._battleWins || 0) + ' 승';
       rows.push({ name, val });
     });
@@ -1541,7 +1541,7 @@ window.loadLeaderboard = async function loadLeaderboard(tab) {
     let myVal;
     if (myData) {
       if (tab === 'data')   myVal = (myData.playerStats?.data || 0) + ' 💎';
-      if (tab === 'favor')  myVal = (myData.puangState?.favorability || 0) + ' / 100';
+      if (tab === 'favor')  myVal = Number(myData.puangState?.favorability || 0) + ' / 100';
       if (tab === 'battle') myVal = (myData.playerStats?._battleWins || 0) + ' 승';
     }
 
@@ -1660,7 +1660,7 @@ window.generateShareCard = function() {
     ['💎 데이터', (playerStats.data || 0) + '개'],
     ['⚔️ 전투승리', (playerStats._battleWins || 0) + '회'],
     ['🗺️ 탐험수', (playerStats._explorationCount || 0) + '회'],
-    ['🐉 호감도', (puangState.favorability) + '/100'],
+    ['🐉 호감도', (puangState.favorability) + '/ 100'],  // 호감도 랭킹 UI '/' 표시 안 되는 것 수정 완료
   ];
   ctx.font = '13px monospace';
   stats.forEach(([label, val], i) => {
