@@ -1805,6 +1805,13 @@
         if (orig) orig.apply(this, arguments);
       };
     });
+
+    // 이면세계 탈출 후킹 (confirmExitExploration은 returnToGame 안 거침)
+    const _origConfirmExit = window.confirmExitExploration;
+    window.confirmExitExploration = function() {
+      window.clearPlaceBg();
+      if (_origConfirmExit) _origConfirmExit.apply(this, arguments);
+    };
   });
   </script>
 
