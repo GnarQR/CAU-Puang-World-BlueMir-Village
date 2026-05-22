@@ -155,7 +155,17 @@
     </div>
 
     <div class="map-bg" id="map-bg">  <!-- 맵 배경 + 장소 버튼 -->
-      <img class="map-image" src="images/map/cau_map.png" />
+      <img class="map-image" id="map-season-img" src="images/cau_map_spring.png" />
+      <!-- 계절 배지 -->
+      <div id="season-badge" style="
+        position:absolute; top:12px; right:12px;
+        background:rgba(0,0,0,0.55); color:#fff;
+        font-size:13px; font-weight:700; letter-spacing:0.5px;
+        padding:5px 12px; border-radius:20px;
+        backdrop-filter:blur(6px);
+        opacity:0; transition:opacity 0.5s ease;
+        z-index:10; pointer-events:none;
+      "></div>
       <div class="map-info-group">
         <div id="datetime-display" class="map-datetime"></div>
         <div class="map-favor-mini">

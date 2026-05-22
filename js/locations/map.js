@@ -3,6 +3,59 @@
 // 장소 데이터, 장소 진입 함수, 툴팁, 날짜/시간 표시
 // ================================================================
 
+// ── 계절별 맵 이미지 ──
+const SEASON_MAPS = {
+  spring: 'images/cau_map_spring.png',  // 3~5월
+  summer: 'images/cau_map_summer.png',  // 6~8월
+  autumn: 'images/cau_map_autmn.png',   // 9~11월 (파일명 오타 그대로 유지)
+  winter: 'images/cau_map_winter.png',  // 12~2월
+};
+
+const SEASON_LABELS = {
+  spring: '🌸 봄',
+  summer: '🌿 여름',
+  autumn: '🍂 가을',
+  winter: '❄️ 겨울',
+};
+
+function getCurrentSeason() {
+  const month = new Date().getMonth() + 1; // 1~12
+  if (month >= 3 && month <= 5)  return 'spring';
+  if (month >= 6 && month <= 8)  return 'summer';
+  if (month >= 9 && month <= 11) return 'autumn';
+  return 'winter'; // 12, 1, 2
+}
+
+function updateSeasonMap() {
+  const season = getCurrentSeason();
+  const img = document.getElementById('map-season-img');
+  if (!img) return;
+
+  // 이미 같은 계절이면 스킵
+  if (img.getAttribute('data-season') === season) return;
+  img.setAttribute('data-season', season);
+
+  // 페이드 아웃 → 이미지 교체 → 페이드 인
+  img.style.transition = 'opacity 0.8s ease';
+  img.style.opacity = '0';
+
+  setTimeout(() => {
+    img.src = SEASON_MAPS[season];
+    img.onerror = () => {
+      img.src = 'images/map/cau_map.png'; // 이미지 없으면 기본값 폴백
+    };
+    img.style.opacity = '1';
+
+    // 계절 배지 표시 (있으면)
+    const badge = document.getElementById('season-badge');
+    if (badge) {
+      badge.textContent = SEASON_LABELS[season];
+      badge.style.opacity = '1';
+      setTimeout(() => { badge.style.opacity = '0'; }, 3000);
+    }
+  }, 800);
+}
+
 // ── 맵 장소 데이터 ──
 // 각 장소의 라벨, 설명, 잠금 여부 정의
 // enterPlace()에서 참조하고 툴팁 호버에도 사용됨
@@ -177,6 +230,9 @@ function updateDatetime() {
 // 맵 버튼에 마우스를 올리면 장소 설명 툴팁 표시
 // ★ Fix #14: 모바일(touch) 지원 추가 — touchstart로 툴팁 표시, touchend로 숨김
 document.addEventListener('DOMContentLoaded', () => {
+    // 계절 맵 적용 (페이지 로드 시)
+    updateSeasonMap();
+
     // 1분마다 시간 갱신
     updateDatetime();
     setInterval(updateDatetime, 60000);
