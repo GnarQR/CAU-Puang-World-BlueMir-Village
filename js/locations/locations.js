@@ -17,7 +17,6 @@ window.enterMountain = function() {
     prevBattle.style.display = 'none';
     prevBattle.classList.remove('visible');
   }
-  console.trace('enterMountain 호출됨');
   document.getElementById('mountain-container').style.display = 'flex';
   document.getElementById('mtn-hp-val').textContent = playerStats.hp;
   // ★ BugFix #20: maxHp 표시 엘리먼트도 갱신 — 원본에 hp만 갱신하던 누락 수정

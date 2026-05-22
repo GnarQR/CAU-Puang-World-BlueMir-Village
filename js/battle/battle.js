@@ -1134,7 +1134,6 @@ window.doCmd = async function(cmd) {
           const el = document.getElementById(id);
           if (el) el.style.display = 'none';
         });
-        console.trace('battle.js 1137 mountain flex');
         document.getElementById('mountain-container').style.display = 'flex';
       }
 
