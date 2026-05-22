@@ -433,6 +433,11 @@ window.initBattle = function(origin = 'map', bossId = null) {
     if (savedSp !== null) {
       battlePlayerSp = parseInt(savedSp);
     }
+    // ★ BugFix #14: MaxSp도 복구 — 저장된 값이 있으면 사용, 없으면 playerStats.maxSp 사용
+    const savedMaxSp = localStorage.getItem('battlePlayerMaxSp');
+    if (savedMaxSp !== null) {
+      battlePlayerMaxSp = parseInt(savedMaxSp);
+    }
   } 
   
   else {  // 새로 시작하는 전투일 때만 초기화
@@ -443,6 +448,9 @@ window.initBattle = function(origin = 'map', bossId = null) {
 
   // ★ Fix #5: enemyMaxHp 이중 초기화 제거 — 위(412줄)에서 이미 설정됨. 중복 할당 시 복구된 enemyHp와 비율 불일치 발생
   battlePlayerMaxHp = playerStats.maxHp;
+  // ★ BugFix #14: battlePlayerMaxSp도 항상 playerStats.maxSp로 동기화
+  //   복구 경로에서 battlePlayerSp만 복구하고 MaxSp는 덮어쓰지 않던 문제 수정
+  battlePlayerMaxSp = playerStats.maxSp;
 
   // 현재 전투 상태를 localStorage에 동기화
   localStorage.setItem('inBattle', 'true');
@@ -450,6 +458,8 @@ window.initBattle = function(origin = 'map', bossId = null) {
   localStorage.setItem('battleEnemyHp', enemyHp);
   localStorage.setItem('battlePlayerHp', battlePlayerHp);
   localStorage.setItem('battlePlayerSp', battlePlayerSp); // ★ Fix #4: SP도 저장 (새로고침 복구 시 SP 복원)
+  // ★ BugFix #14: MaxSp도 저장 — 복구 시 SP 바 비율 정확하게 표시
+  localStorage.setItem('battlePlayerMaxSp', battlePlayerMaxSp);
   localStorage.setItem('battleTurn', battleTurn);
   if (bossId) localStorage.setItem('battleBossId', bossId);  // ★ Fix 2: 'bossId' → 'battleBossId' (checkResumeBattle과 키 일치)
   // ★ Fix 5: 일반 몬스터 ID 저장 — 새로고침 복구 시 같은 몬스터 유지
@@ -678,6 +688,8 @@ function clearBattleState() {
   localStorage.removeItem('battleMonsterId'); // ★ Fix 5: 일반 몬스터 ID도 삭제
   localStorage.removeItem('battleEnemyHp');
   localStorage.removeItem('battlePlayerHp');
+  localStorage.removeItem('battlePlayerSp');
+  localStorage.removeItem('battlePlayerMaxSp'); // ★ BugFix #14: MaxSp도 정리
   localStorage.removeItem('battleTurn');
   // ★ BugFix #30: 전투 종료 시 버프 상태도 초기화 (탈출·승리·패배 모든 경로에서 보장)
   buffActive = false;

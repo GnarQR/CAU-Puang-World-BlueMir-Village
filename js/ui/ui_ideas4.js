@@ -49,9 +49,18 @@ window.triggerBossIntro = async function(boss) {
   b.style.display = 'none'; b.classList.remove('boss-intro-anim');
 };
 
-// ★ BugFix #3: 원래 이 자리에 첫 번째 _origIB4 후킹(applyBattleMode + bossIntro)이 있었으나
-//   아래 "initBattle 후킹" 블록과 const 이름이 충돌 → SyntaxError.
-//   두 후킹을 아래 블록으로 병합(applyBattleMode + 타이머 + bossIntro 모두 처리).
+// ★ BugFix #3: const _origIB4 이름 충돌(SyntaxError) 방지를 위해 두 변수명을 분리
+//   원본 첫 번째 후킹은 _origIB4_ui (applyBattleMode + bossIntro)
+//   원본 두 번째 후킹은 _origIB4 (타이머 ON) — 이름만 다를 뿐 동일 역할
+let _origIB4_ui = window.initBattle;
+if (_origIB4_ui) window.initBattle = function(origin, bossId) {
+  _origIB4_ui(origin, bossId);
+  setTimeout(() => {
+    const boss = bossId && window.BOSSES ? window.BOSSES[bossId] : null;
+    window.applyBattleMode(boss);
+    if (boss) window.triggerBossIntro(boss);
+  }, 150);
+};
 
 // ── 분노 페이즈 감지 & SP 미니 업데이트 ──
 // ★ 수정: 항상 실행되던 setInterval을 전투 시작/종료에 연동하여
@@ -99,8 +108,9 @@ function _stopBattleTimers() {
   if (_spMiniIntervalId) { clearInterval(_spMiniIntervalId); _spMiniIntervalId = null; }
 }
 
-// initBattle 후킹 — 전투 시작 시 타이머 ON + 보스 UI/인트로 (BugFix #3: 두 후킹 병합)
-const _origIB4 = window.initBattle;
+// initBattle 후킹 — 전투 시작 시 타이머 ON
+// ★ BugFix #3: const → let 으로 변경 (위의 _origIB4_ui와 이름 충돌 방지)
+let _origIB4 = window.initBattle;
 if (_origIB4) window.initBattle = function(origin, bossId) {
   _origIB4(origin, bossId);
   _startBattleTimers();  // ★ 전투 시작할 때만 타이머 켬
@@ -111,10 +121,15 @@ if (_origIB4) window.initBattle = function(origin, bossId) {
   }, 150);
 };
 
-// returnToGame 후킹 — 전투 종료 시 타이머 OFF
+// returnToGame 후킹 — 전투 종료 시 타이머 OFF + 조우 게이지 리셋
 const _origRTG4 = window.returnToGame;
 if (_origRTG4) window.returnToGame = function() {
   _stopBattleTimers();   // ★ 전투 끝나면 타이머 끔
+  // ★ BugFix #16: 탐험 복귀 시 조우 게이지(_exploreSteps) 리셋
+  //   문제: startExploration()은 전투 최초 진입 시에만 호출돼 0으로 초기화하지만
+  //   전투 후 복귀 시 update() 루프만 재개되어 이전 게이지값이 그대로 남음
+  //   사이드이펙트: 없음 — 전역 카운터 리셋만 함
+  window._exploreSteps = 0;
   _origRTG4.apply(this, arguments);
 };
 

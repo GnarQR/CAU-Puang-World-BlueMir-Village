@@ -172,6 +172,20 @@ async function loadAllDataFromServer() {
     _prevData = playerStats.data;
     if (typeof updateMapStats === 'function') updateMapStats();
 
+    // ★ BugFix #11: Firebase 로드 완료 후 placeInfo.bluedragonlake.locked 재설정
+    //   문제: locations.js 파일 로드 시 1회만 실행 → 다른 기기에서 lakeUnlocked가
+    //   Firebase로 복원돼도 placeInfo.locked가 true로 고정될 수 있음
+    //   사이드이펙트: 없음 — placeInfo가 정의된 경우에만 실행
+    if (typeof placeInfo !== 'undefined' && placeInfo.bluedragonlake) {
+      const isUnlocked = s.lakeUnlocked === true || localStorage.getItem('lakeUnlocked') === 'true';
+      placeInfo.bluedragonlake.locked = !isUnlocked;
+      // 맵 버튼 locked 클래스도 동기화
+      if (isUnlocked) {
+        const lakeBtn = document.querySelector('.map-spot[onclick*="bluedragonlake"]');
+        if (lakeBtn) lakeBtn.classList.remove('locked');
+      }
+    }
+
   } catch (e) {
     serverDataLoaded = true;
     // ★ Fix 구멍3: 로드 실패해도 예약된 저장 처리 (로컬 데이터라도 보존)

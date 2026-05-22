@@ -19,6 +19,10 @@ window.enterMountain = function() {
   }
   document.getElementById('mountain-container').style.display = 'flex';
   document.getElementById('mtn-hp-val').textContent = playerStats.hp;
+  // ★ BugFix #20: maxHp 표시 엘리먼트도 갱신 — 원본에 hp만 갱신하던 누락 수정
+  //   사이드이펙트: 없음 — 엘리먼트 없으면 조용히 무시
+  const mtnHpMax = document.getElementById('mtn-hp-max');
+  if (mtnHpMax) mtnHpMax.textContent = playerStats.maxHp;
 }
 
 // 청룡산 퇴장
@@ -2475,7 +2479,14 @@ window.joinUnionClub = function(clubId) {
   club.apply();
   joined.push(clubId);
   localStorage.setItem('unionJoinedClubs', JSON.stringify(joined));
-  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  // ★ BugFix #12: 동아리 가입은 1회성 영구 이벤트이므로 debouncedSave(1.5초 지연) 대신
+  //   즉시 Firebase 저장. 지연 중 새로고침 시 패시브 적용은 됐지만 서버 저장 안 된 상태 방지.
+  //   사이드이펙트: Firebase write 1회 즉시 발생 — 가입은 게임 전체에서 최대 1회라 비용 무시 가능.
+  if (typeof window.saveAllDataToServer === 'function') {
+    window.saveAllDataToServer();
+  } else if (typeof window.syncAndSave === 'function') {
+    window.syncAndSave(); // fallback
+  }
   document.getElementById('union-data-val').textContent = playerStats.data + ' 💎';
   addUnionLog('[🎓 동아리 가입!] ' + club.icon + ' ' + club.name + ' — ' + club.buff + ' · 💎 -' + club.cost, 'union-log-ok');
   updateUnionClubUI();
@@ -2615,15 +2626,23 @@ window.buyCart = function() {
   // ★ BugFix #4: 기존에 hp/sp_potion, full_potion은 즉시 회복만 하고 인벤토리에 추가하지 않아
   //   단일 구매(buyStore)와 동작 불일치. inventory에 추가하도록 통일.
   //   origBuy 변수는 실제로 사용되지 않았으므로 제거(사이드이펙트 없음).
+  //   원본 즉시 회복 로직은 주석으로 보존 ↓
   for (const id of storeCart) {
+    const origBuy = _origBuyStore; // 원본 선언 보존 (미사용 변수였으나 원본 코드 유지)
     // 재고 차감
     stock[id] = (stock[id] || 0) - 1;
+    // 원본 효과 직접 적용 코드 (주석으로 보존):
+    // if      (id === 'hp_potion')   { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); }
+    // else if (id === 'sp_potion')   { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); }
+    // else if (id === 'full_potion') { playerStats.hp = playerStats.maxHp; playerStats.sp = playerStats.maxSp; }
+    // else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost', name: STORE_ITEMS[id].name, icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
+    // else if (id === 'shield')      { inventory.push({ id: 'shield',    name: STORE_ITEMS[id].name, icon: '🛡️', desc: '다음 전투 피해 -50%'  }); saveInventory(); }
     // 효과 적용 — buyStore와 동일한 방식(인벤토리 추가)으로 통일
-    if      (id === 'hp_potion')   { inventory.push({ id: 'hp_potion',   name: STORE_ITEMS[id]?.name || 'HP 포션',    icon: '🧃', desc: 'HP +30 회복' });         saveInventory(); }
-    else if (id === 'sp_potion')   { inventory.push({ id: 'sp_potion',   name: STORE_ITEMS[id]?.name || 'SP 포션',    icon: '💙', desc: 'SP +20 회복' });         saveInventory(); }
-    else if (id === 'full_potion') { inventory.push({ id: 'full_potion', name: STORE_ITEMS[id]?.name || '풀 회복 포션', icon: '✨', desc: 'HP+SP 완전 회복' }); saveInventory(); }
+    if      (id === 'hp_potion')   { inventory.push({ id: 'hp_potion',   name: STORE_ITEMS[id]?.name || 'HP 포션',      icon: '🧃', desc: 'HP +30 회복' });           saveInventory(); }
+    else if (id === 'sp_potion')   { inventory.push({ id: 'sp_potion',   name: STORE_ITEMS[id]?.name || 'SP 포션',      icon: '💙', desc: 'SP +20 회복' });           saveInventory(); }
+    else if (id === 'full_potion') { inventory.push({ id: 'full_potion', name: STORE_ITEMS[id]?.name || '풀 회복 포션', icon: '✨', desc: 'HP+SP 완전 회복' });       saveInventory(); }
     else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost',   name: STORE_ITEMS[id]?.name || '데미지 부스터', icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
-    else if (id === 'shield')      { inventory.push({ id: 'shield',      name: STORE_ITEMS[id]?.name || '방어막',      icon: '🛡️', desc: '다음 전투 피해 -50%'  }); saveInventory(); }
+    else if (id === 'shield')      { inventory.push({ id: 'shield',      name: STORE_ITEMS[id]?.name || '방어막',        icon: '🛡️', desc: '다음 전투 피해 -50%' });  saveInventory(); }
   }
   saveStoreStock(stock);
   storeCart = [];
@@ -2649,6 +2668,10 @@ function updateStoreCartUI() {
 
 // 신상품 알림: 주 1회 새 아이템 입고
 // ★ BugFix #18: id 필드를 STORE_ITEMS 키와 일치시킴
+// 원본 배열 (id 없어 buyStore 불가 — 주석으로 보존):
+// { name: '기억력 포션', icon: '🧠', cost: 10, desc: '도서관 정답률 +20% (5분)' },
+// { name: '투명 망토',   icon: '🫥', cost: 18, desc: '이면세계 몬스터 조우율 -30%' },
+// { name: '청룡 부적',   icon: '🧧', cost: 12, desc: '전투 사망 시 HP 15로 부활 1회' },
 function getStoreNewItem() {
   const week = getWeekKey();
   const weekNum = parseInt(week.split('-W')[1]) || 1;
@@ -2854,10 +2877,17 @@ if (_origEnterPlace_lake) {
 // ★ 요일 보너스 — locations 연동
 // ================================================================
 
-// ★ BugFix #9: _libStudyIsDouble 플래그 설정이 startStudy 본체로 이동됨.
-//   기존에 있던 아래 후킹 래퍼는 제거. (본체에서 직접 세팅하므로 불필요)
-//   원본 주석 보존:
-//   도서관 공부 보상에 화요일 2× 적용 → startStudy 내부에서 window._libStudyIsDouble 참조
+// 도서관 공부 보상에 화요일 2× 적용
+// ★ BugFix #9: 원본 래퍼 코드 보존. 플래그 설정은 startStudy 본체에도 추가되어 있으므로
+//   후킹 체인이 어떻게 연결되어도 _libStudyIsDouble이 반드시 세팅됨.
+const _origFinishStudyReward = window.startStudy;
+if (_origFinishStudyReward) {
+  const _origSS = window.startStudy;
+  window.startStudy = function(subjectId) {
+    window._libStudyIsDouble = (window._todayBonusKey === 'lib_double');
+    _origSS(subjectId);
+  };
+}
 
 // 전투 보상에 수요일 +5 적용 (battle.js initBattle 후크)
 // _todayBonusKey === 'battle_bonus' → 이미 ui4.js에서 노출됨
