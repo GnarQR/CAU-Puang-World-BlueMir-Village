@@ -15,7 +15,23 @@ window.checkResumeBattle = function() {
     // serverDataLoaded 완료 후 실행되도록 지연
     setTimeout(() => {
       if (typeof window.initBattle === 'function') {
-        window.initBattle(origin, bossId);
+        // ★ BugFix #8: origin='map'일 때 전투 복구 후 returnToGame()이
+        //   explore-container를 보여주고 requestAnimationFrame(update)를 호출하는데,
+        //   canvas 크기가 설정되지 않아 검은 화면이 됨.
+        //   복구 전에 startExploration()을 먼저 호출해 canvas를 초기화한 뒤 숨기고,
+        //   전투 화면으로 전환. 전투 종료 시 returnToGame()이 다시 explore를 표시.
+        if (origin === 'map' && typeof window.startExploration === 'function') {
+          const exploreCont = document.getElementById('explore-container');
+          if (exploreCont) exploreCont.style.display = 'block';
+          window.startExploration(); // canvas 크기 초기화
+          // 잠시 후 전투 화면으로 전환 (startExploration의 requestAnimationFrame 1프레임 후)
+          setTimeout(() => {
+            if (exploreCont) exploreCont.style.display = 'none';
+            window.initBattle(origin, bossId);
+          }, 50);
+        } else {
+          window.initBattle(origin, bossId);
+        }
       }
     }, 100);
   }

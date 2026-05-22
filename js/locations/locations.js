@@ -189,6 +189,16 @@ let libTypingIdx   = 0;
 let libTypingCorrect = 0;
 let libTypingTimer = null;
 
+// ★ BugFix #25: Firebase 로드 완료 후 지역 변수를 최신 localStorage 값으로 동기화하는 헬퍼
+//   문제: locations.js 파싱 시 libStudyCount/libFocus가 초기화되지만, 이후
+//   loadAllDataFromServer()가 localStorage를 업데이트해도 지역 변수는 그대로 0.
+//   해결: enterLibrary 진입 시 항상 localStorage에서 재읽기.
+function _syncLibLocalVars() {
+  libStudyCount = parseInt(localStorage.getItem('libStudyCount') || '0');
+  const rawFocus = localStorage.getItem('libFocus');
+  libFocus = rawFocus !== null ? parseInt(rawFocus) : 100;
+}
+
 window.enterLibrary = function() {
   const today = new Date().toDateString();  // 날짜가 바뀌었으면 lib 관련 변수도 초기화
   if (localStorage.getItem('libDate') !== today) {
@@ -197,6 +207,9 @@ window.enterLibrary = function() {
     localStorage.setItem('libStudyCount', 0);
     localStorage.setItem('libFocus', 100);
     localStorage.setItem('libDate', today);
+  } else {
+    // ★ BugFix #25: 같은 날이면 Firebase에서 복원된 최신값을 지역변수에 반영
+    _syncLibLocalVars();
   }
 
   document.getElementById('game-container').style.display = 'none';
@@ -244,6 +257,12 @@ window.startStudy = function(subjectId) {
     if (npc) npc.textContent = '🤫 잘 쉬셨나요? 다시 열심히 해봐요.';
     return;
   }
+
+  // ★ BugFix #9: _libStudyIsDouble 플래그를 startStudy 본체 내에서 직접 설정
+  //   기존: locations.js 하단의 별도 후킹 래퍼에서 설정 → ui_enhancements.js가 이를 다시
+  //   후킹하면 플래그 설정 줄이 실행되지 않을 수 있음.
+  //   해결: 원본 함수 내부에서 세팅하여 어떤 후킹 체인에서도 반드시 실행되도록 보장.
+  window._libStudyIsDouble = (window._todayBonusKey === 'lib_double');
 
   if (!useDaily('library')) {
     addLibLog('[❌] 오늘 공부는 충분히 했어요! (일일 5회 한도)', 'lib-log-info');
@@ -1268,6 +1287,12 @@ const STORE_ITEMS = {
   full_potion: { name: '풀 회복 포션',  cost: 15, clerk: '저희 가게 최고 인기 상품이에요! ✨' },
   dmg_boost:   { name: '데미지 부스터', cost: 8,  clerk: '전투 전에 꼭 챙겨가세요 💪' },
   shield:      { name: '방어막',        cost: 8,  clerk: '안전이 최우선이죠! 방어막 추천해요 🛡️' },
+  // ★ BugFix #18: 주간 신상품 아이템을 STORE_ITEMS에 등록 — 미등록 시 buyStore()에서 STORE_ITEMS[id] undefined로 구매 불가
+  //   getStoreNewItem()이 반환하는 id와 일치하는 키로 등록.
+  //   사이드이펙트: getStoreStock()의 STORE_STOCK_LIMIT에 없어 재고 무제한이지만, 신상품은 의도적으로 주 1회 제한이므로 별도 구매 처리.
+  mem_potion:  { name: '기억력 포션', cost: 10, clerk: '공부 전에 딱이에요! 🧠' },
+  cloak:       { name: '투명 망토',   cost: 18, clerk: '이면세계 탐험가 필수템! 🫥' },
+  charm:       { name: '청룡 부적',   cost: 12, clerk: '위기의 순간 당신을 지켜줘요 🧧' },
 };
 
 const STORE_CLERK_DEFAULT = [
@@ -2587,16 +2612,18 @@ window.buyCart = function() {
 
   playerStats.data -= total;
   // 아이템 효과 적용
+  // ★ BugFix #4: 기존에 hp/sp_potion, full_potion은 즉시 회복만 하고 인벤토리에 추가하지 않아
+  //   단일 구매(buyStore)와 동작 불일치. inventory에 추가하도록 통일.
+  //   origBuy 변수는 실제로 사용되지 않았으므로 제거(사이드이펙트 없음).
   for (const id of storeCart) {
-    const origBuy = _origBuyStore;
     // 재고 차감
     stock[id] = (stock[id] || 0) - 1;
-    // 효과 직접 적용
-    if      (id === 'hp_potion')   { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); }
-    else if (id === 'sp_potion')   { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); }
-    else if (id === 'full_potion') { playerStats.hp = playerStats.maxHp; playerStats.sp = playerStats.maxSp; }
-    else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost', name: STORE_ITEMS[id].name, icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
-    else if (id === 'shield')      { inventory.push({ id: 'shield',    name: STORE_ITEMS[id].name, icon: '🛡️', desc: '다음 전투 피해 -50%'  }); saveInventory(); }
+    // 효과 적용 — buyStore와 동일한 방식(인벤토리 추가)으로 통일
+    if      (id === 'hp_potion')   { inventory.push({ id: 'hp_potion',   name: STORE_ITEMS[id]?.name || 'HP 포션',    icon: '🧃', desc: 'HP +30 회복' });         saveInventory(); }
+    else if (id === 'sp_potion')   { inventory.push({ id: 'sp_potion',   name: STORE_ITEMS[id]?.name || 'SP 포션',    icon: '💙', desc: 'SP +20 회복' });         saveInventory(); }
+    else if (id === 'full_potion') { inventory.push({ id: 'full_potion', name: STORE_ITEMS[id]?.name || '풀 회복 포션', icon: '✨', desc: 'HP+SP 완전 회복' }); saveInventory(); }
+    else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost',   name: STORE_ITEMS[id]?.name || '데미지 부스터', icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
+    else if (id === 'shield')      { inventory.push({ id: 'shield',      name: STORE_ITEMS[id]?.name || '방어막',      icon: '🛡️', desc: '다음 전투 피해 -50%'  }); saveInventory(); }
   }
   saveStoreStock(stock);
   storeCart = [];
@@ -2621,16 +2648,40 @@ function updateStoreCartUI() {
 }
 
 // 신상품 알림: 주 1회 새 아이템 입고
+// ★ BugFix #18: id 필드를 STORE_ITEMS 키와 일치시킴
 function getStoreNewItem() {
   const week = getWeekKey();
   const weekNum = parseInt(week.split('-W')[1]) || 1;
   const newItems = [
-    { name: '기억력 포션', icon: '🧠', cost: 10, desc: '도서관 정답률 +20% (5분)' },
-    { name: '투명 망토',   icon: '🫥', cost: 18, desc: '이면세계 몬스터 조우율 -30%' },
-    { name: '청룡 부적',   icon: '🧧', cost: 12, desc: '전투 사망 시 HP 15로 부활 1회' },
+    { id: 'mem_potion', name: '기억력 포션', icon: '🧠', cost: 10, desc: '도서관 정답률 +20% (5분)' },
+    { id: 'cloak',      name: '투명 망토',   icon: '🫥', cost: 18, desc: '이면세계 몬스터 조우율 -30%' },
+    { id: 'charm',      name: '청룡 부적',   icon: '🧧', cost: 12, desc: '전투 사망 시 HP 15로 부활 1회' },
   ];
   return newItems[weekNum % newItems.length];
 }
+
+// ★ BugFix #18: 신상품 구매 함수 — 주 1회 한도
+window.buyNewStoreItem = function() {
+  const item = getStoreNewItem();
+  const weekKey = 'newItem_' + getWeekKey();
+  if (localStorage.getItem(weekKey)) {
+    addStoreLog('[❌] 이번 주 신상품은 이미 구매하셨어요!', 'store-log-err');
+    return;
+  }
+  if (playerStats.data < item.cost) {
+    addStoreLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개)', 'store-log-err');
+    return;
+  }
+  playerStats.data -= item.cost;
+  inventory.push({ id: item.id, name: item.name, icon: item.icon, desc: item.desc });
+  saveInventory();
+  localStorage.setItem(weekKey, '1');
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  document.getElementById('store-data-val').textContent = playerStats.data;
+  addStoreLog('[🆕 신상품 구매!] ' + item.icon + ' ' + item.name + ' · 💎 -' + item.cost, 'store-log-ok');
+  const npc = document.getElementById('store-clerk-text');
+  if (npc) npc.textContent = '좋은 선택이에요! 이번 주 한정이에요 😊';
+};
 
 // buyStore 후크: 재고 차감 적용
 const _origBuyStore = window.buyStore;
@@ -2803,15 +2854,10 @@ if (_origEnterPlace_lake) {
 // ★ 요일 보너스 — locations 연동
 // ================================================================
 
-// 도서관 공부 보상에 화요일 2× 적용
-const _origFinishStudyReward = window.startStudy;
-if (_origFinishStudyReward) {
-  const _origSS = window.startStudy;
-  window.startStudy = function(subjectId) {
-    window._libStudyIsDouble = (window._todayBonusKey === 'lib_double');
-    _origSS(subjectId);
-  };
-}
+// ★ BugFix #9: _libStudyIsDouble 플래그 설정이 startStudy 본체로 이동됨.
+//   기존에 있던 아래 후킹 래퍼는 제거. (본체에서 직접 세팅하므로 불필요)
+//   원본 주석 보존:
+//   도서관 공부 보상에 화요일 2× 적용 → startStudy 내부에서 window._libStudyIsDouble 참조
 
 // 전투 보상에 수요일 +5 적용 (battle.js initBattle 후크)
 // _todayBonusKey === 'battle_bonus' → 이미 ui4.js에서 노출됨

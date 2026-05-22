@@ -49,15 +49,9 @@ window.triggerBossIntro = async function(boss) {
   b.style.display = 'none'; b.classList.remove('boss-intro-anim');
 };
 
-const _origIB4 = window.initBattle;
-if (_origIB4) window.initBattle = function(origin, bossId) {
-  _origIB4(origin, bossId);
-  setTimeout(() => {
-    const boss = bossId && window.BOSSES ? window.BOSSES[bossId] : null;
-    window.applyBattleMode(boss);
-    if (boss) window.triggerBossIntro(boss);
-  }, 150);
-};
+// ★ BugFix #3: 원래 이 자리에 첫 번째 _origIB4 후킹(applyBattleMode + bossIntro)이 있었으나
+//   아래 "initBattle 후킹" 블록과 const 이름이 충돌 → SyntaxError.
+//   두 후킹을 아래 블록으로 병합(applyBattleMode + 타이머 + bossIntro 모두 처리).
 
 // ── 분노 페이즈 감지 & SP 미니 업데이트 ──
 // ★ 수정: 항상 실행되던 setInterval을 전투 시작/종료에 연동하여
@@ -105,15 +99,15 @@ function _stopBattleTimers() {
   if (_spMiniIntervalId) { clearInterval(_spMiniIntervalId); _spMiniIntervalId = null; }
 }
 
-// initBattle 후킹 — 전투 시작 시 타이머 ON
+// initBattle 후킹 — 전투 시작 시 타이머 ON + 보스 UI/인트로 (BugFix #3: 두 후킹 병합)
 const _origIB4 = window.initBattle;
 if (_origIB4) window.initBattle = function(origin, bossId) {
   _origIB4(origin, bossId);
   _startBattleTimers();  // ★ 전투 시작할 때만 타이머 켬
   setTimeout(() => {
     const boss = bossId && window.BOSSES ? window.BOSSES[bossId] : null;
-    window.applyBattleMode(boss);
-    if (boss) window.triggerBossIntro(boss);
+    window.applyBattleMode(boss);       // ★ 병합: 첫 번째 후킹의 applyBattleMode
+    if (boss) window.triggerBossIntro(boss); // ★ 병합: 첫 번째 후킹의 bossIntro
   }, 150);
 };
 

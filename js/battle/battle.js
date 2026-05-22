@@ -679,6 +679,8 @@ function clearBattleState() {
   localStorage.removeItem('battleEnemyHp');
   localStorage.removeItem('battlePlayerHp');
   localStorage.removeItem('battleTurn');
+  // ★ BugFix #30: 전투 종료 시 버프 상태도 초기화 (탈출·승리·패배 모든 경로에서 보장)
+  buffActive = false;
 }
 
 // ── 주사위 굴리기 애니메이션 ──
@@ -824,6 +826,8 @@ async function enemyTurn() {
     // ★ Fix #10: 패배 시 hp가 음수 그대로 저장되는 버그 방지 — 최소 1로 보정
     playerStats.hp = Math.max(1, battlePlayerHp);
     battlePlayerHp = playerStats.hp;
+    // ★ BugFix #5: 패배 시 SP도 battlePlayerSp 현재값으로 동기화 (전투 중 소모 반영)
+    playerStats.sp = Math.max(0, battlePlayerSp);
     // ★ Fix #3: 패배 시에도 clearBattleState 호출 — 미호출 시 새로고침마다 전투 복구 루프
     clearBattleState();
     await sleepMs(3000);
@@ -944,6 +948,10 @@ window.doCmd = async function(cmd) {
       if (typeof showToast === 'function') showToast('⚔️ 전투 승리! 💎 +' + reward, 'success', 3000);
       // ★ Fix #3: 승리 시 clearBattleState — 미호출 시 inBattle=true 잔류 → 새로고침마다 전투 루프 재진입
       clearBattleState();
+      // ★ BugFix #1: 전투 승리 보상(data, hp, sp)을 Firebase에 즉시 저장
+      //   기존: updateMapStats()만 호출 → 탭 종료 시 보상 손실
+      //   수정: syncAndSave()로 debounce 저장 트리거 (사이드이펙트 없음 — syncAndSave는 debouncedSave 래퍼)
+      if (typeof window.syncAndSave === 'function') window.syncAndSave();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;
@@ -1039,6 +1047,8 @@ window.doCmd = async function(cmd) {
       if (typeof showToast === 'function') showToast('⚡ 서지로 승리! 💎 +' + reward, 'success', 3000);
       // ★ Fix #3: 서지 승리 시에도 clearBattleState — inBattle 잔류 방지
       clearBattleState();
+      // ★ BugFix #1: 서지 승리 보상도 Firebase에 즉시 저장
+      if (typeof window.syncAndSave === 'function') window.syncAndSave();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;
@@ -1090,6 +1100,8 @@ window.doCmd = async function(cmd) {
 
     if (roll === 2) {
       clearBattleState();  // 전투 상태 삭제
+      // ★ BugFix #30: 탈출 성공 시 buffActive 초기화 — 미초기화 시 하이퍼 프롬프트 버프가 다음 전투로 이월됨
+      buffActive = false;
       addBattleLog('[결과] 전투에서 벗어났다!', 'log-success');
       document.getElementById('dice-result').textContent = '탈출 성공!';
 

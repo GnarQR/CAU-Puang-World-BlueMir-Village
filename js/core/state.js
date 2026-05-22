@@ -73,6 +73,10 @@ async function loadAllDataFromServer() {
         else if (s.playerStats.diamond !== undefined) playerStats.data = s.playerStats.diamond;
         else                                          playerStats.data = 0;
         if (playerStats.diamond !== undefined) delete playerStats.diamond;
+        // ★ BugFix #2: 체육관/동아리 패시브 필드 복원 (저장 추가와 짝을 이루는 로드 처리)
+        if (s.playerStats._agilityBonus !== undefined) playerStats._agilityBonus = s.playerStats._agilityBonus;
+        if (s.playerStats._gymDiscount  !== undefined) playerStats._gymDiscount  = s.playerStats._gymDiscount;
+        if (s.playerStats._festBonus    !== undefined) playerStats._festBonus    = s.playerStats._festBonus;
         localStorage.setItem('playerStats', JSON.stringify(playerStats));
       }
 
@@ -206,6 +210,11 @@ async function saveAllDataToServer() {
         unionBonusStudy:    playerStats.unionBonusStudy    || 0,  // ★ Fix 구멍1: 집중력 교재 효과 Firebase 저장
         _slotLucky:         playerStats._slotLucky         || false,
         _libTimeBonus:      playerStats._libTimeBonus      || 0,
+        // ★ BugFix #2: 아래 세 필드가 누락되어 체육관/동아리 패시브가 새로고침 후 초기화되던 버그 수정
+        //   사이드이펙트 없음 — 기존 필드에 추가만 하는 변경
+        _agilityBonus:      playerStats._agilityBonus      || 0,
+        _gymDiscount:       playerStats._gymDiscount       || 0,
+        _festBonus:         playerStats._festBonus         || 0,
       },
 
       puangState:  puangState,
@@ -353,6 +362,8 @@ const dailyLimits = {
   cafeteria: 3, library: 5, gym:  3,
   clinic:    1, festival: 5, lab2: 3,
   union:     2, praise:   2, lab:  2,
+  // ★ BugFix #6: dormitory 키 추가 — 미등록 시 useDaily('dormitory')가 항상 통과되어 청룡호 산책 무한 반복 허용
+  dormitory: 3,
 };
 
 const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
@@ -360,6 +371,8 @@ const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
   cafeteria: 0, library: 0, gym:  0,
   clinic:    0, festival: 0, lab2: 0,
   union:     0, praise:   0, lab:  0,
+  // ★ BugFix #6: dailyLimits와 키 일치
+  dormitory: 0,
 };
 
 function checkAndResetDaily() {
