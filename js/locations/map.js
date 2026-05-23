@@ -204,8 +204,11 @@ window.returnToGame = function() {
       player.y = player.gridY * 32;
     }
 
-    // 🌟 루프 재실행
-    if (typeof update === 'function') requestAnimationFrame(update);
+    // 방 전투 콜백 실행
+    if (typeof window._onExploreRoomBattleEnd === 'function') window._onExploreRoomBattleEnd();
+    else {
+      if (typeof update === 'function') requestAnimationFrame(update);
+    }
   } 
   
   else {

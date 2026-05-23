@@ -21,48 +21,8 @@ let battleTurn        = 1;      // 현재 턴 수
 let buffActive        = false;  // 하이퍼 프롬프트 버프 활성 여부 (다음 공격 데미지 2배)
 let battleBusy        = false;  // 커맨드 처리 중 여부 (중복 입력 방지)
 
-let player = {
-  gridX: 2, 
-  gridY: 10,           // 왼쪽 입구 근처로 시작접 지정
-  x: 2 * 32, 
-  y: 10 * 32,          // 초기 위치 조정
-  isMoving: false,
-  speed: 4             // 부드러운 이동 속도
-};
-
-// ── 탐험 맵 이미지 설정 ──
-const TILE_SIZE = 32;
-const MAP_WIDTH_TILES = 32; // collisionData의 한 줄 개수 (32개)
-const MAP_HEIGHT_TILES = 19; // collisionData의 줄 수 (약 19줄)
-
-const bgImage = new Image();
-bgImage.src = 'images/map/205_building.jpg'; 
-
-const playerImage = new Image();
-playerImage.src = 'images/player/player_male_default.png'; 
-
-const collisionData =  // 격자에 대한 충돌 데이터 (56은 벽, 0은 이동 가능)
-            [56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56];
-
 // 이미지가 로드되었는지 확인하는 플래그
+/*
 let assetsLoaded = 0;
 [bgImage, playerImage].forEach(img => {
     img.onload = () => {
@@ -75,8 +35,10 @@ let assetsLoaded = 0;
         }
     };
 });
+*/
 
 // ── 그리기 함수 (draw) ──
+/*
 function draw() {
     const canvas = document.getElementById('map-canvas');
     if (!canvas) return;
@@ -125,8 +87,8 @@ function draw() {
             ctx.fillRect((i % 32) * 32, Math.floor(i / 32) * 32, 32, 32);
         }
     });
-    */
-}
+    
+}*/
 
 // ── 메인 맵으로 돌아가기 기능 구현 ──
 // 1. 팝업 열기
@@ -166,93 +128,7 @@ window.confirmExitExploration = function() {
     if (typeof updateMapStats === 'function') updateMapStats();
 };
 
-// ── 탐험 모드 시작 함수 ──
-window.startExploration = function() {
-    console.log("이면 세계 탐험 시작");
-
-    // ★ Fix 3: 이미지 로드 전 진입 시 검은 화면 방지
-    // 이미지가 아직 로드 중이면 로드 완료 후 재시도
-    if (assetsLoaded < 2) {
-        console.log("이미지 로드 중... 대기");
-        const checkReady = setInterval(() => {
-            if (assetsLoaded >= 2) {
-                clearInterval(checkReady);
-                window.startExploration();
-            }
-        }, 100);
-        return;
-    }
-
-    // ★ Fix 6: 캔버스 해상도를 컨테이너 실제 크기에 맞게 설정 (그림 잘림 방지)
-    // CSS로 건드리지 않고 canvas.width/height를 직접 설정해야 해상도 불일치 없음
-    const canvas = document.getElementById('map-canvas');
-    const container = document.getElementById('explore-container');
-    if (canvas && container) {
-    // ★ Fix #6: 모바일에서 container.clientWidth가 0일 때 window.innerWidth로 폴백
-    //   (1024 고정 폴백은 모바일에서 가로 스크롤 및 좌표 어긋남 유발)
-    const w = container.clientWidth  || window.innerWidth  || 1024;
-    const h = container.clientHeight || window.innerHeight || 598;
-    // 실제 픽셀 해상도 설정 (이걸 안 하면 위쪽 절반만 보이고 아래 검은색)
-    canvas.width  = w;
-    canvas.height = h;
-    canvas.style.width  = w + 'px';
-    canvas.style.height = h + 'px';
-    }
-
-    // 플레이어 초기 위치 설정
-    player.gridX = 2;
-    player.gridY = 10;
-    player.x = player.gridX * 32;
-    player.y = player.gridY * 32;
-    player.isMoving = false;
-
-    // ★ Fix #7: 창 크기 변경 시 탐험 캔버스도 리사이즈
-    //   기존에는 resize 핸들러가 없어 브라우저 창 조절 시 캔버스가 잘리거나 늘어남
-    if (!window._exploreResizeHandler) {
-      window._exploreResizeHandler = function() {
-        const cv = document.getElementById('map-canvas');
-        const ct = document.getElementById('explore-container');
-        if (!cv || !ct || ct.style.display === 'none') return;
-        const nw = ct.clientWidth  || window.innerWidth  || 1024;
-        const nh = ct.clientHeight || window.innerHeight || 598;
-        cv.width  = nw; cv.height  = nh;
-        cv.style.width  = nw + 'px';
-        cv.style.height = nh + 'px';
-      };
-      window.addEventListener('resize', window._exploreResizeHandler);
-    }
-
-    // 애니메이션 루프 시작
-    requestAnimationFrame(update);
-};
-
-// 캐릭터 움직이는 함수
-function movePlayer(dx, dy) {
-    const nextGridX = player.gridX + dx;
-    const nextGridY = player.gridY + dy;
-
-    // 1. 맵 경계 체크
-    if (nextGridX < 0 || nextGridX >= MAP_WIDTH_TILES || nextGridY < 0 || nextGridY >= MAP_HEIGHT_TILES) return;
-
-    // 2. 벽 체크 (56이면 리턴)
-    const nextIdx = nextGridY * MAP_WIDTH_TILES + nextGridX;
-
-    // 데이터 보호: 인덱스 범위를 벗어나는지 확인
-    if (nextIdx >= collisionData.length || collisionData[nextIdx] === 56) return;
-
-    // 56(빨간 칸)이면 이동하지 않고 리턴
-    if (dx !== 0 && dy !== 0) {
-      const sideX = player.gridY * MAP_WIDTH_TILES + nextGridX; // 수평 이동 시 체크할 칸
-      const sideY = nextGridY * MAP_WIDTH_TILES + player.gridX; // 수직 이동 시 체크할 칸
-      if (collisionData[sideX] === 56 && collisionData[sideY] === 56) return;
-    }
-    
-    // 3. 이동 가능한 곳(0)이면 좌표 갱신
-    player.gridX = nextGridX;
-    player.gridY = nextGridY;
-    player.isMoving = true;
-}
-
+/*
 function update() {
     // 탐험 화면이 보일 때만 루프 생성
     const exploreCont = document.getElementById('explore-container');
@@ -300,67 +176,7 @@ function update() {
     draw();  // 매 프레임마다 그리기 함수 호출
     requestAnimationFrame(update);  // 루프 지속
 }
-
-// ── 마우스 클릭 이동 시스템 ──
-// BFS로 클릭 지점까지 경로 탐색 후 자동 이동
-
-let _clickPath   = [];   // 이동할 그리드 좌표 배열 [{x,y}, ...]
-let _clickTarget = null; // 클릭 목표 픽셀 좌표 — 클릭 표시용
-let _clickAnim   = 0;    // 클릭 표시 애니메이션 프레임 카운터
-
-// BFS 경로 탐색
-function findPath(fromX, fromY, toX, toY) {
-  if (collisionData[toY * MAP_WIDTH_TILES + toX] === 56) return [];
-  const visited = new Uint8Array(MAP_WIDTH_TILES * MAP_HEIGHT_TILES);
-  const queue   = [{ x: fromX, y: fromY, path: [] }];
-  visited[fromY * MAP_WIDTH_TILES + fromX] = 1;
-  const dirs = [[0,-1],[0,1],[-1,0],[1,0], [-1,-1],[1,-1],[-1,1],[1,1]];
-  while (queue.length) {
-    const { x, y, path } = queue.shift();
-    if (x === toX && y === toY) return path;
-    for (const [dx, dy] of dirs) {
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || nx >= MAP_WIDTH_TILES || ny < 0 || ny >= MAP_HEIGHT_TILES) continue;
-      const idx = ny * MAP_WIDTH_TILES + nx;
-      if (visited[idx] || collisionData[idx] === 56) continue;
-      visited[idx] = 1;
-      queue.push({ x: nx, y: ny, path: [...path, { x: nx, y: ny }] });
-    }
-  }
-  return [];
-}
-
-// 캔버스 클릭 이벤트 등록
-document.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('map-canvas');
-  if (!canvas) return;
-
-  canvas.addEventListener('click', (e) => {
-    const exploreCont = document.getElementById('explore-container');
-    if (!exploreCont || exploreCont.style.display === 'none') return;
-
-    // 캔버스 내 클릭 좌표 → 그리드 좌표 변환 (CSS 스케일 보정)
-    const rect   = canvas.getBoundingClientRect();
-    const scaleX = canvas.width  / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const px     = (e.clientX - rect.left) * scaleX;
-    const py     = (e.clientY - rect.top)  * scaleY;
-    const gx     = Math.floor(px / TILE_SIZE);
-    const gy     = Math.floor(py / TILE_SIZE);
-
-    // 범위/벽 체크
-    const idx = gy * MAP_WIDTH_TILES + gx;
-    if (gx < 0 || gx >= MAP_WIDTH_TILES || gy < 0 || gy >= MAP_HEIGHT_TILES) return;
-    if (idx < 0 || idx >= collisionData.length || collisionData[idx] === 56) return;
-
-    // 클릭 표시 (원 이펙트)
-    _clickTarget = { x: gx * TILE_SIZE + TILE_SIZE / 2, y: gy * TILE_SIZE + TILE_SIZE / 2 };
-    _clickAnim   = 25;
-
-    // BFS로 경로 계산 후 저장
-    _clickPath = findPath(player.gridX, player.gridY, gx, gy);
-  });
-});
+*/
 
 /*
 // 방향키 입력 활성화
@@ -383,69 +199,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 */
-
-// 방 이동 로직 함수 (연출 변경 가능)
-function checkRoomPortal() {
-    let hasMoved = false;
-
-    // 위쪽 문 (예: 중앙 계단 위쪽 좌표)
-    if (player.gridY <= 4) { 
-        player.gridY = 14; // 아래쪽으로 이동
-        hasMoved = true;
-    }
-    // 왼쪽 끝
-    else if (player.gridX <= 0) {
-        player.gridX = 27; // 오른쪽으로 이동
-        hasMoved = true;
-    }
-    // 오른쪽 끝
-    else if (player.gridX >= 28) {
-        player.gridX = 1; // 왼쪽으로 이동
-        hasMoved = true;
-    }
-
-    if (hasMoved) {
-        // 즉시 픽셀 위치 업데이트 및 화면 깜빡임 연출
-        player.x = player.gridX * 32;
-        player.y = player.gridY * 32;
-        
-        // 화면이 번쩍하는 연출 (밝아졌다가 돌아옴)
-        const canvas = document.getElementById('map-canvas');
-        canvas.style.filter = 'brightness(2)';
-        setTimeout(() => { canvas.style.filter = 'brightness(1)'; }, 150);
-
-        // 방을 옮겼을 때는 30%의 높은 확률로 전투 발생
-        if (Math.random() < 0.3) {
-            triggerBattle();
-            // ★ Fix #8: 포탈에서 전투 발생 시 true 반환 — update()가 이를 받아 10% 전투 체크를 건너뜀
-            return true; // ★ Fix 4 유지 + Fix #8: 반환값으로 전투 발생 여부 전파
-        }
-    }
-    // ★ Fix #8: 전투 미발생 시 false 반환
-    return false;
-}
-
-// 탐험 중 전투 발생 시 호출
-function triggerBattle() {
-  console.log("전투 발생!");
-
-  // 1. 모든 레이어 정리 & 탐험 화면 숨기기
-  const exploreCont = document.getElementById('explore-container');
-  if (exploreCont) exploreCont.style.display = 'none';
-
-  // 2. 기존 전투 화면 띄우기 (원래 map.js에 있던 코드들)
-  const battleCont = document.getElementById('battle-container');
-  if (battleCont) {
-    battleCont.style.display = 'flex';  // 그릇을 먼저 보여주고
-    battleCont.classList.add('visible');  // CSS 애니메이션 클래스 추가
-    battleCont.style.zIndex = '2000'; // 탐험 화면보다 위에 오도록 z-index 조정
-  }
-
-  // 3. 전투 시스템 초기화
-  if (typeof window.initBattle === 'function') {
-    window.initBattle('map', null); // 일반 몬스터 전투로 초기화 // ★ Fix #4: bossId = null → null (전역 변수 오염 방지)
-  }
-}
 
 // ── 전투 초기화 ──
 // 205관 이면 세계 진입 시 호출

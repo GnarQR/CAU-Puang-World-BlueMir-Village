@@ -300,6 +300,7 @@
     <div id="explore-container">
       <button id="explore-exit-btn" onclick="showExitPopup()">← 탈출하기</button>
       <canvas id="map-canvas" width="1024" height="598"></canvas>
+
       <!-- ★ 탐험 HUD -->
       <div id="explore-hud">
         <div class="explore-hud-floor" id="explore-floor-badge">B1F</div>
@@ -310,11 +311,22 @@
             <span class="explore-hud-num" id="explore-hp-text">--/--</span>
           </div>
           <div class="explore-hud-row">
+            <button onclick="toggleMiniMap()" style="background:none;border:1px solid #0f3460;border-radius:6px;color:#5dcaa5;font-size:11px;padding:2px 8px;cursor:pointer;">🗺️ 지도</button>
+          </div>
+          <!--
+          <div class="explore-hud-row">
             <span class="explore-hud-label" style="color:#e24b4a;">조우</span>
             <div class="explore-hud-bar-wrap"><div class="explore-hud-bar-fill" id="explore-encounter-fill" style="width:0%;background:#e24b4a;"></div></div>
           </div>
+          -->
         </div>
       </div>
+
+      <!-- 미니맵 오버레이 -->
+      <div id="explore-minimap-overlay" style="display:none;position:absolute;top:0;left:0;
+        width:100%;height:100%;z-index:100;align-items:center;justify-content:center;
+        background:rgba(0,0,0,.6);"></div>
+
       <!-- ★ 모바일 터치 방향키 -->
       <div id="explore-dpad">
         <div class="dpad-row"><button class="dpad-btn" ontouchstart="dpadPress('up')" ontouchend="dpadRelease()" onmousedown="dpadPress('up')" onmouseup="dpadRelease()">▲</button></div>
@@ -339,6 +351,11 @@
       </div>
     </div>
   </div>
+
+  <!-- 층 선택 오버레이 -->
+  <div id="explore-floor-select" style="display:none;position:fixed;top:0;left:0;
+    width:100%;height:100%;z-index:3000;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.8);"></div>
 
   <!--          -->
   <!-- 전투 화면 -->
@@ -1714,6 +1731,7 @@
   <script src="js/puang/puang_room.js"></script>
   <script src="js/core/intro.js"></script>
   <script src="js/locations/map.js"></script>
+  <script src="js/battle/battle_explore.js"></script>
   <script src="js/battle/battle.js"></script>
   <script src="js/puang/puang.js"></script>
   <script src="js/locations/locations.js"></script>
