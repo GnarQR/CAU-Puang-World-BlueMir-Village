@@ -2794,6 +2794,7 @@ window.playEndingCredits = function() {
   const scroll = document.getElementById('credits-scroll');
   if (scroll) {
     scroll.style.animation = 'none';
+    scroll.style.top = '100vh';
     scroll.offsetHeight; // reflow
     scroll.style.animation = 'creditsRoll 60s linear forwards';
   }
@@ -2804,6 +2805,11 @@ window.playEndingCredits = function() {
 window.skipCredits = function() {
   const credits = document.getElementById('ending-credits');
   if (credits) credits.style.display = 'none';
+  // 크레딧 종료 후 맵으로 복귀
+  const gameCont = document.getElementById('game-container');
+  if (gameCont && gameCont.style.display === 'none') {
+    gameCont.style.display = 'flex';
+  }
 };
 
 window.enterBluedragonLake = function() {

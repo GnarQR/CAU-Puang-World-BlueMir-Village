@@ -1613,6 +1613,19 @@ h1 {
     100% { transform: scale(1); }
 }
 
+/* 결과값 bouncing */
+.dice-display.dice-bounce {
+    animation: diceBounce 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes diceBounce {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.6) rotate(-8deg); }
+    60%  { transform: scale(0.9) rotate(4deg); }
+    80%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
 @keyframes diceShake {
     0%,
     100% {
@@ -6468,13 +6481,12 @@ body.place-bluedragonlake { background-image: url('../images/background/Lake_.pn
   width: 100%;
   text-align: center;
   padding: 0 20px;
-  animation: creditsRoll 60s linear forwards;
   top: 100vh;
 }
 
 @keyframes creditsRoll {
-  0%   { transform: translateY(0); }
-  100% { transform: translateY(-100%); }
+  0%   { top: 100vh; }
+  100% { top: -300%; }
 }
 
 .credits-block {
@@ -6581,3 +6593,29 @@ body.place-bluedragonlake { background-image: url('../images/background/Lake_.pn
 #credits-skip-btn:hover {
   background: rgba(255,255,255,0.2);
 }
+
+
+/* ── 장소별 body 배경 이미지 ── */
+body { transition: background-image 0.4s ease; }
+
+body[class*="place-"] {
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-attachment: fixed !important;
+}
+
+body.place-dormitory      { background-image: url('../images/background/bluemirHall.png') !important; }
+body.place-cafeteria      { background-image: url('../images/background/cafeteria.png') !important; }
+body.place-library        { background-image: url('../images/background/library.png') !important; }
+body.place-lab            { background-image: url('../images/background/institute.png') !important; }
+body.place-gym            { background-image: url('../images/background/gym.png') !important; }
+body.place-clinic         { background-image: url('../images/background/Hospital.png') !important; }
+body.place-lab2           { background-image: url('../images/background/Lab.png') !important; }
+body.place-festival       { background-image: url('../images/background/concerthall.png') !important; }
+body.place-union          { background-image: url('../images/background/univClass.png') !important; }
+body.place-store          { background-image: url('../images/background/itemstore.png') !important; }
+body.place-mountain       { background-image: url('../images/background/moutain.png') !important; }
+body.place-battle,
+body.place-explore        { background-image: url('../images/background/InnerSpace.png') !important; }
+body.place-bluedragonlake { background-image: url('../images/background/Lake_.png') !important; }
