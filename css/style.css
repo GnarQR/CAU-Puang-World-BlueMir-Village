@@ -6474,6 +6474,7 @@ body.place-bluedragonlake { background-image: url('../images/background/Lake_.pn
   background: #000;
   z-index: 9999;
   overflow: hidden;
+  pointer-events: all;
 }
 
 #credits-scroll {
@@ -6486,7 +6487,7 @@ body.place-bluedragonlake { background-image: url('../images/background/Lake_.pn
 
 @keyframes creditsRoll {
   0%   { top: 100vh; }
-  100% { top: -300%; }
+  100% { top: -500%; }
 }
 
 .credits-block {
