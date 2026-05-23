@@ -2849,6 +2849,7 @@ window.lakeWalk = function() {
 };
 
 window.lakeMeditate = function() {
+  if (!useDaily('lake_meditate')) { addLakeMsg('system', '오늘은 이미 명상했어요! 내일 또 와줘 푸앙~'); return; }
   playerStats.hp = playerStats.maxHp;
   playerStats.sp = playerStats.maxSp;
   if (typeof window.syncAndSave === 'function') window.syncAndSave();

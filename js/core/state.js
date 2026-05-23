@@ -380,6 +380,7 @@ const dailyLimits = {
   union:     2, praise:   2, lab:  2,
   // ★ BugFix #6: dormitory 키 추가 — 미등록 시 useDaily('dormitory')가 항상 통과되어 청룡호 산책 무한 반복 허용
   dormitory: 3,
+  lake_meditate: 1,  // 청룡호 명상 — 하루 1회
 };
 
 const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
@@ -389,6 +390,7 @@ const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
   union:     0, praise:   0, lab:  0,
   // ★ BugFix #6: dailyLimits와 키 일치
   dormitory: 0,
+  lake_meditate: 0,  // 청룡호 명상
 };
 
 function checkAndResetDaily() {
