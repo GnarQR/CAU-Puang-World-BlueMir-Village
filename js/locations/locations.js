@@ -2785,9 +2785,37 @@ window.enterStore = function() {
 // ★ 청룡호 (호감도 100 해금 콘텐츠)
 // ================================================================
 
+// ── 크레딧 재생 ──
+window.playEndingCredits = function() {
+  const credits = document.getElementById('ending-credits');
+  if (!credits) return;
+  credits.style.display = 'block';
+  // 애니메이션 리셋
+  const scroll = document.getElementById('credits-scroll');
+  if (scroll) {
+    scroll.style.animation = 'none';
+    scroll.offsetHeight; // reflow
+    scroll.style.animation = 'creditsRoll 60s linear forwards';
+  }
+  // 60초 후 자동 종료
+  setTimeout(() => window.skipCredits(), 62000);
+};
+
+window.skipCredits = function() {
+  const credits = document.getElementById('ending-credits');
+  if (credits) credits.style.display = 'none';
+};
+
 window.enterBluedragonLake = function() {
   if (!localStorage.getItem('lakeUnlocked') && puangState.favorability < 100) {
     if (typeof showToast === 'function') showToast('🔒 푸앙이 호감도 100 달성 시 입장 가능합니다.', 'warning', 3000);
+    return;
+  }
+
+  // 최초 입장 시 크레딧 재생 (1회만) — lakeUnlocked와 별도 키로 관리
+  if (!localStorage.getItem('lakeCreditsPlayed')) {
+    localStorage.setItem('lakeCreditsPlayed', 'true');
+    if (typeof window.playEndingCredits === 'function') window.playEndingCredits();
     return;
   }
   const containers = [

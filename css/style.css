@@ -6450,3 +6450,134 @@ body.place-mountain       { background-image: url('../images/background/moutain.
 body.place-battle,
 body.place-explore        { background-image: url('../images/background/InnerSpace.png') !important; }
 body.place-bluedragonlake { background-image: url('../images/background/Lake_.png') !important; }
+
+
+/* ================================================================
+   엔딩 크레딧
+================================================================ */
+#ending-credits {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+#credits-scroll {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  padding: 0 20px;
+  animation: creditsRoll 60s linear forwards;
+  top: 100vh;
+}
+
+@keyframes creditsRoll {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-100%); }
+}
+
+.credits-block {
+  margin-bottom: 80px;
+  padding: 0 20px;
+}
+
+.credits-emoji {
+  font-size: 80px;
+  margin-bottom: 16px;
+}
+
+.credits-title {
+  font-size: 36px;
+  font-weight: bold;
+  color: #a0c4ff;
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+}
+
+.credits-subtitle {
+  font-size: 18px;
+  color: #6c8ebf;
+  letter-spacing: 2px;
+}
+
+.credits-section {
+  font-size: 13px;
+  color: #5dcaa5;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(93,202,165,0.3);
+  padding-bottom: 8px;
+  display: inline-block;
+  min-width: 200px;
+}
+
+.credits-name {
+  font-size: 20px;
+  color: #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.credits-role {
+  font-size: 13px;
+  color: #6c8ebf;
+  margin-bottom: 16px;
+}
+
+.credits-text {
+  font-size: 16px;
+  color: #c0c8d8;
+  margin-bottom: 6px;
+}
+
+.credits-para {
+  font-size: 15px;
+  color: #b0b8c8;
+  line-height: 1.8;
+}
+
+.credits-cheer {
+  font-size: 32px;
+  font-weight: bold;
+  color: #fbbf24;
+  margin-bottom: 12px;
+  text-shadow: 0 0 20px rgba(251,191,36,0.5);
+}
+
+.credits-thanks {
+  font-size: 22px;
+  color: #a0c4ff;
+  margin-bottom: 8px;
+}
+
+.credits-copyright {
+  font-size: 13px;
+  color: #4a5568;
+  letter-spacing: 2px;
+}
+
+.credits-message {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 건너뛰기 버튼 */
+#credits-skip-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #a0c4ff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  z-index: 10000;
+  transition: background 0.2s;
+}
+#credits-skip-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
