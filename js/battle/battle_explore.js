@@ -37,10 +37,10 @@ const collisionData =  // 격자에 대한 충돌 데이터 (56은 벽, 0은 이
             0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
             0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
             0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
-            56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56];
+            0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56,
+            0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 56, 56,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 56,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 0, 0, 0, 0, 0, 0, 0, 0];
 
 // 층 시스템
 let exploreFloor      = 1;   // 현재 층 (1~10)
@@ -90,8 +90,8 @@ const ROOM_TYPES = ['empty', 'empty', 'item', 'bonfire', 'empty'];
 function generateRooms(floor) {
   roomGrid = {};
 
-  // 랜덤 방 개수 (층마다 5~12개)
-  const roomCount = 5 + Math.floor(Math.random() * 8);
+  // 층마다 방 개수 증가 (1층=8개, 10층=16개) + 약간의 랜덤
+  const roomCount = 8 + Math.floor(floor * 0.8) + Math.floor(Math.random() * 4);
 
   // 시작방
   roomGrid['start'] = {
@@ -99,7 +99,7 @@ function generateRooms(floor) {
     hasStatue: false, x: 0, y: 0, connections: []
   };
 
-  // BFS로 방 연결 생성
+  // BFS로 방 연결 생성 (상하좌우 모두 허용)
   const positions = new Set(['0,0']);
   const queue = ['start'];
   let idCounter = 1;
@@ -107,12 +107,9 @@ function generateRooms(floor) {
   while (idCounter < roomCount) {
     const parentId = queue[Math.floor(Math.random() * queue.length)];
     const parent   = roomGrid[parentId];
+    const dirs = [[1,0],[-1,0],[0,-1],[0,1]].sort(() => Math.random() - 0.5);
 
-    // 방향: 우/좌/상 (하 없음 — 계단방만 하강)
-    const dirs = [[1,0],[-1,0],[0,-1],[0,1]];
-    const shuffled = dirs.sort(() => Math.random() - 0.5);
-
-    for (const [dx, dy] of shuffled) {
+    for (const [dx, dy] of dirs) {
       const nx = parent.x + dx;
       const ny = parent.y + dy;
       const key = `${nx},${ny}`;
@@ -120,13 +117,8 @@ function generateRooms(floor) {
 
       positions.add(key);
       const roomId = `room_${idCounter}`;
-
-      // 마지막 방은 계단방
-      const isLast = idCounter === roomCount - 1;
-      let type = isLast ? 'stairs' : ROOM_TYPES[Math.floor(Math.random() * ROOM_TYPES.length)];
-
-      // 조각상 확률 (계단방 제외, 20%)
-      const hasStatue = !isLast && Math.random() < 0.2;
+      const type = ROOM_TYPES[Math.floor(Math.random() * ROOM_TYPES.length)];  // 마지막 방은 계단방
+      const hasStatue = Math.random() < 0.2;  // 조각상 확률 (계단방 제외, 20%)
 
       roomGrid[roomId] = {
         id: roomId, type, cleared: false, hasFought: false,
@@ -139,8 +131,30 @@ function generateRooms(floor) {
     }
   }
 
-  // 계단방 방향 힌트 계산 (시작방 기준)
-  _calcStairsHint();
+  // BFS로 시작방에서 각 방까지 거리 계산
+  const dist = { start: 0 };
+  const bfsQ = [{ id: 'start', d: 0 }];
+  while (bfsQ.length) {
+    const { id, d } = bfsQ.shift();
+    for (const cId of roomGrid[id].connections) {
+      if (dist[cId] === undefined) {
+        dist[cId] = d + 1;
+        bfsQ.push({ id: cId, d: d + 1 });
+      }
+    }
+  }
+
+  // 가장 먼 방을 계단으로 지정 (최소 거리 5 보장)
+  let farthestId = null, maxDist = 0;
+  for (const [id, d] of Object.entries(dist)) {
+    if (id !== 'start' && d > maxDist) { maxDist = d; farthestId = id; }
+  }
+
+  if (farthestId) {  // 기존 계단 타입 제거
+    Object.values(roomGrid).forEach(r => { if (r.type === 'stairs') r.type = 'empty'; });
+    roomGrid[farthestId].type = 'stairs';
+    roomGrid[farthestId].hasStatue = false;
+  }
 }
 
 // 계단방까지의 대략적인 방향 힌트
@@ -183,12 +197,11 @@ function renderRoomArrows() {
     const dy = conn.y - room.y;
 
     // 화살표 위치 (캔버스 기준)
-    if (dy > 0) return;  // 아래 방향 화살표 제거 
-    
     let left, top, symbol;
-    if      (dx ===  1) { left = cw - 52; top = ch / 2 - 22; symbol = '▶'; nearX = MAP_WIDTH_TILES - 3; nearY = player.gridY; }
-    else if (dx === -1) { left = 8;       top = ch / 2 - 22; symbol = '◀'; nearX = 2;                  nearY = player.gridY; }
-    else if (dy === -1) { left = cw / 2 - 22; top = 8;       symbol = '▲'; nearX = player.gridX;       nearY = 4; }
+    if      (dx ===  1) { left = cw - 52;     top = ch / 2 - 22; symbol = '▶'; nearX = MAP_WIDTH_TILES - 3; nearY = player.gridY; }
+    else if (dx === -1) { left = 8;           top = ch / 2 - 22; symbol = '◀'; nearX = 2;                   nearY = player.gridY; }
+    else if (dy === -1) { left = cw / 2 - 22; top = 8;           symbol = '▲'; nearX = player.gridX;        nearY = 4; }
+    else if (dy ===  1) { left = cw / 2 - 22; top = ch - 52;     symbol = '▼'; nearX = player.gridX;        nearY = MAP_HEIGHT_TILES - 3; }
     else return;
 
     const distX = Math.abs(player.gridX - nearX);
@@ -218,7 +231,7 @@ function renderRoomArrows() {
   });
 
   // 조각상 힌트 표시
-  if (room.hasStatue && !room.cleared) _showStatueHint();
+  if (room.hasStatue && !room.cleared) _showStatueHintPopup();
 }
 
 // 캐릭터 이동 시 화살표 활성화 상태 갱신
@@ -237,7 +250,8 @@ function _updateArrowActivation() {
     let nearX, nearY;
     if      (dx ===  1) { nearX = MAP_WIDTH_TILES - 3; nearY = player.gridY; }
     else if (dx === -1) { nearX = 2;                   nearY = player.gridY; }
-    else if (dy === -1) { nearX = player.gridX;         nearY = 4; }
+    else if (dy === -1) { nearX = player.gridX;        nearY = 4; }
+    else if (dy ===  1) { nearX = player.gridX;        nearY = MAP_HEIGHT_TILES - 3; }
     else return;
 
     const isNear = Math.abs(player.gridX - nearX) <= ARROW_ACTIVATE_DIST &&
@@ -288,8 +302,12 @@ function moveToRoom(roomId) {
   player.x = player.gridX * TILE_SIZE;
   player.y = player.gridY * TILE_SIZE;
   _clickPath = [];
-  _bonfirePos = null; // 방 이동 시 모닥불 초기화
+  _bonfirePos = null;  // 방 이동 시 상호작용 아이템 초기화
+  _chestPos   = null;
+  _stairsPos  = null;
+  _statuePos  = null;
   document.getElementById('bonfire-confirm')?.remove();
+  document.getElementById('statue-popup')?.remove();
 
   // 화살표 갱신
   setTimeout(() => {
@@ -332,43 +350,42 @@ function _afterFight(room) {
   room.hasFought = true;
   if (room.type === 'item')    _triggerItemRoom(room);
   if (room.type === 'bonfire') _triggerBonfireRoom(room);
+  if (room.type === 'stairs')  _onEnterStairs();
+  if (room.hasStatue) _spawnStatue(room);
   renderMiniMap();
 }
 
 // ── 아이템 방 ──
-function _triggerItemRoom(room) {
-  if (room.itemTaken) return;
-  room.itemTaken = true;
+// ── 방 오브젝트 위치 ──
+let _chestPos   = null;       // 아이템 상자
+let _statuePos  = null;       // 조각상
+let _stairsPos  = null;       // 계단
+const OBJ_ACTIVATE_DIST = 3;  // 근접 활성화 거리
 
-  // 랜덤 아이템 지급 (inventory에 추가)
-  const items = ['potion_small', 'potion_large', 'data_chip', 'energy_drink'];
-  const pick  = items[Math.floor(Math.random() * items.length)];
-  if (typeof inventory !== 'undefined') inventory.push(pick);
-  if (typeof showToast === 'function') showToast(`📦 아이템 획득: ${pick}`, 'success', 2500);
-  if (typeof saveAllDataToServer === 'function') saveAllDataToServer();
-}
-
-// ── 모닥불 방 ──
-// 모닥불 위치 (그리드 좌표) — 방 입장 시 랜덤 생성
-let _bonfirePos = null;
-const BONFIRE_ACTIVATE_DIST = 3; // 근접 활성화 거리
-
-function _triggerBonfireRoom(room) { 
-  if (!container) return;
-  room.bonfireSpawned = true;
-
-  // 이동 가능한 바닥 위 랜덤 위치 선택
+function _getRandomWalkable() {
   const walkable = [];
   for (let y = 7; y <= 14; y++) {
     for (let x = 3; x <= 28; x++) {
       if (collisionData[y * MAP_WIDTH_TILES + x] === 0) walkable.push({x, y});
     }
   }
+  return walkable.length ? walkable[Math.floor(Math.random() * walkable.length)] : null;
+}
 
-  if (!walkable.length) return;
-  _bonfirePos = walkable[Math.floor(Math.random() * walkable.length)];
-  room._bonfirePos = _bonfirePos;
+function _triggerItemRoom(room) {
+  if (room.chestSpawned) return;
+  room.chestSpawned = true;
+  _chestPos = _getRandomWalkable();
+  if (typeof showToast === 'function') showToast('📦 상자가 있어요! 가까이 가서 클릭하세요.', 'warning', 2500);
+}
 
+// 모닥불 위치 (그리드 좌표) — 방 입장 시 랜덤 생성
+let _bonfirePos = null;
+
+function _triggerBonfireRoom(room) { 
+  if (room.bonfireSpawned) return;
+  room.bonfireSpawned = true;
+  _bonfirePos = _getRandomWalkable();
   if (typeof showToast === 'function') showToast('🔥 모닥불이 있어요! 가까이 가서 클릭하세요.', 'warning', 2500);
 }
 
@@ -420,22 +437,72 @@ function _showBonfireConfirm() {
   document.getElementById('bonfire-no').onclick = () => box.remove();
 }
 
+// ── 상자 열기 ──
+function _openChest() {
+  const room = roomGrid[currentRoomId];
+  if (!room || room.chestOpened) {
+    if (typeof showToast === 'function') showToast('📦 이미 열린 상자예요.', 'warning', 1500);
+    return;
+  }
+  room.chestOpened = true;
+  _chestPos = null;
+
+  const items = [
+    { id: 'potion_small',   name: '소형 포션',      emoji: '🧪' },
+    { id: 'potion_large',   name: '대형 포션',      emoji: '💊' },
+    { id: 'data_chip',      name: '데이터 조각',    emoji: '💎' },
+    { id: 'energy_drink',   name: '에너지 드링크',  emoji: '⚡' },
+  ];
+  const pick = items[Math.floor(Math.random() * items.length)];
+
+  if (typeof inventory !== 'undefined') inventory.push(pick.id);
+  if (typeof saveAllDataToServer === 'function') saveAllDataToServer();
+  if (typeof showToast === 'function') showToast(`${pick.emoji} 상자에서 [${pick.name}] 획득!`, 'success', 2500);
+}
+
 // ── 계단 방 ──
 function _onEnterStairs() {
-  const container = document.getElementById('explore-container');
-  if (!container) return;
+  _stairsPos = _getRandomWalkable();
+  if (typeof showToast === 'function') showToast('🪜 계단이 있어요! 가까이 가서 클릭하세요.', 'success', 2500);
+}
 
-  const btn = document.createElement('button');
-  btn.id = 'stairs-btn';
-  btn.innerHTML = `🪜 다음 층으로 (현재: ${exploreFloor}층)`;
-  btn.style.cssText = `
-    position:absolute; bottom:60px; left:50%; transform:translateX(-50%);
-    background:rgba(93,202,165,.15); border:1px solid #5dcaa5;
-    border-radius:10px; color:#5dcaa5; font-size:14px; font-weight:600;
-    padding:10px 24px; cursor:pointer; z-index:50;
-  `;
-  btn.onclick = () => _goNextFloor();
-  container.appendChild(btn);
+// ── 조각상 스폰 ──
+function _spawnStatue(room) {
+  _statuePos = _getRandomWalkable();
+}
+
+// ── 조각상 방향 힌트 (현재 방 → 계단방 BFS) ──
+function _getStatueHint() {
+  const stairsRoom = Object.values(roomGrid).find(r => r.type === 'stairs');
+  if (!stairsRoom) return '???';
+
+  // 방 노드 BFS (roomGrid 기준)
+  const visited = new Set([currentRoomId]);
+  const queue   = [{ id: currentRoomId, path: [] }];
+  while (queue.length) {
+    const { id, path } = queue.shift();
+    const room = roomGrid[id];
+    if (!room) continue;
+    for (const connId of room.connections) {
+      if (visited.has(connId)) continue;
+      visited.add(connId);
+      const newPath = [...path, connId];
+      if (connId === stairsRoom.id) {
+        // 첫 번째 이동 방향 계산
+        const firstRoom = roomGrid[newPath[0]];
+        const dx = firstRoom.x - room.x; // 잘못된 참조 방지를 위해 시작방 기준
+        const start = roomGrid[currentRoomId];
+        const fdx = firstRoom.x - start.x;
+        const fdy = firstRoom.y - start.y;
+        if      (fdx >  0) return '동쪽(오른쪽)';
+        else if (fdx <  0) return '서쪽(왼쪽)';
+        else if (fdy < 0)  return '북쪽(위쪽)';
+        else               return '남쪽(아래쪽)';
+      }
+      queue.push({ id: connId, path: newPath });
+    }
+  }
+  return '???';
 }
 
 function _goNextFloor() {
@@ -443,13 +510,18 @@ function _goNextFloor() {
     if (typeof showToast === 'function') showToast('🏆 최고 층에 도달했어요!', 'success', 3000);
     return;
   }
+
+  // 현재 층 클리어 저장
+  const prev = parseInt(localStorage.getItem('exploreFloorCleared') || '0');
+  if (exploreFloor > prev) localStorage.setItem('exploreFloorCleared', exploreFloor);
+
   exploreFloor++;
   localStorage.setItem('exploreFloor', exploreFloor);
 
-  // 버튼 제거
-  document.getElementById('stairs-btn')?.remove();
+  // 오브젝트/화살표 초기화
+  _chestPos = null; _bonfirePos = null; _stairsPos = null; _statuePos = null;
   document.querySelectorAll('.room-arrow').forEach(e => e.remove());
-  document.getElementById('bonfire-btn')?.remove();
+  document.getElementById('bonfire-confirm')?.remove();
 
   // 새 층 생성
   generateRooms(exploreFloor);
@@ -458,7 +530,6 @@ function _goNextFloor() {
   player.x = player.gridX * TILE_SIZE;
   player.y = player.gridY * TILE_SIZE;
 
-  // 층 배지 갱신
   const badge = document.getElementById('explore-floor-badge');
   if (badge) badge.textContent = `B${exploreFloor}F`;
 
@@ -468,10 +539,32 @@ function _goNextFloor() {
   if (typeof showToast === 'function') showToast(`🪜 B${exploreFloor}F 진입!`, 'success', 2000);
 }
 
-// ── 조각상 힌트 ──
-function _showStatueHint() {
-  const hint = window._stairsHint || '???';
-  if (typeof showToast === 'function') showToast(`🗿 조각상: "${hint} 방향으로 향하라..."`, 'warning', 3500);
+// ── 조각상 힌트 팝업 ──
+function _showStatueHintPopup() {
+  const hint = _getStatueHint();
+  const container = document.getElementById('explore-container');
+  if (!container) return;
+
+  document.getElementById('statue-popup')?.remove();
+  const box = document.createElement('div');
+  box.id = 'statue-popup';
+  box.style.cssText = `
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(10,12,20,.97); border:1px solid #6c8ebf;
+    border-radius:14px; padding:20px 28px; z-index:200;
+    text-align:center; min-width:240px;
+  `;
+  box.innerHTML = `
+    <div style="font-size:28px;margin-bottom:8px;">🗿</div>
+    <div style="color:#a0c4ff;font-size:13px;line-height:1.6;margin-bottom:16px;">
+      "계단은 <span style="color:#5dcaa5;font-weight:700;">${hint}</span> 방향에 있노라..."
+    </div>
+    <button onclick="document.getElementById('statue-popup').remove()"
+      style="background:rgba(22,33,62,.8);border:1px solid #0f3460;border-radius:8px;color:#6c8ebf;padding:6px 20px;cursor:pointer;">
+      확인
+    </button>
+  `;
+  container.appendChild(box);
 }
 
 // ================================================================
@@ -504,6 +597,7 @@ window.triggerExploreRoomBattle = function(onBattleEnd) {
 window._onExploreRoomBattleEnd = function() {
   const cb = window._exploreRoomBattleCallback;
   window._exploreRoomBattleCallback = null;
+  roomEventActive = false;
   const exploreCont = document.getElementById('explore-container');
   if (exploreCont) exploreCont.style.display = 'block';
   if (typeof update === 'function') requestAnimationFrame(update);
@@ -604,28 +698,50 @@ window.showFloorSelectScreen = function() {
   const overlay = document.getElementById('explore-floor-select');
   if (!overlay) return;
 
-  const floors = Array.from({ length: MAX_FLOOR }, (_, i) => i + 1);
+  const btnHTML = Array.from({ length: MAX_FLOOR }, (_, i) => {
+    const f        = i + 1;
+    const unlocked = f <= maxSelectable;
+    const isCurrent = f === exploreFloor;
+    const bg     = unlocked ? (isCurrent ? 'rgba(93,202,165,.2)' : 'rgba(22,33,62,.9)') : 'rgba(10,12,20,.6)';
+    const border = unlocked ? (isCurrent ? '#5dcaa5' : '#0f3460') : '#1a1a2e';
+    const color  = unlocked ? (isCurrent ? '#5dcaa5' : '#e0e0e0') : '#2a2a4a';
+
+    return `
+      <button
+        ${unlocked ? `onclick="window.startFloor(${f})"` : ''}
+        style="padding:14px 0 10px;border-radius:10px;font-size:14px;font-weight:700;
+          cursor:${unlocked ? 'pointer' : 'default'};
+          background:${bg};border:1px solid ${border};color:${color};transition:all .15s;"
+        ${unlocked ? `onmouseenter="this.style.transform='scale(1.06)';this.style.boxShadow='0 0 8px rgba(93,202,165,.3)'"` : ''}
+        ${unlocked ? `onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='none'"` : ''}
+      >
+        B${f}F
+        ${!unlocked ? '<div style="font-size:10px;margin-top:3px;opacity:.4;">🔒</div>' : ''}
+        ${isCurrent ? '<div style="font-size:9px;margin-top:2px;color:#5dcaa5;letter-spacing:1px;">NOW</div>' : ''}
+        ${unlocked && !isCurrent && f <= clearedFloor ? '<div style="font-size:9px;margin-top:2px;color:#6c8ebf;">CLEAR</div>' : ''}
+      </button>`;
+  }).join('');
+
   overlay.innerHTML = `
-    <div style="background:rgba(10,12,20,.97);border:1px solid #0f3460;border-radius:16px;padding:24px;max-width:400px;width:90%;">
-      <div style="font-size:18px;font-weight:700;color:#5dcaa5;margin-bottom:6px;">⚡ 205관 이면세계</div>
-      <div style="font-size:12px;color:#6c8ebf;margin-bottom:20px;">탐험할 층을 선택하세요</div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px;">
-        ${floors.map(f => {
-          const unlocked = f <= maxSelectable;
-          return `<button onclick="${unlocked ? `window.startFloor(${f})` : ''}"
-            style="padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:${unlocked ? 'pointer' : 'default'};
-            background:${unlocked ? (f === exploreFloor ? 'rgba(93,202,165,.2)' : 'rgba(22,33,62,.8)') : 'rgba(10,12,20,.5)'};
-            border:1px solid ${unlocked ? (f === exploreFloor ? '#5dcaa5' : '#0f3460') : '#111'};
-            color:${unlocked ? '#e0e0e0' : '#333'};">
-            B${f}F${!unlocked ? '<br><span style="font-size:9px;">🔒</span>' : ''}
-          </button>`;
-        }).join('')}
+    <div style="background:rgba(8,10,18,.98);border:1px solid #0f3460;border-radius:20px;
+      padding:28px 32px;max-width:480px;width:90%;box-shadow:0 0 40px rgba(0,0,0,.8);">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:11px;letter-spacing:3px;color:#2a3a5a;margin-bottom:6px;">205관 이면세계</div>
+        <div style="font-size:22px;font-weight:800;color:#e0e0e0;letter-spacing:1px;">탐험할 층을 선택해주세요.</div>
+        <div style="width:40px;height:2px;background:#5dcaa5;margin:10px auto 0;border-radius:2px;"></div>
       </div>
-      <button onclick="document.getElementById('explore-floor-select').style.display='none'; document.getElementById('game-container').style.display='flex';"
-        style="width:100%;padding:10px;border-radius:8px;background:rgba(22,33,62,.8);border:1px solid #0f3460;color:#6c8ebf;cursor:pointer;">
-        ← 맵으로 돌아가기
-      </button>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;">
+        ${btnHTML}
+      </div>
+      <button
+        onclick="document.getElementById('explore-floor-select').style.display='none';document.getElementById('game-container').style.display='flex';"
+        style="width:100%;padding:11px;border-radius:10px;background:rgba(15,22,40,.8);
+          border:1px solid #0f3460;color:#6c8ebf;font-size:13px;cursor:pointer;transition:all .15s;"
+        onmouseenter="this.style.color='#a0c4ff';this.style.borderColor='#1e3a60'"
+        onmouseleave="this.style.color='#6c8ebf';this.style.borderColor='#0f3460'"
+      >← 맵으로 돌아가기</button>
     </div>`;
+
   overlay.style.display = 'flex';
 };
 
@@ -706,10 +822,61 @@ function draw() {
 
     // 근접 시 안내 텍스트
     const dist = Math.hypot(player.gridX - _bonfirePos.x, player.gridY - _bonfirePos.y);
-    if (dist <= BONFIRE_ACTIVATE_DIST) {
+    if (dist <= OBJ_ACTIVATE_DIST) {
       ctx.fillStyle = '#ef9f27';
       ctx.font = 'bold 11px sans-serif';
       ctx.fillText('클릭하여 쉬기', bx, by - 24);
+    }
+    ctx.restore();
+  }
+
+  // 아이템 상자 렌더링
+  if (_chestPos) {
+    const cx = _chestPos.x * TILE_SIZE + TILE_SIZE / 2;
+    const cy = _chestPos.y * TILE_SIZE + TILE_SIZE / 2;
+    const dist = Math.hypot(player.gridX - _chestPos.x, player.gridY - _chestPos.y);
+    ctx.save();
+    ctx.font = '20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('📦', cx, cy);
+    if (dist <= OBJ_ACTIVATE_DIST) {
+      ctx.fillStyle = '#a0c4ff'; ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('클릭하여 조사', cx, cy - 24);
+    }
+    ctx.restore();
+  }
+
+  // 계단 렌더링
+  if (_stairsPos) {
+    const sx = _stairsPos.x * TILE_SIZE + TILE_SIZE / 2;
+    const sy = _stairsPos.y * TILE_SIZE + TILE_SIZE / 2;
+    const dist = Math.hypot(player.gridX - _stairsPos.x, player.gridY - _stairsPos.y);
+    ctx.save();
+    // 계단 글로우
+    const grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, 22);
+    grad.addColorStop(0, 'rgba(93,202,165,0.5)');
+    grad.addColorStop(1, 'rgba(93,202,165,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(sx, sy, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.font = '20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🪜', sx, sy);
+    if (dist <= OBJ_ACTIVATE_DIST) {
+      ctx.fillStyle = '#5dcaa5'; ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('다음 층으로', sx, sy - 24);
+    }
+    ctx.restore();
+  }
+
+  // 조각상 렌더링
+  if (_statuePos) {
+    const tx = _statuePos.x * TILE_SIZE + TILE_SIZE / 2;
+    const ty = _statuePos.y * TILE_SIZE + TILE_SIZE / 2;
+    const dist = Math.hypot(player.gridX - _statuePos.x, player.gridY - _statuePos.y);
+    ctx.save();
+    ctx.font = '20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🗿', tx, ty);
+    if (dist <= OBJ_ACTIVATE_DIST) {
+      ctx.fillStyle = '#6c8ebf'; ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('클릭하여 조사', tx, ty - 24);
     }
     ctx.restore();
   }
@@ -734,6 +901,14 @@ function draw() {
     ctx.restore();
     _clickAnim--;
   }
+
+  // [디버깅용] 벽 위치 눈으로 확인하기 
+    collisionData.forEach((val, i) => {
+        if (val === 56) {
+            ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
+            ctx.fillRect((i % 32) * 32, Math.floor(i / 32) * 32, 32, 32);
+        }
+    });
 }
 
 // ================================================================
@@ -859,10 +1034,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (_bonfirePos) {
       const bDist = Math.hypot(gx - _bonfirePos.x, gy - _bonfirePos.y);
       const pDist = Math.hypot(player.gridX - _bonfirePos.x, player.gridY - _bonfirePos.y);
-      if (bDist <= 1.5 && pDist <= BONFIRE_ACTIVATE_DIST) {
+      if (bDist <= 1.5 && pDist <= OBJ_ACTIVATE_DIST) {
         _showBonfireConfirm();
         return;
       }
+    }
+
+    // 상자 클릭 체크
+    if (_chestPos) {
+      const bDist = Math.hypot(gx - _chestPos.x, gy - _chestPos.y);
+      const pDist = Math.hypot(player.gridX - _chestPos.x, player.gridY - _chestPos.y);
+      if (bDist <= 1.5 && pDist <= OBJ_ACTIVATE_DIST) { _openChest(); return; }
+    }
+
+    // 계단 클릭 체크
+    if (_stairsPos) {
+      const bDist = Math.hypot(gx - _stairsPos.x, gy - _stairsPos.y);
+      const pDist = Math.hypot(player.gridX - _stairsPos.x, player.gridY - _stairsPos.y);
+      if (bDist <= 1.5 && pDist <= OBJ_ACTIVATE_DIST) { _goNextFloor(); return; }
+    }
+
+    // 조각상 클릭 체크
+    if (_statuePos) {
+      const bDist = Math.hypot(gx - _statuePos.x, gy - _statuePos.y);
+      const pDist = Math.hypot(player.gridX - _statuePos.x, player.gridY - _statuePos.y);
+      if (bDist <= 1.5 && pDist <= OBJ_ACTIVATE_DIST) { _showStatueHintPopup(); return; }
     }
 
     // 범위/벽 체크

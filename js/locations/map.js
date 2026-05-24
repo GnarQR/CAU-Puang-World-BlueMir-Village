@@ -132,17 +132,10 @@ window.enterPlace = function(placeId) {
   // ★ Fix #3: setTimeout 콜백 내 return은 outer 함수를 종료하지 못하므로
   //   블록 바깥에 return을 추가해 아래 if문들이 연달아 실행되는 버그 수정
   if (placeId === 'battle') {
-    window.setPlaceBg('explore');
-    showSystemMsgOnMap('학생증을 단말기에 찍는다... 이면 세계의 균열 속으로 뛰어듭니다...');
-    setTimeout(() => {
-      // 탐험 컨테이너 표시
-      const exploreCont = document.getElementById('explore-container');
-      if (exploreCont) exploreCont.style.display = 'block';
+    // 층 선택 장면 추가
+    if (typeof window.showFloorSelectScreen === 'function') window.showFloorSelectScreen();
 
-      // 탐험 로직 및 루프 시작
-      if (typeof startExploration === 'function') startExploration();
-    });
-    return; // ★ Fix #3: 여기서 함수 종료 — 아래 if문 실행 방지
+    return;
   }
 
   // 각 장소 진입 함수 연결

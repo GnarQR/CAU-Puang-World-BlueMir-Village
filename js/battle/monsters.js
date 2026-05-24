@@ -36,7 +36,7 @@ window.MONSTERS = {
     hp:        75,
     attackMin: 2, attackMax: 10,  // 14 → 10 (평균 6)
     reward:    7,
-    image:     'images/monster/normal/F_ghost.png',
+    image:     'images/monster/normal/assignment_demon.png',
     weakness:  '시간 관리 속성',
     intro:     '마감 기한이 다가온다... 과제악마가 소환됐다!',
     isBoss:    false,
@@ -49,7 +49,7 @@ window.MONSTERS = {
     hp:        50,
     attackMin: 3, attackMax: 9,   // 16 → 9 (평균 6)
     reward:    9,
-    image:     'images/monster/normal/F_ghost.png',
+    image:     'images/monster/normal/sugang_bot.png',
     weakness:  '빠른 손가락 속성',
     intro:     '수강신청봇이 접속을 차단한다!',
     isBoss:    false,
@@ -62,7 +62,7 @@ window.MONSTERS = {
     hp:        90,
     attackMin: 3, attackMax: 11,  // 4~15 → 3~11 (평균 7)
     reward:    11,
-    image:     'images/monster/normal/F_ghost.png',
+    image:     'images/monster/normal/syllabus_wraith.png',
     weakness:  '족보 수집 속성',
     intro:     '족보 없는 시험... 족보귀신이 나타났다!',
     isBoss:    false,
@@ -75,7 +75,7 @@ window.MONSTERS = {
     hp:        40,
     attackMin: 1, attackMax: 6,   // 8 → 6 (평균 3.5, 입문 몹)
     reward:    4,
-    image:     'images/monster/normal/F_ghost.png',
+    image:     'images/monster/normal/sleep_specter.png',
     weakness:  '카페인 속성',
     intro:     '눈꺼풀이 무거워진다... 졸음유령 출현!',
     isBoss:    false,

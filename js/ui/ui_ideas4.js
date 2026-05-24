@@ -502,6 +502,7 @@ window.goToFloor=function(f){
   if(typeof showToast==='function') showToast('🛗 B'+f+'F 진입!','info',2000);
 };
 
+/*
 const _origSE4b=window.startExploration;
 if(_origSE4b) window.startExploration=function(){
   _origSE4b();
@@ -513,6 +514,7 @@ if(_origSE4b) window.startExploration=function(){
     c.appendChild(nav);
   },200);
 };
+*/
 
 // ================================================================
 // 16. 온보딩 튜토리얼
