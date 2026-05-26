@@ -179,6 +179,8 @@ async function loadAllDataFromServer() {
       if (s.playerAvatar)             localStorage.setItem('playerAvatar',        s.playerAvatar);
       if (s.monsterCompendium)        localStorage.setItem('monsterCompendium',   JSON.stringify(s.monsterCompendium));
       if (s.dataHistory)              localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
+      if (s.playerStats?.equippedPet !== undefined)
+        playerStats.equippedPet = s.playerStats.equippedPet;
       if (s.playerCostume !== undefined) {
         localStorage.setItem('playerCostume', s.playerCostume);
         playerStats.playerCostume = s.playerCostume; // 메모리에도 즉시 반영
@@ -302,6 +304,7 @@ async function saveAllDataToServer() {
         data:               playerStats.data ?? 0,
         gender:             playerStats.gender || 'male',
         playerCostume:      playerStats.playerCostume       || '',
+        equippedPet:        playerStats.equippedPet          || '',
         ownedRoomItems:     playerStats.ownedRoomItems     || [],
         roomDecorations:    playerStats.roomDecorations    || {},
         statusEffects:      playerStats.statusEffects      || [],
