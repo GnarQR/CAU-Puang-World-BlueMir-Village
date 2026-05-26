@@ -783,8 +783,8 @@ window.openProfile = function() {
       const st = document.createElement('style');
       st.id = 'profile-tab-style';
       st.textContent = `
-        .profile-tab-bar{display:flex;gap:6px;margin:10px 0 14px;padding:0 2px;}
-        .profile-tab-btn{flex:1;padding:7px 4px;border:1px solid #1a3a5c;border-radius:8px;background:rgba(10,20,40,0.6);color:#6090b0;font-size:12px;cursor:pointer;transition:all .18s;}
+        .profile-tab-bar{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 14px;padding:0 2px;}
+        .profile-tab-btn{flex:1;min-width:calc(50% - 4px);padding:6px 4px;border:1px solid #1a3a5c;border-radius:8px;background:rgba(10,20,40,0.6);color:#6090b0;font-size:11px;cursor:pointer;transition:all .18s;text-align:center;}
         .profile-tab-btn.active{background:#0f2a40;border-color:#378add;color:#a0c4ff;font-weight:700;}
         .profile-tab-btn:hover:not(.active){border-color:#2a5a8c;color:#80b0d0;}
 
