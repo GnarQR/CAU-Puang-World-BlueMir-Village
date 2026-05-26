@@ -696,10 +696,8 @@ window.doCmd = async function(cmd) {
       if (typeof showToast === 'function') showToast('⚔️ 전투 승리! 💎 +' + reward, 'success', 3000);
       // ★ Fix #3: 승리 시 clearBattleState — 미호출 시 inBattle=true 잔류 → 새로고침마다 전투 루프 재진입
       clearBattleState();
-      // ★ BugFix #1: 전투 승리 보상(data, hp, sp)을 Firebase에 즉시 저장
-      //   기존: updateMapStats()만 호출 → 탭 종료 시 보상 손실
-      //   수정: syncAndSave()로 debounce 저장 트리거 (사이드이펙트 없음 — syncAndSave는 debouncedSave 래퍼)
-      if (typeof window.syncAndSave === 'function') window.syncAndSave();
+      // 전투 승리 보상 즉시 저장 (탭 닫기 전 손실 방지)
+      if (typeof window.syncAndSaveNow === 'function') window.syncAndSaveNow();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;
@@ -793,10 +791,9 @@ window.doCmd = async function(cmd) {
       updateMapStats();
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof showToast === 'function') showToast('⚡ 서지로 승리! 💎 +' + reward, 'success', 3000);
-      // ★ Fix #3: 서지 승리 시에도 clearBattleState — inBattle 잔류 방지
+      // 서지 승리 시 clearBattleState + 즉시 저장
       clearBattleState();
-      // ★ BugFix #1: 서지 승리 보상도 Firebase에 즉시 저장
-      if (typeof window.syncAndSave === 'function') window.syncAndSave();
+      if (typeof window.syncAndSaveNow === 'function') window.syncAndSaveNow();
       await sleepMs(3000);
       returnToGame();
       battleBusy = false;

@@ -1,9 +1,30 @@
 // ================================================================
-// state.js — 전역 상태 관리
+// state.js — 전역 상태 관리 v3
 // ================================================================
 //
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  설계 원칙 (멀티 디바이스 단일 진실 원천)                    ║
+// ║                                                              ║
+// ║  1. Firebase = 유일한 진실 원천                              ║
+// ║     - 로드 전에는 게임 화면 자체를 열지 않음 (intro.js 게이팅)║
+// ║     - 로컬스토리지 초기값은 절대 Firebase를 덮어쓰지 않음     ║
+// ║                                                              ║
+// ║  2. 저장 타이밍                                              ║
+// ║     - 일반 데이터 변경: 디바운스 0.8초                       ║
+// ║     - 전투 종료 / 보상 획득: immediateSave() 즉시 저장       ║
+// ║                                                              ║
+// ║  3. localStorage 역할                                        ║
+// ║     - UI 설정(테마, SFX 등) 기기별 보관                      ║
+// ║     - 전투 복구용 임시 플래그 (inBattle 등)                  ║
+// ║     - Firebase 로드 성공 후 캐시로만 갱신됨                  ║
+// ║                                                              ║
+// ║  4. 타임아웃                                                 ║
+// ║     - Firebase 응답 5초 초과 시 로컬 캐시로 폴백             ║
+// ║     - 폴백 시 화면에 경고 배너 표시                          ║
+// ╚══════════════════════════════════════════════════════════════╝
+//
 // ┌──────────────────────────┬────────────────────────────────────┐
-// │  Firebase (영구)         │  localStorage (임시/기기별)        │
+// │  Firebase (영구·크로스기기)│  localStorage (기기별 캐시/UI)    │
 // ├──────────────────────────┼────────────────────────────────────┤
 // │  playerStats             │  groqApiKey       ← 민감 정보      │
 // │  puangState              │  dailyUsage       ← 오늘만 유효    │
@@ -20,194 +41,248 @@
 // │  lab2Recipes             │  union_sale_*     ← 이번주만       │
 // │  unionClubs              │  inBattle         ← 임시 복구      │
 // │  libBorrowedBooks        │  battleOrigin     ← 임시 복구      │
-// │  playerAvatar            │  cauTheme         ← 기기별 UI      │
-// │  monsterCompendium       │  statBarCollapsed ← 기기별 UI      │
-// │  dataHistory             │  sfxEnabled       ← 기기별 UI      │
+// │  libStudyCount / libFocus│  cauTheme         ← 기기별 UI      │
+// │  playerAvatar            │  statBarCollapsed ← 기기별 UI      │
+// │  monsterCompendium       │  sfxEnabled       ← 기기별 UI      │
+// │  dataHistory             │                                    │
 // └──────────────────────────┴────────────────────────────────────┘
 
 // ── Groq API 키 ──
 let GROQ_API_KEY = '';
+
+// ── 로드 완료 플래그 ──
+// true가 되기 전에는 게임 화면 진입 불가 (intro.js가 게이팅)
+// saveAllDataToServer도 이 플래그 없이는 실행 안 됨
 let serverDataLoaded = false;
 
-// ================================================================
-// 디바운싱 — 1.5초 내 중복 Firebase write를 1번으로 압축
-// ================================================================
+// ── 디바운스 타이머 ──
 let _saveDebounceTimer = null;
-// ★ Fix 구멍3: serverDataLoaded 전 debouncedSave 호출 시 저장이 조용히 무시되는 문제
-//   기존: saveAllDataToServer 첫 줄에서 !serverDataLoaded면 그냥 return
-//   수정: 로드 전이면 _pendingSave 플래그를 세워두고 로드 완료 후 자동 1회 저장
-let _pendingSave = false;
+
+// ── _pendingSave 제거 이유 ──
+// 이전: 로드 전 debouncedSave 호출 → _pendingSave=true → 로드 완료 후 즉시 저장
+// 문제: 로컬 초기값(hp:60 등)으로 Firebase 실제 데이터를 덮어쓰는 버그 원인
+// 해결: intro.js 로딩 게이트가 로드 전 게임 진입을 막으므로
+//       로드 전 debouncedSave 자체가 호출될 일이 없음 → 경고만 출력하고 무시
+
 function debouncedSave() {
   if (!serverDataLoaded) {
-    _pendingSave = true; // 로드 완료 후 저장하도록 예약
+    console.warn('[State] 로드 완료 전 저장 시도 — 무시됨 (로컬 초기값 보호)');
     return;
   }
   if (_saveDebounceTimer) clearTimeout(_saveDebounceTimer);
   _saveDebounceTimer = setTimeout(() => {
     _saveDebounceTimer = null;
     saveAllDataToServer();
-  }, 1500);
+  }, 800);
 }
+
+// ── 즉시 저장 (전투 종료, 보상 획득 등 손실 허용 불가 순간) ──
+function immediateSave() {
+  if (!serverDataLoaded) {
+    console.warn('[State] 로드 완료 전 즉시 저장 시도 — 무시됨');
+    return;
+  }
+  if (_saveDebounceTimer) { clearTimeout(_saveDebounceTimer); _saveDebounceTimer = null; }
+  saveAllDataToServer();
+}
+window.immediateSave = immediateSave;
 
 // ================================================================
 // 1. Firebase → 로컬 데이터 로드
+//    원칙: 서버값이 있으면 항상 서버값 우선. 로컬 병합 없음.
+//    타임아웃: 5초 초과 시 로컬 캐시로 폴백 + 경고 배너 표시
 // ================================================================
 async function loadAllDataFromServer() {
   if (!GROQ_API_KEY) return;
 
+  // ── 5초 타임아웃 ──
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('TIMEOUT')), 5000)
+  );
+
   try {
-    const docSnap = await getDoc(doc(db, 'gameData', GROQ_API_KEY));
+    const docSnap = await Promise.race([
+      getDoc(doc(db, 'gameData', GROQ_API_KEY)),
+      timeoutPromise
+    ]);
 
     if (docSnap.exists) {
-      const s = docSnap.data();  // s = serverData
+      const s = docSnap.data();
 
-      // ── 핵심 게임 데이터 ──
+      // ── 플레이어 스탯 ──
       if (s.playerStats) {
         Object.assign(playerStats, s.playerStats);
         if (s.playerStats.name) {
           playerStats.name = s.playerStats.name;
           localStorage.setItem('playerName', s.playerStats.name);
         }
-        // diamond → data 마이그레이션
+        // diamond → data 마이그레이션 (구버전 호환)
+        // 원본 로직 그대로 유지: data 없으면 diamond 시도, 둘 다 없으면 0
         if (s.playerStats.data !== undefined)        playerStats.data = s.playerStats.data;
         else if (s.playerStats.diamond !== undefined) playerStats.data = s.playerStats.diamond;
         else                                          playerStats.data = 0;
+
         if (playerStats.diamond !== undefined) delete playerStats.diamond;
-        // ★ BugFix #2: 체육관/동아리 패시브 필드 복원 (저장 추가와 짝을 이루는 로드 처리)
+
+        // 체육관/동아리 패시브 필드 복원 (BugFix #2 유지)
         if (s.playerStats._agilityBonus !== undefined) playerStats._agilityBonus = s.playerStats._agilityBonus;
         if (s.playerStats._gymDiscount  !== undefined) playerStats._gymDiscount  = s.playerStats._gymDiscount;
         if (s.playerStats._festBonus    !== undefined) playerStats._festBonus    = s.playerStats._festBonus;
+
         localStorage.setItem('playerStats', JSON.stringify(playerStats));
       }
 
+      // ── 푸앙이 상태 ──
       if (s.puangState) {
         Object.assign(puangState, s.puangState);
         localStorage.setItem('puangState', JSON.stringify(puangState));
       }
 
+      // ── 인벤토리 ──
       if (s.inventory && Array.isArray(s.inventory)) {
         inventory.length = 0;
         s.inventory.forEach(item => inventory.push(item));
         localStorage.setItem('cau_inventory', JSON.stringify(inventory));
       }
 
-      // dailyUsage: 날짜 같을 때만 복원
-      // ★ Fix #12: 멀티 디바이스 동기화 — 같은 날짜면 서버/로컬 중 더 높은 값(max)으로 병합
-      //   예) A기기에서 도서관 3회, B기기에서 2회 → 서버값(3)으로 덮어쓰지 않고 max(3,2)=3 유지
+      // ── dailyUsage ──
+      // 변경: Math.max 병합 제거 → 서버값 완전 교체
+      // 이유: 멀티 디바이스에서 기기A가 한도를 다 쓰면 기기B도 한도 도달처럼 보이는 문제
+      //       서버의 마지막 저장값을 신뢰하고 완전 교체
       if (s.dailyUsage) {
         const today = new Date().toDateString();
         if (s.dailyUsage.date === today) {
-          Object.keys(s.dailyUsage).forEach(k => {
-            if (k === 'date') return;
-            // 숫자 필드: 서버와 로컬 중 더 큰 값 사용 (중복 차감 방지)
-            if (typeof s.dailyUsage[k] === 'number' && typeof dailyUsage[k] === 'number') {
-              dailyUsage[k] = Math.max(dailyUsage[k], s.dailyUsage[k]);
-            } else {
-              dailyUsage[k] = s.dailyUsage[k];
-            }
-          });
-          dailyUsage.date = today;
+          Object.assign(dailyUsage, s.dailyUsage);
           localStorage.setItem('dailyUsage', JSON.stringify(dailyUsage));
         }
-        // 날짜가 다르면 로컬 초기화 (checkAndResetDaily가 처리)
+        // 날짜 다르면 checkAndResetDaily()가 자동 초기화
       }
 
-      // ── 영구 보존 데이터 → localStorage 복원 ──
-      if (s.achievements)       localStorage.setItem('labAchievements',     JSON.stringify(s.achievements));
-      if (s.skills)             localStorage.setItem('labSkills',           JSON.stringify(s.skills));
-      if (s.lakeUnlocked)       localStorage.setItem('lakeUnlocked',        'true');
-      if (s.questCompleted)     localStorage.setItem('questCompleted',      JSON.stringify(s.questCompleted));
+      // ── 영구 보존 데이터 → localStorage 캐시 갱신 ──
+      if (s.achievements)    localStorage.setItem('labAchievements',      JSON.stringify(s.achievements));
+      if (s.skills)          localStorage.setItem('labSkills',            JSON.stringify(s.skills));
+      if (s.lakeUnlocked)    localStorage.setItem('lakeUnlocked',         'true');
+      if (s.questCompleted)  localStorage.setItem('questCompleted',       JSON.stringify(s.questCompleted));
       if (s.saveSlots) {
-        if (s.saveSlots.slot1)  localStorage.setItem('cau_save_slot_1',     JSON.stringify(s.saveSlots.slot1));
-        if (s.saveSlots.slot2)  localStorage.setItem('cau_save_slot_2',     JSON.stringify(s.saveSlots.slot2));
-        if (s.saveSlots.slot3)  localStorage.setItem('cau_save_slot_3',     JSON.stringify(s.saveSlots.slot3));
+        if (s.saveSlots.slot1) localStorage.setItem('cau_save_slot_1',    JSON.stringify(s.saveSlots.slot1));
+        if (s.saveSlots.slot2) localStorage.setItem('cau_save_slot_2',    JSON.stringify(s.saveSlots.slot2));
+        if (s.saveSlots.slot3) localStorage.setItem('cau_save_slot_3',    JSON.stringify(s.saveSlots.slot3));
       }
 
-      // ── 추가 영구 데이터 → localStorage 복원 ──
-      if (s.gymStreak !== undefined) localStorage.setItem('gymStreak',      String(s.gymStreak));
-      if (s.gymLastVisit)            localStorage.setItem('gymLastVisit',   s.gymLastVisit);
-      if (s.clinicVaccine)           localStorage.setItem('clinicVaccine',  JSON.stringify(s.clinicVaccine));
-      if (s.clinicInsurance)         localStorage.setItem('clinicInsurance','true');
-      if (s.lab2Recipes)             localStorage.setItem('lab2UnlockedRecipes', JSON.stringify(s.lab2Recipes));
-      if (s.unionClubs)              localStorage.setItem('unionJoinedClubs',    JSON.stringify(s.unionClubs));
-      if (s.libBorrowedBooks)        localStorage.setItem('libBorrowedBooks',    JSON.stringify(s.libBorrowedBooks));
-      if (s.playerAvatar)            localStorage.setItem('playerAvatar',        s.playerAvatar);
-      if (s.monsterCompendium)       localStorage.setItem('monsterCompendium',   JSON.stringify(s.monsterCompendium));
-      if (s.dataHistory)             localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
+      if (s.gymStreak !== undefined)  localStorage.setItem('gymStreak',          String(s.gymStreak));
+      if (s.gymLastVisit)             localStorage.setItem('gymLastVisit',        s.gymLastVisit);
+      if (s.clinicVaccine)            localStorage.setItem('clinicVaccine',       JSON.stringify(s.clinicVaccine));
+      if (s.clinicInsurance)          localStorage.setItem('clinicInsurance',     'true');
+      if (s.lab2Recipes)              localStorage.setItem('lab2UnlockedRecipes', JSON.stringify(s.lab2Recipes));
+      if (s.unionClubs)               localStorage.setItem('unionJoinedClubs',    JSON.stringify(s.unionClubs));
+      if (s.libBorrowedBooks)         localStorage.setItem('libBorrowedBooks',    JSON.stringify(s.libBorrowedBooks));
+      if (s.playerAvatar)             localStorage.setItem('playerAvatar',        s.playerAvatar);
+      if (s.monsterCompendium)        localStorage.setItem('monsterCompendium',   JSON.stringify(s.monsterCompendium));
+      if (s.dataHistory)              localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
 
-      // ★ Fix 구멍2: libStudyCount / libFocus 복원
-      //   날짜가 같을 때만 복원 (날짜 바뀌면 locations.js의 enterLibrary에서 초기화)
+      // ── libStudyCount / libFocus ──
+      // 원본 Fix 구멍2 로직 유지 + 서버값 우선으로 변경
+      // 단, libDate가 없는 신규 기기도 서버값 로드되도록 조건 완화:
+      //   원본: savedLibDate === today (libDate 없으면 로드 안 됨 → 신규 기기 공부 카운트 초기화 버그)
+      //   수정: savedLibDate가 없거나 today면 서버값 로드 (신규 기기 보호)
       if (s.libStudyCount !== undefined || s.libFocus !== undefined) {
         const today = new Date().toDateString();
         const savedLibDate = localStorage.getItem('libDate');
-        if (savedLibDate === today) {
-          // 같은 날짜면 서버/로컬 중 더 큰 값 사용 (멀티 디바이스 보호)
-          if (s.libStudyCount !== undefined) {
-            const localCount = parseInt(localStorage.getItem('libStudyCount') || '0');
-            localStorage.setItem('libStudyCount', String(Math.max(localCount, s.libStudyCount)));
-          }
-          if (s.libFocus !== undefined) {
-            const localFocus = parseInt(localStorage.getItem('libFocus') || '100');
-            // libFocus는 낮을수록 더 공부한 것 — 더 낮은 값(더 많이 공부한 기기) 사용
-            localStorage.setItem('libFocus', String(Math.min(localFocus, s.libFocus)));
-          }
+        if (!savedLibDate || savedLibDate === today) {
+          if (s.libStudyCount !== undefined)
+            localStorage.setItem('libStudyCount', String(s.libStudyCount));
+          if (s.libFocus !== undefined)
+            localStorage.setItem('libFocus', String(s.libFocus));
+          // libDate가 없었으면 오늘로 설정
+          if (!savedLibDate) localStorage.setItem('libDate', today);
         }
       }
-      
-      // ★ BugFix #11: Firebase 로드 완료 후 placeInfo.bluedragonlake.locked 재설정
-      //  문제: locations.js 파일 로드 시 1회만 실행 → 다른 기기에서 lakeUnlocked가
-      //  Firebase로 복원돼도 placeInfo.locked가 true로 고정될 수 있음
-      //  사이드이펙트: 없음 — placeInfo가 정의된 경우에만 실행
+
+      // ── 청룡호 잠금 해제 동기화 (BugFix #11 유지) ──
       if (typeof placeInfo !== 'undefined' && placeInfo.bluedragonlake) {
         const isUnlocked = s.lakeUnlocked === true || localStorage.getItem('lakeUnlocked') === 'true';
         placeInfo.bluedragonlake.locked = !isUnlocked;
-        
-        if (isUnlocked) {  // 맵 버튼 locked 클래스도 동기화
+        if (isUnlocked) {
           const lakeBtn = document.querySelector('.map-spot[onclick*="bluedragonlake"]');
           if (lakeBtn) lakeBtn.classList.remove('locked');
         }
       }
 
-      // ★ 기존 유저 엔딩 영상 스킵 처리
+      // ── 기존 유저 엔딩 영상 스킵 처리 ──
       if ((s.puangState?.favorability >= 100 || s.lakeUnlocked) && !localStorage.getItem('endingVideoPlayed')) {
         localStorage.setItem('endingVideoPlayed', 'true');
       }
 
-      console.log('Firebase 로드 완료');
+      console.log('[State] Firebase 로드 완료 —', new Date().toLocaleTimeString());
     } else {
-      console.log('신규 유저 — 기본값으로 시작');
+      console.log('[State] 신규 유저 — 기본값으로 시작');
     }
 
     serverDataLoaded = true;
-    // ★ Fix 구멍3: 로드 전에 예약된 저장이 있으면 즉시 실행
-    if (_pendingSave) {
-      _pendingSave = false;
-      saveAllDataToServer();
+
+    // _prevData 동기화 — 로드 후 updateMapStats 오발 방지 (BugFix #13 유지)
+    _prevData = playerStats.data;
+    if (typeof updateMapStats === 'function') updateMapStats();
+
+  } catch (e) {
+    serverDataLoaded = true; // 에러/타임아웃이어도 게임은 계속
+
+    if (e.message === 'TIMEOUT') {
+      console.warn('[State] Firebase 응답 5초 초과 — 로컬 데이터로 시작');
+      // 화면에 경고 배너 표시
+      _showOfflineWarning();
+    } else {
+      console.error('[State] 데이터 로드 실패:', e);
     }
 
-    // ★ Fix #13: 서버 로드 완료 후 _prevData를 현재 data값으로 맞춰
-    //   이유: loadAllDataFromServer 완료 후 updateMapStats 재호출 시 _prevData=null(초기값)이고
-    //   서버 data가 양수이면 "💎 +N 획득" 팝업이 오발됨 — 실제 획득이 아님에도 표시
-    //   해결: updateMapStats 호출 전 _prevData를 현재 data로 동기화해 diff=0 으로 만듦
+    if (typeof showToast === 'function')
+      showToast('⚠️ 서버 로드 실패 — 로컬 데이터로 시작합니다.', 'warning', 3500);
+
+    // 로드 실패해도 _prevData 동기화
     _prevData = playerStats.data;
     if (typeof updateMapStats === 'function') updateMapStats();
   }
-   
-  catch (e) {
-    serverDataLoaded = true;
-    // ★ Fix 구멍3: 로드 실패해도 예약된 저장 처리 (로컬 데이터라도 보존)
-    if (_pendingSave) { _pendingSave = false; saveAllDataToServer(); }
-    console.error('데이터 로드 실패:', e);
-    if (typeof showToast === 'function') showToast('⚠️ 서버 로드 실패 — 로컬 데이터로 시작합니다.', 'warning', 3500);
+}
+
+// ── 오프라인/타임아웃 경고 배너 ──
+// 맵 화면 상단에 고정 표시, 3번 클릭하거나 10초 후 자동 제거
+function _showOfflineWarning() {
+  // DOMContentLoaded 이후에 삽입
+  const insert = () => {
+    if (document.getElementById('offline-warning')) return;
+    const banner = document.createElement('div');
+    banner.id = 'offline-warning';
+    banner.style.cssText = `
+      position: fixed; top: 0; left: 0; right: 0; z-index: 8888;
+      background: #7a3a1a; color: #ffd580;
+      font-size: 13px; text-align: center;
+      padding: 7px 12px; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      border-bottom: 1px solid #c06020;
+    `;
+    banner.textContent = '⚠️ 서버 연결 실패 — 로컬 데이터로 시작됨. 진행상황이 동기화되지 않을 수 있습니다. (클릭해서 닫기)';
+    banner.onclick = () => banner.remove();
+    document.body.prepend(banner);
+    setTimeout(() => { if (banner.parentNode) banner.remove(); }, 10000);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', insert);
+  } else {
+    insert();
   }
 }
 
 // ================================================================
 // 2. 로컬 데이터 → Firebase 저장
+//    원칙: serverDataLoaded=true 전에는 절대 실행 안 됨
 // ================================================================
 async function saveAllDataToServer() {
   if (!GROQ_API_KEY) return;
-  if (!serverDataLoaded) return;
+  if (!serverDataLoaded) {
+    console.warn('[State] 로드 완료 전 저장 차단');
+    return;
+  }
 
   try {
     const dataToSave = {
@@ -220,6 +295,7 @@ async function saveAllDataToServer() {
         sp:                 playerStats.sp,
         maxSp:              playerStats.maxSp,
         data:               playerStats.data ?? 0,
+        gender:             playerStats.gender || 'male',
         ownedRoomItems:     playerStats.ownedRoomItems     || [],
         roomDecorations:    playerStats.roomDecorations    || {},
         statusEffects:      playerStats.statusEffects      || [],
@@ -228,11 +304,9 @@ async function saveAllDataToServer() {
         _regenPerTurn:      playerStats._regenPerTurn      || 0,
         _battleBonusReward: playerStats._battleBonusReward || 0,
         unionBonusDmg:      playerStats.unionBonusDmg      || 0,
-        unionBonusStudy:    playerStats.unionBonusStudy    || 0,  // ★ Fix 구멍1: 집중력 교재 효과 Firebase 저장
+        unionBonusStudy:    playerStats.unionBonusStudy    || 0,
         _slotLucky:         playerStats._slotLucky         || false,
         _libTimeBonus:      playerStats._libTimeBonus      || 0,
-        // ★ BugFix #2: 아래 세 필드가 누락되어 체육관/동아리 패시브가 새로고침 후 초기화되던 버그 수정
-        //   사이드이펙트 없음 — 기존 필드에 추가만 하는 변경
         _agilityBonus:      playerStats._agilityBonus      || 0,
         _gymDiscount:       playerStats._gymDiscount       || 0,
         _festBonus:         playerStats._festBonus         || 0,
@@ -252,28 +326,24 @@ async function saveAllDataToServer() {
         slot2: JSON.parse(localStorage.getItem('cau_save_slot_2') || 'null'),
         slot3: JSON.parse(localStorage.getItem('cau_save_slot_3') || 'null'),
       },
-
-      // ── 추가 영구 데이터 ──
-      gymStreak:          parseInt(localStorage.getItem('gymStreak')              || '0'),
-      gymLastVisit:       localStorage.getItem('gymLastVisit')                    || '',
-      clinicVaccine:      JSON.parse(localStorage.getItem('clinicVaccine')        || 'null'),
-      clinicInsurance:    localStorage.getItem('clinicInsurance') === 'true',
-      lab2Recipes:        JSON.parse(localStorage.getItem('lab2UnlockedRecipes')  || '[]'),
-      unionClubs:         JSON.parse(localStorage.getItem('unionJoinedClubs')     || '[]'),
-      libBorrowedBooks:   JSON.parse(localStorage.getItem('libBorrowedBooks')     || '[]'),
-      playerAvatar:       localStorage.getItem('playerAvatar')                    || '🧑‍💻',
-      monsterCompendium:  JSON.parse(localStorage.getItem('monsterCompendium')    || '{}'),
-      dataHistory:        JSON.parse(localStorage.getItem('dataHistory')          || '[]'),
-
-      // ★ Fix 구멍2: libStudyCount / libFocus를 Firebase에도 저장
-      //   기존: localStorage에만 저장 → 다른 기기 접속 시 초기화, 업적 달성 누락
-      libStudyCount:      parseInt(localStorage.getItem('libStudyCount') || '0'),
-      libFocus:           parseInt(localStorage.getItem('libFocus')      || '100'),
+      gymStreak:         parseInt(localStorage.getItem('gymStreak')              || '0'),
+      gymLastVisit:      localStorage.getItem('gymLastVisit')                    || '',
+      clinicVaccine:     JSON.parse(localStorage.getItem('clinicVaccine')        || 'null'),
+      clinicInsurance:   localStorage.getItem('clinicInsurance') === 'true',
+      lab2Recipes:       JSON.parse(localStorage.getItem('lab2UnlockedRecipes')  || '[]'),
+      unionClubs:        JSON.parse(localStorage.getItem('unionJoinedClubs')     || '[]'),
+      libBorrowedBooks:  JSON.parse(localStorage.getItem('libBorrowedBooks')     || '[]'),
+      playerAvatar:      localStorage.getItem('playerAvatar')                    || '🧑‍💻',
+      monsterCompendium: JSON.parse(localStorage.getItem('monsterCompendium')    || '{}'),
+      dataHistory:       JSON.parse(localStorage.getItem('dataHistory')          || '[]'),
+      libStudyCount:     parseInt(localStorage.getItem('libStudyCount') || '0'),
+      libFocus:          parseInt(localStorage.getItem('libFocus')      || '100'),
 
       lastUpdated: new Date(),
+      lastDevice:  navigator.userAgent.slice(0, 80), // 마지막 저장 기기 추적
     };
 
-    // localStorage도 동시에 최신화
+    // localStorage 캐시 동시 갱신
     localStorage.setItem('playerStats',   JSON.stringify(dataToSave.playerStats));
     localStorage.setItem('playerName',    dataToSave.playerStats.name);
     localStorage.setItem('puangState',    JSON.stringify(dataToSave.puangState));
@@ -281,22 +351,32 @@ async function saveAllDataToServer() {
     localStorage.setItem('cau_inventory', JSON.stringify(dataToSave.inventory));
 
     await setDoc(doc(db, 'gameData', GROQ_API_KEY), dataToSave);
-    console.log('Firebase 저장 완료');
+    console.log('[State] Firebase 저장 완료 —', new Date().toLocaleTimeString());
 
   } catch (e) {
-    console.error('서버 저장 실패:', e);
-    if (typeof showToast === 'function') showToast('⚠️ 서버 저장 실패 — 데이터는 로컬에 보관됩니다.', 'warning', 4000);
+    console.error('[State] 서버 저장 실패:', e);
+    if (typeof showToast === 'function')
+      showToast('⚠️ 서버 저장 실패 — 데이터는 로컬에 보관됩니다.', 'warning', 4000);
   }
 }
 
 // ================================================================
-// 통합 업데이트 함수 — 데이터 변경 후 항상 이걸 호출
+// 통합 업데이트 함수
 // ================================================================
+
+// 일반 데이터 변경 후 호출 (0.8초 디바운스)
 function syncAndSave() {
   updateMapStats();
   debouncedSave();
 }
 window.syncAndSave = syncAndSave;
+
+// 중요 데이터 변경 후 호출 (전투 승리, 보상 등 — 즉시 저장)
+function syncAndSaveNow() {
+  updateMapStats();
+  immediateSave();
+}
+window.syncAndSaveNow = syncAndSaveNow;
 
 // ================================================================
 // 맵 상단 스탯 바 업데이트
@@ -342,7 +422,9 @@ window.updateMapStats = function() {
 document.addEventListener('DOMContentLoaded', () => { window.updateMapStats(); });
 
 // ================================================================
-// 전역 변수 — localStorage 초기값 로드
+// 전역 변수 초기값
+// 주의: 이 값들은 intro.js 로딩 게이트가 뜨는 동안의 임시값.
+//       loadAllDataFromServer() 완료 후 반드시 서버값으로 덮어씌워짐.
 // ================================================================
 
 // ── 플레이어 스탯 ──
@@ -351,6 +433,7 @@ const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {
   hp: 60,  maxHp: 60,
   sp: 40,  maxSp: 40,
   data: 0,
+  gender: 'male',
   ownedRoomItems: [],
   roomDecorations: {
     background:      'default',
@@ -376,12 +459,11 @@ const puangState = JSON.parse(localStorage.getItem('puangState')) || {
 window.savePuangState = function() {
   localStorage.setItem('puangState', JSON.stringify(puangState));
 
-  // ★ 호감도 100 달성 시 플래그만 저장 (영상은 맵 복귀 시 재생)
+  // 호감도 100 달성 시 플래그만 저장 (영상은 맵 복귀 시 재생)
   if (puangState.favorability >= 100 && !localStorage.getItem('lakeUnlocked') && !localStorage.getItem('endingVideoPlayed')) {
     localStorage.setItem('lakeUnlocked', 'true');
-    localStorage.setItem('endingVideoPending', 'true'); // ← 대기 플래그
+    localStorage.setItem('endingVideoPending', 'true');
 
-    // placeInfo 즉시 갱신
     if (typeof placeInfo !== 'undefined' && placeInfo.bluedragonlake) {
       placeInfo.bluedragonlake.locked = false;
       const btn = document.querySelector('.map-spot[onclick*="bluedragonlake"]');
@@ -397,9 +479,8 @@ const dailyLimits = {
   cafeteria: 3, library: 5, gym:  3,
   clinic:    1, festival: 5, lab2: 3,
   union:     2, praise:   2, lab:  2,
-  // ★ BugFix #6: dormitory 키 추가 — 미등록 시 useDaily('dormitory')가 항상 통과되어 청룡호 산책 무한 반복 허용
-  dormitory: 3,
-  lake_meditate: 1,  // 청룡호 명상 — 하루 1회
+  dormitory: 3,        // BugFix #6: 미등록 시 청룡호 산책 무한 반복 허용 버그
+  lake_meditate: 1,    // 청룡호 명상 — 하루 1회
 };
 
 const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
@@ -407,9 +488,8 @@ const dailyUsage = JSON.parse(localStorage.getItem('dailyUsage')) || {
   cafeteria: 0, library: 0, gym:  0,
   clinic:    0, festival: 0, lab2: 0,
   union:     0, praise:   0, lab:  0,
-  // ★ BugFix #6: dailyLimits와 키 일치
   dormitory: 0,
-  lake_meditate: 0,  // 청룡호 명상
+  lake_meditate: 0,
 };
 
 function checkAndResetDaily() {
@@ -450,8 +530,6 @@ window.saveInventory = function() {
   debouncedSave();
 };
 
-// ★ Fix #2: loadAllDataFromServer / saveAllDataToServer를 window에 명시 노출
-//   기존: 일반 async function 선언 → 타 파일에서 스코프 격리 시 접근 불가 위험
-//   수정: window에 붙여 어느 파일에서든 typeof 체크 없이 안전하게 호출 가능
+// window 노출 (Fix #2 유지: 타 파일에서 안전하게 호출 가능하도록)
 window.loadAllDataFromServer = loadAllDataFromServer;
 window.saveAllDataToServer   = saveAllDataToServer;

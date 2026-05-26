@@ -1,7 +1,61 @@
 // ================================================================
-// intro.js — 인트로 화면 로직
-// 순서: 1단계(API 키 입력) → 2단계(스토리 타이핑) → 3단계(닉네임 입력) → 게임 시작
+// intro.js — 인트로 화면 로직 v2
 // ================================================================
+// 핵심 변경: Firebase 로드 완료 전 게임 화면 진입 차단 (로딩 게이트)
+//
+// 흐름:
+//   재방문 유저: 게임화면 숨김 → 로딩 게이트 → Firebase 로드 → 게임 진입
+//   신규 유저:   API키 입력 → Firebase 로드(await) → 스토리 → 닉네임 → 게임 진입
+// ================================================================
+
+// ================================================================
+// 로딩 게이트 — Firebase 로드 완료 전 게임화면 차단
+// ================================================================
+
+function showLoadingGate(msg) {
+  msg = msg || '데이터 불러오는 중...';
+  let gate = document.getElementById('loading-gate');
+  if (!gate) {
+    gate = document.createElement('div');
+    gate.id = 'loading-gate';
+    gate.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:9999',
+      'background:#0a0e1a',
+      'display:flex', 'flex-direction:column',
+      'align-items:center', 'justify-content:center',
+      'gap:18px',
+      "font-family:'Noto Sans KR',sans-serif",
+    ].join(';');
+    gate.innerHTML =
+      '<div id="loading-gate-icon" style="font-size:48px;animation:puang-bounce 0.8s ease-in-out infinite;">' +
+        '🐨' +
+      '</div>' +
+      '<div id="loading-gate-msg" style="color:#5dcaa5;font-size:15px;letter-spacing:1px;">' +
+        msg +
+      '</div>' +
+      '<style>' +
+        '@keyframes puang-bounce{' +
+          '0%,100%{transform:translateY(0) rotate(-8deg);}' +
+          '50%{transform:translateY(-10px) rotate(8deg);}' +
+        '}' +
+      '</style>';
+    document.body.appendChild(gate);
+  } else {
+    document.getElementById('loading-gate-msg').textContent = msg;
+    gate.style.display = 'flex';
+  }
+}
+
+function hideLoadingGate() {
+  const gate = document.getElementById('loading-gate');
+  if (!gate) return;
+  gate.style.transition = 'opacity 0.4s ease';
+  gate.style.opacity = '0';
+  setTimeout(function() {
+    gate.style.display = 'none';
+    gate.style.opacity = '1';
+  }, 400);
+}
 
 // ── 새로 고침 시 전투 데이터 이어하기 확인 ──
 window.checkResumeBattle = function() {
@@ -10,35 +64,28 @@ window.checkResumeBattle = function() {
     const origin = localStorage.getItem('battleOrigin') || 'map';
     const bossId = localStorage.getItem('battleBossId');
 
-    console.log('전투 복구 시도:', { origin, bossId });
+    console.log('[Intro] 전투 복구 시도:', { origin, bossId });
 
     // serverDataLoaded 완료 후 실행되도록 지연
-    setTimeout(() => {
+    setTimeout(function() {
       if (typeof window.initBattle === 'function') {
-        // ★ BugFix #8: origin='map'일 때 전투 복구 후 returnToGame()이
-        //   explore-container를 보여주고 requestAnimationFrame(update)를 호출하는데,
-        //   canvas 크기가 설정되지 않아 검은 화면이 됨.
-        //   복구 전에 startExploration()을 먼저 호출해 canvas를 초기화한 뒤 숨기고,
-        //   전투 화면으로 전환. 전투 종료 시 returnToGame()이 다시 explore를 표시.
+        // BugFix #8: origin='map'일 때 canvas 초기화 후 전투 화면 전환
         if (origin === 'map' && typeof window.startExploration === 'function') {
-          const exploreCont = document.getElementById('explore-container');
+          var exploreCont = document.getElementById('explore-container');
           if (exploreCont) exploreCont.style.display = 'block';
           window.startExploration(); // canvas 크기 초기화
-          // 잠시 후 전투 화면으로 전환 (startExploration의 requestAnimationFrame 1프레임 후)
-          setTimeout(() => {
+          setTimeout(function() {
             if (exploreCont) exploreCont.style.display = 'none';
             window.initBattle(origin, bossId);
           }, 50);
-        } 
-        
-        else {
-          // ★ Fix: mountain 복구 시 모든 컨테이너 먼저 숨기기
+        } else {
+          // mountain 복구 시 모든 컨테이너 먼저 숨기기
           ['mountain-container','game-container','cafeteria-container',
            'library-container','lab-container','gym-container','clinic-container',
            'lab2-container','festival-container','union-container',
            'store-container','puang-room'
-          ].forEach(id => {
-            const el = document.getElementById(id);
+          ].forEach(function(id) {
+            var el = document.getElementById(id);
             if (el) el.style.display = 'none';
           });
           window.initBattle(origin, bossId);
@@ -51,13 +98,11 @@ window.checkResumeBattle = function() {
 // ── 인트로 스킵 ──
 window.skipIntro = function() {
   document.getElementById('intro-overlay').classList.add('hidden');
-  // ★ Fix: 전투 복구 중이면 updateMapStats만 호출, game-container 표시는 스킵
+  // 전투 복구 중이면 updateMapStats만 호출, game-container 표시는 스킵
   if (typeof updateMapStats === 'function') updateMapStats();
 };
 
 // ── 1단계: API 키 제출 ──
-// ★ Fix: async 추가 + await loadAllDataFromServer()
-//        로드 완료 후 화면 전환하여 serverDataLoaded = true 보장
 window.submitApiKey = async function() {
   const key = document.getElementById('api-key-input').value.trim();
 
@@ -69,10 +114,12 @@ window.submitApiKey = async function() {
   localStorage.setItem('groqApiKey', key);
   GROQ_API_KEY = key;
 
-  // ★ Fix: await로 로드 완료까지 대기 (이전엔 await 없이 바로 화면 전환)
+  // 로딩 게이트 표시 후 Firebase 로드 (await 완료까지 대기)
+  showLoadingGate('푸앙이 데이터 불러오는 중...');
   if (typeof loadAllDataFromServer === 'function') {
     await loadAllDataFromServer();
   }
+  hideLoadingGate();
 
   switchStep('step-api', 'step-story');
   startStoryTyping();
@@ -107,7 +154,7 @@ function startStoryTyping() {
   step();
 }
 
-// ── 3단계: 캐릭터 성별 선택으로 이동 ──
+// ── 3단계: 캐릭터 성별 선택 ──
 window.selectGender = function(gender) {
   localStorage.setItem('playerGender', gender);
 
@@ -129,7 +176,7 @@ window.selectGender = function(gender) {
 window.goToNameStep = function() {
   const fromStory = !document.getElementById('step-story').classList.contains('hidden');
   if (fromStory) switchStep('step-story', 'step-gender');
-  else switchStep('step-gender', 'step-name'); 
+  else switchStep('step-gender', 'step-name');
 };
 
 // ── 닉네임 제출 ──
@@ -145,12 +192,12 @@ window.submitName = async function() {
   localStorage.setItem('playerName', name);
 
   if (typeof playerStats !== 'undefined') {
-    playerStats.name = name;
-    playerStats.gender = localStorage.getItem('playerGender') || 'male';  // 성별 정보 저장
+    playerStats.name   = name;
+    playerStats.gender = localStorage.getItem('playerGender') || 'male'; // 성별 정보 저장
     localStorage.setItem('playerStats', JSON.stringify(playerStats));
   }
 
-  // ★ Fix: serverDataLoaded가 true인 상태에서 저장 (submitApiKey에서 await 보장됨)
+  // serverDataLoaded가 true인 상태에서 저장 (submitApiKey에서 await 보장됨)
   if (typeof saveAllDataToServer === 'function') {
     await saveAllDataToServer();
   }
@@ -159,7 +206,7 @@ window.submitName = async function() {
   overlay.style.transition = 'opacity 0.6s ease';
   overlay.style.opacity = '0';
 
-  setTimeout(() => {
+  setTimeout(function() {
     overlay.classList.add('hidden');
     if (typeof window.playIntroVideo === 'function') {
       window.playIntroVideo();
@@ -178,9 +225,9 @@ function shakeInput(id) {
   const element = document.getElementById(id);
   element.style.borderColor = '#f09595';
   element.style.animation = 'none';
-  setTimeout(() => {
+  setTimeout(function() {
     element.style.animation = 'shake 0.3s ease';
-    setTimeout(() => {
+    setTimeout(function() {
       element.style.animation = '';
       element.style.borderColor = '';
     }, 300);
@@ -209,8 +256,8 @@ window.playIntroVideo = function() {
   videoCont.style.display = 'flex';
 
   video.currentTime = 0;
-  video.play().catch(e => {
-    console.warn('재생 실패:', e);
+  video.play().catch(function(e) {
+    console.warn('[Intro] 영상 재생 실패:', e);
     finishVideo();
   });
 
@@ -230,17 +277,17 @@ window.finishVideo = function() {
 
   sessionStorage.setItem('introVideoPlayed', 'true');
 
-  // ★ Fix: game-container 열기 전 모든 컨테이너 숨기기
+  // game-container 열기 전 모든 컨테이너 숨기기
   ['mountain-container','cafeteria-container','library-container',
    'lab-container','gym-container','clinic-container','lab2-container',
    'festival-container','union-container','store-container','puang-room',
    'battle-container','explore-container'
-  ].forEach(id => {
-    const el = document.getElementById(id);
+  ].forEach(function(id) {
+    var el = document.getElementById(id);
     if (el) { el.style.display = 'none'; el.classList.remove('visible'); }
   });
 
-  // ★ Fix: 전투 복구 중이면 game-container 표시 스킵 (checkResumeBattle이 처리)
+  // 전투 복구 중이면 game-container 표시 스킵 (checkResumeBattle이 처리)
   const inBattle = localStorage.getItem('inBattle') === 'true';
   if (!inBattle) {
     // 엔딩 영상 대기 중이면 game-container 대신 엔딩 영상 재생
@@ -255,9 +302,9 @@ window.finishVideo = function() {
   }
 };
 
-// 엔딩 영상 재생
+// ── 엔딩 영상 재생 ──
 window.playEndingVideo = function() {
-  console.trace('playEndingVideo 호출됨'); // ← 추가
+  console.trace('[Intro] playEndingVideo 호출됨'); // 디버그용 유지
   const cont  = document.getElementById('ending-video-container');
   const video = document.getElementById('ending-video');
   if (!cont || !video) return;
@@ -265,12 +312,12 @@ window.playEndingVideo = function() {
   cont.classList.remove('hidden');
   cont.style.display = 'flex';
   video.currentTime = 0;
-  video.play().catch(() => window.finishEndingVideo());
-  video.onended = window.finishEndingVideo;
+  video.play().catch(function() { window.finishEndingVideo(); });
+  video.onended  = window.finishEndingVideo;
   cont.ondblclick = window.finishEndingVideo;
 };
 
-// 엔딩 영상 재생 종료
+// ── 엔딩 영상 종료 ──
 window.finishEndingVideo = function() {
   const cont  = document.getElementById('ending-video-container');
   const video = document.getElementById('ending-video');
@@ -282,27 +329,49 @@ window.finishEndingVideo = function() {
   if (typeof updateMapStats === 'function') updateMapStats();
 };
 
-
-// ── DOMContentLoaded: 초기화 ──
-// ★ Fix: 재방문 유저도 loadAllDataFromServer() 호출하여 serverDataLoaded = true 보장
-document.addEventListener('DOMContentLoaded', async () => {
+// ================================================================
+// DOMContentLoaded — 재방문 유저 처리
+// ================================================================
+// 핵심 변경:
+//   1. 게임화면 전부 숨기고 로딩 게이트 표시
+//   2. Firebase 로드 완료(await)를 기다린 후 게임 진입
+//   3. 로컬 캐시로 게임화면을 먼저 보여주지 않음 (멀티 디바이스 안전)
+// ================================================================
+document.addEventListener('DOMContentLoaded', async function() {
   const savedKey  = localStorage.getItem('groqApiKey');
   const savedName = localStorage.getItem('playerName');
 
   if (savedKey && savedName) {
     GROQ_API_KEY = savedKey;
 
-    // ★ Fix: 재방문 유저도 서버 로드 (이전엔 로드 없이 skipIntro만 했음)
+    // ① 게임 화면 전부 숨기기
+    [
+      'game-container','battle-container','explore-container',
+      'mountain-container','cafeteria-container','library-container',
+      'lab-container','gym-container','clinic-container','lab2-container',
+      'festival-container','union-container','store-container','puang-room',
+    ].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.style.display = 'none'; el.classList.remove('visible'); }
+    });
+
+    // ② 로딩 게이트 표시
+    showLoadingGate('저장 데이터 불러오는 중...');
+
+    // ③ Firebase 로드 완료까지 대기 (5초 타임아웃은 state.js에서 처리)
     if (typeof loadAllDataFromServer === 'function') {
       await loadAllDataFromServer();
     }
 
-    // 인트로 오버레이 숨기기
+    // ④ 로딩 게이트 제거
+    hideLoadingGate();
+
+    // ⑤ 인트로 오버레이 숨기기
     if (typeof window.skipIntro === 'function') window.skipIntro();
-    
+
     const inBattle = localStorage.getItem('inBattle') === 'true';
 
-    // // ★ Fix: 전투 복구 중이면 영상/game-container 표시 스킵
+    // ⑥ 전투 복구가 아닐 때만 게임/영상 화면 진입
     if (!inBattle) {
       if (sessionStorage.getItem('introVideoPlayed') !== 'true') {
         const startOverlay = document.getElementById('video-start-overlay');
@@ -310,22 +379,32 @@ document.addEventListener('DOMContentLoaded', async () => {
           startOverlay.classList.remove('hidden');
           startOverlay.style.display = 'flex';
         }
-      } 
-      else {
+      } else {
         document.getElementById('game-container').style.display = 'flex';
       }
     }
 
-    // 전투 복구 (로드 완료 후 실행)
+    // ⑦ 전투 복구 (로드 완료 이후 실행 — 순서 중요)
     if (typeof window.checkResumeBattle === 'function') window.checkResumeBattle();
   }
 
   // 버튼 이벤트 등록
-  document.getElementById('api-key-btn').onclick      = () => window.submitApiKey();
-  document.getElementById('name-confirm-btn').onclick = () => window.submitName();
+  document.getElementById('api-key-btn').onclick      = function() { window.submitApiKey(); };
+  document.getElementById('name-confirm-btn').onclick = function() { window.submitName(); };
 
   document.getElementById('api-key-input')
-    ?.addEventListener('keydown', e => { if (e.key === 'Enter') window.submitApiKey(); });
+    ?.addEventListener('keydown', function(e) { if (e.key === 'Enter') window.submitApiKey(); });
   document.getElementById('name-input')
-    ?.addEventListener('keydown', e => { if (e.key === 'Enter') window.submitName(); });
+    ?.addEventListener('keydown', function(e) { if (e.key === 'Enter') window.submitName(); });
 });
+
+// ── 엔딩 영상 대기 체크 ──
+window.checkEndingVideoPending = function() {
+  if (localStorage.getItem('endingVideoPending') === 'true') {
+    localStorage.removeItem('endingVideoPending');
+    localStorage.setItem('endingVideoPlayed', 'true');
+    setTimeout(function() {
+      if (typeof window.playEndingVideo === 'function') window.playEndingVideo();
+    }, 500);
+  }
+};
