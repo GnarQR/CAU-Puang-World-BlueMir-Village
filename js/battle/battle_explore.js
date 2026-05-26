@@ -69,6 +69,12 @@ let assetsLoaded = 0;
 
 function _loadExploreAssets(floor) {
   assetsLoaded = 0;
+ 
+  const gender = playerStats?.gender || localStorage.getItem('playerGender') || 'male';
+  playerImage.src = gender === 'female'
+    ? 'images/player/player_female_battle.png'
+    : 'images/player/player_male_battle.png';
+
   // 층마다 밝기 조절 (1층=100%, 10층=40%)
   const brightness = Math.max(40, 100 - (floor - 1) * 6.5);
   bgImage.src = 'images/map/205_building.jpg';
@@ -902,13 +908,15 @@ function draw() {
     _clickAnim--;
   }
 
+  /*
   // [디버깅용] 벽 위치 눈으로 확인하기 
-    collisionData.forEach((val, i) => {
-        if (val === 56) {
-            ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
-            ctx.fillRect((i % 32) * 32, Math.floor(i / 32) * 32, 32, 32);
-        }
-    });
+  collisionData.forEach((val, i) => {
+    if (val === 56) {
+      ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
+      ctx.fillRect((i % 32) * 32, Math.floor(i / 32) * 32, 32, 32);
+    }
+  });
+  */
 }
 
 // ================================================================

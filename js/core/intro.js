@@ -107,9 +107,29 @@ function startStoryTyping() {
   step();
 }
 
-// ── 3단계: 닉네임 입력으로 이동 ──
+// ── 3단계: 캐릭터 성별 선택으로 이동 ──
+window.selectGender = function(gender) {
+  localStorage.setItem('playerGender', gender);
+
+  // 선택 표시
+  document.getElementById('gender-male').classList.remove('selected');
+  document.getElementById('gender-female').classList.remove('selected');
+  const selected = document.getElementById(`gender-${gender}`);
+  selected.classList.add('selected');
+  selected.style.borderColor = '#5dcaa5';
+  selected.style.background  = 'rgba(93,202,165,.15)';
+  const other = document.getElementById(gender === 'male' ? 'gender-female' : 'gender-male');
+  other.style.borderColor = '#0f3460';
+  other.style.background  = 'rgba(22,33,62,.8)';
+
+  document.getElementById('gender-next-btn').style.display = 'block';
+};
+
+// ── 4단계: 닉네임 입력으로 이동 ──
 window.goToNameStep = function() {
-  switchStep('step-story', 'step-name');
+  const fromStory = !document.getElementById('step-story').classList.contains('hidden');
+  if (fromStory) switchStep('step-story', 'step-gender');
+  else switchStep('step-gender', 'step-name'); 
 };
 
 // ── 닉네임 제출 ──
@@ -126,6 +146,7 @@ window.submitName = async function() {
 
   if (typeof playerStats !== 'undefined') {
     playerStats.name = name;
+    playerStats.gender = localStorage.getItem('playerGender') || 'male';  // 성별 정보 저장
     localStorage.setItem('playerStats', JSON.stringify(playerStats));
   }
 
