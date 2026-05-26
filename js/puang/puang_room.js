@@ -161,19 +161,21 @@ window.applyRoomDecorations = function() {
   });
  
   // 3) 코스튬
+  // room-puang-char: 쿼터뷰 방 안 캐릭터 (80×80)
   const charEl = document.getElementById('room-puang-char');
   if (charEl) {
-    const skinEmojis = { skin_cat: '🐱', skin_dragon: '🐲', skin_robot: '🤖' };
-    const costume = skinEmojis[decos.costume];     
-    
-    // 코스튬 적용 시에만 이모지로 교체
-    if (costume) { charEl.textContent = costume; } 
-    else {
-      // 코스튬 없으면 img 태그 유지 (지우지 않음)
-      if (!charEl.querySelector('img')) {
-        charEl.innerHTML = '<img src="images/puang/puang_normal.png" alt="푸앙이" style="width:80px;height:80px;object-fit:contain;">';
-      }
+    const costumeId = decos.costume;
+    // ITEM_DB에서 imgFile 조회 (items_costume.js의 puang_costume 아이템)
+    const costumeItem = costumeId && window.ITEM_DB ? window.ITEM_DB.get(costumeId) : null;
+
+    if (costumeItem && costumeItem.imgFile) {
+      // 새 코스튬 시스템: imgFile 이미지로 교체
+      charEl.innerHTML = '<img src="' + costumeItem.imgFile + '" alt="' + costumeItem.name + '" style="width:80px;height:80px;object-fit:contain;" onerror="this.src=\'images/puang/puang_normal.png\'">';
+    } else if (!costumeId) {
+      // 코스튬 없으면 기본 이미지
+      charEl.innerHTML = '<img src="images/puang/puang_normal.png" alt="푸앙이" style="width:80px;height:80px;object-fit:contain;">';
     }
+    // costumeId 있지만 ITEM_DB 미로드면 그대로 유지
   }
 };
  
