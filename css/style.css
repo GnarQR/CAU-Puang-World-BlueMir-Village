@@ -6620,3 +6620,28 @@ body.place-mountain       { background-image: url('../images/background/moutain.
 body.place-battle,
 body.place-explore        { background-image: url('../images/background/InnerSpace.png') !important; }
 body.place-bluedragonlake { background-image: url('../images/background/Lake_.png') !important; }
+
+
+/* ================================================================
+   미니 스탯바 가림 방지 — padding-top
+   mini-stat-bar (position:fixed; top:0; ~32px 높이)가
+   장소 컨테이너 상단을 가리는 문제 해결
+   PLACE_IDS4 목록의 모든 컨테이너에 적용
+   ================================================================ */
+#cafeteria-container,
+#library-container,
+#lab-container,
+#gym-container,
+#clinic-container,
+#lab2-container,
+#festival-container,
+#union-container,
+#store-container,
+#mountain-container,
+#puang-room,
+#bluedragonlake-container {
+  padding-top: 44px;
+}
+
+/* 맵 화면(#game-container)과 전투화면(#battle-container)은
+   미니 스탯바 없으므로 미적용 */
