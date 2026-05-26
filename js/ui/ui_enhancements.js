@@ -770,6 +770,7 @@ window.openProfile = function() {
           <button class="profile-tab-btn active" id="ptab-stat"    onclick="switchProfileTab('stat')">📊 스탯</button>
           <button class="profile-tab-btn"        id="ptab-costume" onclick="switchProfileTab('costume')">👗 코스튬</button>
           <button class="profile-tab-btn"        id="ptab-pet"     onclick="switchProfileTab('pet')">🐾 펫</button>
+          <button class="profile-tab-btn"        id="ptab-deco"    onclick="switchProfileTab('deco')">🎨 꾸미기</button>
         </div>
 
         <div id="profile-tab-content"></div>
@@ -818,7 +819,7 @@ window.closeProfile = function() {
 // ── 탭 전환 ──
 window.switchProfileTab = function(tab) {
   _profileTab = tab;
-  ['stat','costume','pet'].forEach(t => {
+  ['stat','costume','pet','deco'].forEach(t => {
     const btn = document.getElementById('ptab-' + t);
     if (btn) btn.classList.toggle('active', t === tab);
   });
@@ -856,6 +857,8 @@ function renderProfileTabContent() {
     el.innerHTML = _renderCostumeTab();
   } else if (_profileTab === 'pet') {
     el.innerHTML = _renderPetTab();
+  } else if (_profileTab === 'deco') {
+    el.innerHTML = _renderDecoTab();
   }
 }
 
@@ -955,6 +958,136 @@ function _renderPetTab() {
       ${equippedPet ? `<button class="ptab-unequip-btn" onclick="equipPet('')">펫 해제</button>` : ''}
     </div>`;
 }
+
+
+// ── 꾸미기 탭 ──
+function _renderDecoTab() {
+  const owned    = playerStats.ownedRoomItems || [];
+  const decos    = playerStats.roomDecorations || {};
+
+  if (owned.length === 0)
+    return '<div class="ptab-empty">구매한 꾸미기 아이템이 없어요<br>아이템 가게에서 구매하세요 🛒</div>';
+
+  // slot별 한글 라벨
+  const SLOT_LABELS = {
+    background:      '🎨 배경 테마',
+    bed:             '🛏️ 침대',
+    desk:            '💻 책상',
+    carpet:          '🟦 카펫',
+    bookshelf_small: '📚 작은 책장',
+    bookshelf_big:   '📖 큰 책장',
+    lamp:            '🌟 조명',
+    hanging_plant:   '🪴 행잉 화분',
+    shelf_left:      '🔖 왼쪽 선반',
+    shelf_right:     '🔖 오른쪽 선반',
+    painting_left:   '🖼️ 왼쪽 액자',
+    painting_right:  '🖼️ 오른쪽 액자',
+    wall_plant:      '🌿 벽 화분',
+    hanging_deco:    '✨ 천장 장식',
+    memo_poster:     '📌 포스터',
+    dreamcatcher:    '🌙 드림캐처',
+    wall:            '🏠 벽 장식',
+    wall2:           '🪞 벽 소품',
+    floor:           '🪑 바닥 소품',
+    costume:         '🐨 푸앙이 코스튬',
+  };
+
+  // 소유한 deco 아이템을 ITEM_DB에서 조회, slot별로 그룹핑
+  const bySlot = {};
+  owned.forEach(id => {
+    const item = window.ITEM_DB ? window.ITEM_DB.get(id) : null;
+    if (!item || item.category !== 'deco') return;
+    const slot = item.slot || 'wall';
+    if (!bySlot[slot]) bySlot[slot] = [];
+    bySlot[slot].push(item);
+  });
+
+  if (Object.keys(bySlot).length === 0)
+    return '<div class="ptab-empty">구매한 꾸미기 아이템이 없어요<br>아이템 가게에서 구매하세요 🛒</div>';
+
+  // 슬롯별로 렌더링
+  let html = '<div style="max-height:360px;overflow-y:auto;padding-right:2px;">';
+
+  Object.entries(bySlot).forEach(([slot, items]) => {
+    // 현재 이 슬롯에 장착된 아이템
+    const equipped = slot === 'background'
+      ? Object.keys(decos).find(k => k === 'background' ? decos.background : null)
+      : decos[slot];
+
+    html += `<div class="ptab-costume-section">`;
+    html += `<div class="ptab-section-title">${SLOT_LABELS[slot] || slot}</div>`;
+    html += `<div class="ptab-item-grid">`;
+
+    items.forEach(item => {
+      // background 슬롯은 theme으로 비교
+      const isEquipped = slot === 'background'
+        ? decos.background === item.theme
+        : decos[slot] === item.id;
+
+      html += `<div class="ptab-item ${isEquipped ? 'equipped' : ''}"
+        onclick="equipDecoItem('${item.id}','${slot}')">
+        <div class="ptab-item-icon">${item.icon || '🎨'}</div>
+        <div class="ptab-item-name">${item.name}</div>
+      </div>`;
+    });
+
+    html += `</div>`; // grid
+
+    // 장착 중인 아이템 있으면 해제 버튼
+    if (slot === 'background' ? decos.background && decos.background !== 'default' : decos[slot]) {
+      html += `<button class="ptab-unequip-btn" onclick="unequipDecoSlot('${slot}')">해제</button>`;
+    }
+
+    html += `</div>`; // section
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// ── 꾸미기 장착 ──
+window.equipDecoItem = function(id, slot) {
+  if (!playerStats.roomDecorations) playerStats.roomDecorations = {};
+
+  const item = window.ITEM_DB ? window.ITEM_DB.get(id) : null;
+  if (!item) return;
+
+  if (slot === 'background') {
+    playerStats.roomDecorations.background = item.theme || 'default';
+  } else {
+    playerStats.roomDecorations[slot] = id;
+  }
+
+  // 방이 열려있으면 즉시 반영
+  if (typeof window.applyRoomDecorations === 'function') {
+    window.applyRoomDecorations();
+  }
+
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  if (typeof showToast === 'function') {
+    showToast('🎨 ' + item.name + ' 장착!', 'success', 2000);
+  }
+  renderProfileTabContent();
+};
+
+// ── 꾸미기 해제 ──
+window.unequipDecoSlot = function(slot) {
+  if (!playerStats.roomDecorations) return;
+
+  if (slot === 'background') {
+    playerStats.roomDecorations.background = 'default';
+  } else {
+    delete playerStats.roomDecorations[slot];
+  }
+
+  if (typeof window.applyRoomDecorations === 'function') {
+    window.applyRoomDecorations();
+  }
+
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  if (typeof showToast === 'function') showToast('꾸미기 해제', 'info', 1500);
+  renderProfileTabContent();
+};
 
 // ── 헬퍼: 구매한 카테고리 아이템 조회 ──
 function _getCostumeItems(category) {
