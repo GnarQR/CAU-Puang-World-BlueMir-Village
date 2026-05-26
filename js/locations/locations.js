@@ -30,6 +30,7 @@ window.leaveMountain = function() {
   if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   document.getElementById('mountain-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 // 청룡산 로그 추가
@@ -96,6 +97,7 @@ window.leaveCafeteria = function() {
   document.getElementById('cafeteria-container').classList.remove('visible');
   document.getElementById('cafeteria-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 function syncCafStats() {
@@ -235,6 +237,7 @@ window.leaveLibrary = function() {
   document.getElementById('library-container').classList.remove('visible');
   document.getElementById('library-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 function syncLibStats() {
@@ -444,6 +447,7 @@ window.leaveLab = function() {
 
   // 메인 맵 표시
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 // 연구실 스탯 동기화 — 기존 유지 + 모니터 업데이트 추가
@@ -674,6 +678,7 @@ window.leaveGym = function() {
   gymEl.classList.remove('visible');
   gymEl.style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 function syncGymStats() {
@@ -811,6 +816,7 @@ window.leaveClinic = function() {
   clinicEl2.style.display = 'none';
   clinicEl2.classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 // 의무실 스탯 동기화
@@ -893,6 +899,7 @@ window.leaveLab2 = function() {
   if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
   document.getElementById('lab2-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 function syncLab2Stats() {
@@ -1011,6 +1018,7 @@ window.leaveFestival = function() {
   festEl2.style.display = 'none';
   festEl2.classList.remove('visible');
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 // 축제 로그 추가
@@ -1205,6 +1213,7 @@ window.leaveUnion = function() {
   document.getElementById('union-container').classList.remove('visible');
   document.getElementById('union-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 }
 
 function addUnionLog(msg, cls) {
@@ -1395,6 +1404,7 @@ window.leaveStore = function() {
   document.getElementById('store-container').classList.remove('visible');
   document.getElementById('store-container').style.display = 'none';
   document.getElementById('game-container').style.display = 'flex';
+  if (typeof window.checkEndingVideoPending === 'function') window.checkEndingVideoPending();
 };
 
 // ── 탭 버튼 렌더링 ──

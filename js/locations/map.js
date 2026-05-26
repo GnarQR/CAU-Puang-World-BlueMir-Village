@@ -206,6 +206,17 @@ window.returnToGame = function() {
   
   else {
     // 일반 전체 맵(청룡산 등)으로 복귀
+    document.getElementById('game-container').style.display = 'flex';
+
+    // ★ 엔딩 영상 대기 플래그 체크
+    if (localStorage.getItem('endingVideoPending') === 'true') {
+      localStorage.removeItem('endingVideoPending');
+      localStorage.setItem('endingVideoPlayed', 'true');
+      setTimeout(() => {
+        if (typeof window.playEndingVideo === 'function') window.playEndingVideo();
+      }, 500);
+    }
+
     // ★ Fix: battle-container visible 클래스까지 제거 + 모든 장소 컨테이너 숨기기
     const bc = document.getElementById('battle-container');
     if (bc) { bc.classList.remove('visible'); bc.style.display = 'none'; }
@@ -282,3 +293,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
   });
 });
+
+// 엔딩 영상 대기 체크 함수
+window.checkEndingVideoPending = function() {
+  if (localStorage.getItem('endingVideoPending') === 'true') {
+    localStorage.removeItem('endingVideoPending');
+    localStorage.setItem('endingVideoPlayed', 'true');
+    setTimeout(() => {
+      if (typeof window.playEndingVideo === 'function') window.playEndingVideo();
+    }, 500);
+  }
+};

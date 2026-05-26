@@ -448,4 +448,13 @@ window.leaveRoom = function() {
   if (typeof updateMapStats === 'function') {
     window.updateMapStats();
   }
+
+  // 엔딩 체크 요소
+  if (localStorage.getItem('endingVideoPending') === 'true') {
+    localStorage.removeItem('endingVideoPending');
+    localStorage.setItem('endingVideoPlayed', 'true');
+    setTimeout(() => {
+      if (typeof window.playEndingVideo === 'function') window.playEndingVideo();
+    }, 500);
+  }
 }

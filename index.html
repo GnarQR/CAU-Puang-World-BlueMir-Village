@@ -129,6 +129,17 @@
     </div>
   </div>
 
+  <!-- 엔딩 영상 (호감도 MAX 달성 시) -->
+  <div id="ending-video-container" class="hidden"
+    style="position:fixed;inset:0;background:#000;z-index:2000;display:none;align-items:center;justify-content:center;">
+    <video id="ending-video" width="100%" height="100%" style="max-width:100%;max-height:100%;">
+      <source src="videos/Ending.mp4" type="video/mp4">
+    </video>
+    <div style="position:absolute;bottom:20px;width:100%;text-align:center;color:rgba(255,255,255,.4);font-size:12px;pointer-events:none;">
+      Double Click to Skip
+    </div>
+  </div>
+
   <!-- 맵 화면 -->
   <div class="map-container" id="game-container">
     <div class="map-stat-bar">
@@ -346,12 +357,6 @@
           <div class="explore-hud-row">
             <button onclick="toggleMiniMap()" style="background:none;border:1px solid #0f3460;border-radius:6px;color:#5dcaa5;font-size:11px;padding:2px 8px;cursor:pointer;">🗺️ 지도</button>
           </div>
-          <!--
-          <div class="explore-hud-row">
-            <span class="explore-hud-label" style="color:#e24b4a;">조우</span>
-            <div class="explore-hud-bar-wrap"><div class="explore-hud-bar-fill" id="explore-encounter-fill" style="width:0%;background:#e24b4a;"></div></div>
-          </div>
-          -->
         </div>
       </div>
 
@@ -682,12 +687,6 @@
 
   </div>
 
-  <!--       -->
-  <!-- 체육관 -->
-  <!--       -->
-  <!--       -->
-  <!-- 체육관 -->
-  <!--       -->
   <!--       -->
   <!-- 체육관 -->
   <!--       -->
@@ -1077,9 +1076,6 @@
     </div>
   </div>
 
-  <!--       -->
-  <!-- 의무실 -->
-  <!--       -->
   <!--       -->
   <!-- 의무실 -->
   <!--       -->

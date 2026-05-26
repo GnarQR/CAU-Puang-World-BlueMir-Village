@@ -168,6 +168,11 @@ async function loadAllDataFromServer() {
         }
       }
 
+      // ★ 기존 유저 엔딩 영상 스킵 처리
+      if ((s.puangState?.favorability >= 100 || s.lakeUnlocked) && !localStorage.getItem('endingVideoPlayed')) {
+        localStorage.setItem('endingVideoPlayed', 'true');
+      }
+
       console.log('Firebase 로드 완료');
     } else {
       console.log('신규 유저 — 기본값으로 시작');
@@ -370,6 +375,20 @@ const puangState = JSON.parse(localStorage.getItem('puangState')) || {
 
 window.savePuangState = function() {
   localStorage.setItem('puangState', JSON.stringify(puangState));
+
+  // ★ 호감도 100 달성 시 플래그만 저장 (영상은 맵 복귀 시 재생)
+  if (puangState.favorability >= 100 && !localStorage.getItem('lakeUnlocked') && !localStorage.getItem('endingVideoPlayed')) {
+    localStorage.setItem('lakeUnlocked', 'true');
+    localStorage.setItem('endingVideoPending', 'true'); // ← 대기 플래그
+
+    // placeInfo 즉시 갱신
+    if (typeof placeInfo !== 'undefined' && placeInfo.bluedragonlake) {
+      placeInfo.bluedragonlake.locked = false;
+      const btn = document.querySelector('.map-spot[onclick*="bluedragonlake"]');
+      if (btn) btn.classList.remove('locked');
+    }
+  }
+
   debouncedSave();
 };
 

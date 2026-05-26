@@ -243,10 +243,45 @@ window.finishVideo = function() {
   // ★ Fix: 전투 복구 중이면 game-container 표시 스킵 (checkResumeBattle이 처리)
   const inBattle = localStorage.getItem('inBattle') === 'true';
   if (!inBattle) {
+    // 엔딩 영상 대기 중이면 game-container 대신 엔딩 영상 재생
+    if (localStorage.getItem('endingVideoPending') === 'true') {
+      localStorage.removeItem('endingVideoPending');
+      localStorage.setItem('endingVideoPlayed', 'true');
+      if (typeof window.playEndingVideo === 'function') window.playEndingVideo();
+      return; // game-container 표시 스킵
+    }
     const gameCont = document.getElementById('game-container');
     if (gameCont) gameCont.style.display = 'flex';
   }
 };
+
+// 엔딩 영상 재생
+window.playEndingVideo = function() {
+  console.trace('playEndingVideo 호출됨'); // ← 추가
+  const cont  = document.getElementById('ending-video-container');
+  const video = document.getElementById('ending-video');
+  if (!cont || !video) return;
+
+  cont.classList.remove('hidden');
+  cont.style.display = 'flex';
+  video.currentTime = 0;
+  video.play().catch(() => window.finishEndingVideo());
+  video.onended = window.finishEndingVideo;
+  cont.ondblclick = window.finishEndingVideo;
+};
+
+// 엔딩 영상 재생 종료
+window.finishEndingVideo = function() {
+  const cont  = document.getElementById('ending-video-container');
+  const video = document.getElementById('ending-video');
+  if (video) video.pause();
+  if (cont)  { cont.classList.add('hidden'); cont.style.display = 'none'; }
+
+  // 청룡호 해금 알림
+  if (typeof showToast === 'function') showToast('🐉 청룡호가 해금되었습니다!', 'success', 4000);
+  if (typeof updateMapStats === 'function') updateMapStats();
+};
+
 
 // ── DOMContentLoaded: 초기화 ──
 // ★ Fix: 재방문 유저도 loadAllDataFromServer() 호출하여 serverDataLoaded = true 보장
