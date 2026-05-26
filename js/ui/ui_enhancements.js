@@ -975,6 +975,8 @@ function _getPetIcon(petId) {
 
 // ── 코스튬 / 펫 장착 함수 ──
 window.equipPlayerCostume = function(id) {
+  // playerStats + localStorage 동시 저장 (Firebase로도 동기화됨)
+  playerStats.playerCostume = id || '';
   if (id) {
     localStorage.setItem('playerCostume', id);
     if (typeof showToast === 'function') {
@@ -985,7 +987,7 @@ window.equipPlayerCostume = function(id) {
     localStorage.removeItem('playerCostume');
     if (typeof showToast === 'function') showToast('코스튬 해제', 'info', 1500);
   }
-  // 맵 플레이어 이미지 업데이트
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
   _applyPlayerCostumeToMap();
   renderProfileTabContent();
 };

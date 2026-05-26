@@ -179,7 +179,10 @@ async function loadAllDataFromServer() {
       if (s.playerAvatar)             localStorage.setItem('playerAvatar',        s.playerAvatar);
       if (s.monsterCompendium)        localStorage.setItem('monsterCompendium',   JSON.stringify(s.monsterCompendium));
       if (s.dataHistory)              localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
-      if (s.playerCostume !== undefined) localStorage.setItem('playerCostume',     s.playerCostume);
+      if (s.playerCostume !== undefined) {
+        localStorage.setItem('playerCostume', s.playerCostume);
+        playerStats.playerCostume = s.playerCostume; // 메모리에도 즉시 반영
+      }
       if (s.storePurchased)           localStorage.setItem('storePurchased',      JSON.stringify(s.storePurchased));
 
       // ── libStudyCount / libFocus ──
@@ -298,6 +301,7 @@ async function saveAllDataToServer() {
         maxSp:              playerStats.maxSp,
         data:               playerStats.data ?? 0,
         gender:             playerStats.gender || 'male',
+        playerCostume:      playerStats.playerCostume       || '',
         ownedRoomItems:     playerStats.ownedRoomItems     || [],
         roomDecorations:    playerStats.roomDecorations    || {},
         statusEffects:      playerStats.statusEffects      || [],
@@ -438,6 +442,7 @@ const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {
   sp: 40,  maxSp: 40,
   data: 0,
   gender: 'male',
+  playerCostume: '',
   ownedRoomItems: [],
   roomDecorations: {
     background:      'default',

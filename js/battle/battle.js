@@ -207,11 +207,13 @@ window.initBattle = function(origin = 'map', bossId = null) {
       enemyImg.src = 'images/monster/default.png'; };
   }
 
-  // 플레이어 이미지 — 착용 코스튬 반영
+  // 플레이어 이미지 — playerStats.playerCostume 사용 (localStorage보다 항상 최신)
   const playerImg = document.getElementById('player-img');
   if (playerImg) {
-    const costumeId   = localStorage.getItem('playerCostume') || '';
-    const gender      = localStorage.getItem('playerGender') || (typeof playerStats !== 'undefined' ? playerStats.gender : '') || 'male';
+    const costumeId   = (typeof playerStats !== 'undefined' && playerStats.playerCostume)
+                        || localStorage.getItem('playerCostume') || '';
+    const gender      = (typeof playerStats !== 'undefined' && playerStats.gender)
+                        || localStorage.getItem('playerGender') || 'male';
     const costumeItem = costumeId && window.ITEM_DB ? window.ITEM_DB.get(costumeId) : null;
     playerImg.src = (costumeItem && costumeItem.imgFile)
       ? costumeItem.imgFile
@@ -292,11 +294,11 @@ window.initBossBattle = function(boss) {
     '<span class="log-damage">[BOSS] ' + monster.intro + ' 강력한 적!</span><br>' +
     '<span class="log-system2">[AGENT] 보스 약점 → ' + monster.weakness + '</span>';
 
-  // 플레이어 이미지 — 착용 코스튬 반영
+  // 플레이어 이미지 — playerStats.playerCostume 사용
   const _bossPlayerImg = document.getElementById('player-img');
   if (_bossPlayerImg) {
-    const _costumeId   = localStorage.getItem('playerCostume') || '';
-    const _gender      = localStorage.getItem('playerGender') || playerStats.gender || 'male';
+    const _costumeId   = (playerStats.playerCostume) || localStorage.getItem('playerCostume') || '';
+    const _gender      = playerStats.gender || localStorage.getItem('playerGender') || 'male';
     const _costumeItem = _costumeId && window.ITEM_DB ? window.ITEM_DB.get(_costumeId) : null;
     _bossPlayerImg.src = (_costumeItem && _costumeItem.imgFile)
       ? _costumeItem.imgFile
