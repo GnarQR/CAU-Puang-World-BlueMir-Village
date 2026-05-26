@@ -179,6 +179,8 @@ async function loadAllDataFromServer() {
       if (s.playerAvatar)             localStorage.setItem('playerAvatar',        s.playerAvatar);
       if (s.monsterCompendium)        localStorage.setItem('monsterCompendium',   JSON.stringify(s.monsterCompendium));
       if (s.dataHistory)              localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
+      if (s.playerCostume !== undefined) localStorage.setItem('playerCostume',     s.playerCostume);
+      if (s.storePurchased)           localStorage.setItem('storePurchased',      JSON.stringify(s.storePurchased));
 
       // ── libStudyCount / libFocus ──
       // 원본 Fix 구멍2 로직 유지 + 서버값 우선으로 변경
@@ -338,6 +340,8 @@ async function saveAllDataToServer() {
       dataHistory:       JSON.parse(localStorage.getItem('dataHistory')          || '[]'),
       libStudyCount:     parseInt(localStorage.getItem('libStudyCount') || '0'),
       libFocus:          parseInt(localStorage.getItem('libFocus')      || '100'),
+      playerCostume:     localStorage.getItem('playerCostume')                   || '',
+      storePurchased:    JSON.parse(localStorage.getItem('storePurchased')       || '[]'),
 
       lastUpdated: new Date(),
       lastDevice:  navigator.userAgent.slice(0, 80), // 마지막 저장 기기 추적

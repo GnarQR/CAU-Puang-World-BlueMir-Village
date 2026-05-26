@@ -408,6 +408,16 @@ window.enterRoom = function() {
 
   applyRoomDecorations();
 
+  // 푸앙이 코스튬에 맞게 전신 이미지(puang-room-img) 업데이트
+  const _roomImg = document.getElementById('puang-room-img');
+  if (_roomImg) {
+    const _costumeId   = (playerStats.roomDecorations || {}).costume;
+    const _costumeItem = _costumeId && window.ITEM_DB ? window.ITEM_DB.get(_costumeId) : null;
+    _roomImg.src = (_costumeItem && _costumeItem.imgFile)
+      ? _costumeItem.imgFile
+      : 'images/puang/puang_normal.png';
+  }
+
   // ★ Fix #15: game-container 숨기기 중복 호출 제거 (아래에서 한 번만)
   // ★ Fix #16: display와 visible 클래스를 일관되게 한 곳에서 처리
   document.getElementById('game-container').style.display = 'none';

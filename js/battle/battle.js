@@ -200,11 +200,22 @@ window.initBattle = function(origin = 'map', bossId = null) {
   // 5. 이미지 로드
   const enemyImg = document.getElementById('enemy-img');
   if (enemyImg) {
-    enemyImg.src = currentMonster.image;  // monster.js에 정의된 경로 삽입
+    enemyImg.src = currentMonster.image;
     enemyImg.style.display = 'block';
     enemyImg.onerror = () => { 
       console.warn("몬스터 이미지 로드 실패, 기본 이미지로 대체합니다.");
-      enemyImg.src = 'images/monster/default.png'; };  // 실패 시 대비
+      enemyImg.src = 'images/monster/default.png'; };
+  }
+
+  // 플레이어 이미지 — 착용 코스튬 반영
+  const playerImg = document.getElementById('player-img');
+  if (playerImg) {
+    const costumeId   = localStorage.getItem('playerCostume') || '';
+    const gender      = localStorage.getItem('playerGender') || (typeof playerStats !== 'undefined' ? playerStats.gender : '') || 'male';
+    const costumeItem = costumeId && window.ITEM_DB ? window.ITEM_DB.get(costumeId) : null;
+    playerImg.src = (costumeItem && costumeItem.imgFile)
+      ? costumeItem.imgFile
+      : 'images/player/player_' + gender + '_battle.png';
   }
 
   // 6. 로그 초기화 및 화면 전환
@@ -280,6 +291,18 @@ window.initBossBattle = function(boss) {
   document.getElementById('battle-log').innerHTML =
     '<span class="log-damage">[BOSS] ' + monster.intro + ' 강력한 적!</span><br>' +
     '<span class="log-system2">[AGENT] 보스 약점 → ' + monster.weakness + '</span>';
+
+  // 플레이어 이미지 — 착용 코스튬 반영
+  const _bossPlayerImg = document.getElementById('player-img');
+  if (_bossPlayerImg) {
+    const _costumeId   = localStorage.getItem('playerCostume') || '';
+    const _gender      = localStorage.getItem('playerGender') || playerStats.gender || 'male';
+    const _costumeItem = _costumeId && window.ITEM_DB ? window.ITEM_DB.get(_costumeId) : null;
+    _bossPlayerImg.src = (_costumeItem && _costumeItem.imgFile)
+      ? _costumeItem.imgFile
+      : 'images/player/player_' + _gender + '_battle.png';
+  }
+
   setBattleButtons(false);
 }
 

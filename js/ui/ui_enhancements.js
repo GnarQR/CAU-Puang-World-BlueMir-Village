@@ -994,22 +994,8 @@ window.equipPuangCostume = function(id) {
   if (!playerStats.roomDecorations) playerStats.roomDecorations = {};
   playerStats.roomDecorations.costume = id || null;
 
-  // 1) 푸앙이 방 캐릭터 이미지 반영
-  if (typeof window.applyRoomDecorations === 'function') window.applyRoomDecorations();
-
-  // 2) 맵 블루미르홀 버튼 이미지 반영
-  const mapPuangImg = document.querySelector('.map-spot[onclick*="dormitory"] .map-spot-icon img');
-  if (mapPuangImg) {
-    const item = id && window.ITEM_DB ? window.ITEM_DB.get(id) : null;
-    mapPuangImg.src = (item && item.imgFile) ? item.imgFile : 'images/puang/puang_battle.png';
-  }
-
-  // 3) 푸앙이 방 room-puang-img (전신 이미지)
-  const roomImg = document.getElementById('puang-room-img');
-  if (roomImg) {
-    const item = id && window.ITEM_DB ? window.ITEM_DB.get(id) : null;
-    roomImg.src = (item && item.imgFile) ? item.imgFile : 'images/puang/puang_normal.png';
-  }
+  // 푸앙이 방 안의 캐릭터 이미지 반영 (방 진입 중일 때만 실제로 보임)
+  _applyPuangCostumeToRoom(id);
 
   if (typeof window.syncAndSave === 'function') window.syncAndSave();
   if (typeof showToast === 'function') {
@@ -1022,6 +1008,21 @@ window.equipPuangCostume = function(id) {
   }
   renderProfileTabContent();
 };
+
+// 푸앙이 방 캐릭터 이미지 업데이트
+// - puang-room-img: 방 전신 이미지
+// - applyRoomDecorations: 방 꾸미기 코스튬 이모지/이미지
+function _applyPuangCostumeToRoom(id) {
+  // 1) puang_room.js의 applyRoomDecorations 호출 (이모지 코스튬 처리)
+  if (typeof window.applyRoomDecorations === 'function') window.applyRoomDecorations();
+
+  // 2) puang-room-img (방 전신 이미지 img 태그)
+  const roomImg = document.getElementById('puang-room-img');
+  if (roomImg) {
+    const item = id && window.ITEM_DB ? window.ITEM_DB.get(id) : null;
+    roomImg.src = (item && item.imgFile) ? item.imgFile : 'images/puang/puang_normal.png';
+  }
+}
 
 window.equipPet = function(id) {
   playerStats.equippedPet = id || null;
@@ -1074,16 +1075,8 @@ function _applyPlayerCostumeToMap() {
 function _restorePuangCostume() {
   const costumeId = (playerStats.roomDecorations || {}).costume;
   if (!costumeId || !window.ITEM_DB) return;
-  const item = window.ITEM_DB.get(costumeId);
-  if (!item || !item.imgFile) return;
-
-  // 맵 블루미르홀 버튼 이미지
-  const mapPuangImg = document.querySelector('.map-spot[onclick*="dormitory"] .map-spot-icon img');
-  if (mapPuangImg) mapPuangImg.src = item.imgFile;
-
-  // 푸앙이 방 이미지
-  const roomImg = document.getElementById('puang-room-img');
-  if (roomImg) roomImg.src = item.imgFile;
+  // 방 안 이미지만 복원 (맵 버튼은 건드리지 않음)
+  _applyPuangCostumeToRoom(costumeId);
 }
 
 // stat-brand 클릭으로 프로필 열기 (DOMContentLoaded에서 등록)
