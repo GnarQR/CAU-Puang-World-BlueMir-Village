@@ -1564,6 +1564,7 @@ window.buyStoreItem = function(id) {
 
   } else if (item.category === 'player_costume') {
     localStorage.setItem('playerCostume', id);
+    playerStats.playerCostume = id; // playerStats에도 동기화 (battle.js에서 참조)
     addStorePurchased(id);
 
   } else if (item.category === 'puang_costume') {
@@ -1634,6 +1635,7 @@ window.buyCart = function() {
       addStorePurchased(id);
     } else if (item.category === 'player_costume') {
       localStorage.setItem('playerCostume', id);
+      playerStats.playerCostume = id; // playerStats에도 동기화
       addStorePurchased(id);
     } else if (item.category === 'puang_costume') {
       if (!playerStats.roomDecorations) playerStats.roomDecorations = {};

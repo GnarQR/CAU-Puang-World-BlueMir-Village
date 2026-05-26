@@ -430,6 +430,7 @@ window.hideInvTooltip = function() {
 };
 
 // 인벤토리 아이템 즉시 사용 (전투 외부)
+// ITEM_DB의 effect 필드를 읽어 food 아이템 전체 처리
 window.useInventoryItem = function(idx) {
   const inv = (typeof inventory !== 'undefined') ? inventory : [];
   const item = inv[idx];
@@ -437,32 +438,128 @@ window.useInventoryItem = function(idx) {
 
   let msg = '';
   let type = 'info';
+  let consumed = true; // 아이템 소모 여부
 
-  if (item.id === 'rx_hp' || item.id === 'hp_potion') {
-    const gain = Math.min(50, playerStats.maxHp - playerStats.hp);
-    playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 50);
-    msg = `❤️ HP +${gain} 회복!`;  type = 'success';
-  } else if (item.id === 'rx_sp' || item.id === 'sp_potion') {
-    const gain = Math.min(40, playerStats.maxSp - playerStats.sp);
-    playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 40);
-    msg = `💧 SP +${gain} 회복!`;  type = 'success';
-  } else if (item.id === 'rx_cure') {
-    if (typeof playerStats.statusEffects !== 'undefined') playerStats.statusEffects = [];
-    msg = '🧬 모든 상태이상 제거!'; type = 'success';
-  } else if (item.id === 'full_potion') {
-    playerStats.hp = playerStats.maxHp;
-    playerStats.sp = playerStats.maxSp;
-    msg = '✨ HP + SP 완전 회복!';  type = 'success';
-  } else {
-    // 전투용 아이템은 맵에서 사용 불가 안내
+  // ── 전투 전용 아이템 — 맵에서 사용 불가 ──
+  const battleOnly = ['dmg_boost','speed','shield','regen','lucky','cloak','charm'];
+  if (battleOnly.includes(item.id) || item.category === 'equip') {
     if (typeof showToast === 'function') showToast('⚔️ ' + item.name + ' — 전투 중에만 사용 가능해요!', 'warning', 2500);
     return;
   }
 
+  // ── 기존 하드코딩 처리 (하위 호환) ──
+  if (item.id === 'rx_hp' || item.id === 'hp_potion') {
+    const gain = Math.min(50, playerStats.maxHp - playerStats.hp);
+    playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 50);
+    msg = '❤️ HP +' + gain + ' 회복!'; type = 'success';
+
+  } else if (item.id === 'rx_sp' || item.id === 'sp_potion') {
+    const gain = Math.min(40, playerStats.maxSp - playerStats.sp);
+    playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 40);
+    msg = '💧 SP +' + gain + ' 회복!'; type = 'success';
+
+  } else if (item.id === 'rx_cure') {
+    if (typeof playerStats.statusEffects !== 'undefined') playerStats.statusEffects = [];
+    msg = '🧬 모든 상태이상 제거!'; type = 'success';
+
+  } else if (item.id === 'full_potion') {
+    playerStats.hp = playerStats.maxHp;
+    playerStats.sp = playerStats.maxSp;
+    msg = '✨ HP + SP 완전 회복!'; type = 'success';
+
+  // ── ITEM_DB effect 기반 처리 (food 아이템 전체) ──
+  } else if (item.category === 'food' && window.ITEM_DB) {
+    const dbItem = window.ITEM_DB.get(item.id);
+    const ef = dbItem ? dbItem.effect : null;
+
+    if (!ef) {
+      if (typeof showToast === 'function') showToast('❓ ' + item.name + ' — 효과 정보가 없어요.', 'warning', 2000);
+      return;
+    }
+
+    const msgs = [];
+
+    // HP 회복
+    if (ef.hp) {
+      const gain = Math.min(ef.hp, playerStats.maxHp - playerStats.hp);
+      playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + ef.hp);
+      if (gain > 0) msgs.push('❤️ HP +' + gain);
+    }
+    if (ef.hp_full) {
+      playerStats.hp = playerStats.maxHp;
+      msgs.push('❤️ HP 완전 회복');
+    }
+    // SP 회복/감소
+    if (ef.sp && ef.sp > 0) {
+      const gain = Math.min(ef.sp, playerStats.maxSp - playerStats.sp);
+      playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + ef.sp);
+      if (gain > 0) msgs.push('💧 SP +' + gain);
+    } else if (ef.sp && ef.sp < 0) {
+      // SP 감소 패널티 (마라탕 등)
+      playerStats.sp = Math.max(0, playerStats.sp + ef.sp);
+      msgs.push('💧 SP ' + ef.sp);
+    }
+    if (ef.sp_full) {
+      playerStats.sp = playerStats.maxSp;
+      msgs.push('💧 SP 완전 회복');
+    }
+    // 호감도
+    if (ef.favor) {
+      if (typeof puangState !== 'undefined') {
+        puangState.favorability = Math.min(100, (puangState.favorability || 0) + ef.favor);
+        if (typeof window.savePuangState === 'function') window.savePuangState();
+        msgs.push('🐉 호감도 +' + ef.favor);
+      }
+    }
+    // 최대 HP 영구 증가
+    if (ef.max_hp_perm) {
+      playerStats.maxHp = (playerStats.maxHp || 60) + ef.max_hp_perm;
+      msgs.push('❤️ 최대 HP +' + ef.max_hp_perm + ' (영구)');
+    }
+    // 최대 SP 영구 증가
+    if (ef.max_sp_perm) {
+      playerStats.maxSp = (playerStats.maxSp || 40) + ef.max_sp_perm;
+      msgs.push('💧 최대 SP +' + ef.max_sp_perm + ' (영구)');
+    }
+    // 상태이상 제거
+    if (ef.cure || ef.cure_poison) {
+      if (typeof playerStats.statusEffects !== 'undefined') playerStats.statusEffects = [];
+      msgs.push('🧬 상태이상 제거');
+    }
+    // HP 재생 (전투용이지만 인벤토리에서 설명 표시)
+    if (ef.regen_hp) {
+      msgs.push('🌿 전투 중 HP 재생 효과 적용');
+    }
+    // 도서관 집중력 보너스 (1회용)
+    if (ef.lib_focus_bonus_once) {
+      localStorage.setItem('libFocusBonus', String(ef.lib_focus_bonus_once));
+      msgs.push('📚 도서관 집중력 +' + ef.lib_focus_bonus_once + '% (1회)');
+    }
+    // 체육관 보너스 (1회용)
+    if (ef.gym_bonus_once) {
+      localStorage.setItem('gymBonusOnce', String(ef.gym_bonus_once));
+      msgs.push('💪 체육관 효율 +' + ef.gym_bonus_once + '% (1회)');
+    }
+
+    if (msgs.length === 0) {
+      if (typeof showToast === 'function') showToast('⚔️ ' + item.name + ' — 전투 중에 사용하세요!', 'warning', 2500);
+      return;
+    }
+
+    msg = (dbItem.icon || '🍚') + ' ' + dbItem.name + ' — ' + msgs.join(' · ');
+    type = 'success';
+
+  } else {
+    if (typeof showToast === 'function') showToast('⚔️ ' + item.name + ' — 전투 중에만 사용 가능해요!', 'warning', 2500);
+    return;
+  }
+
+  // 아이템 소모 + 저장
   inventory.splice(idx, 1);
   if (typeof saveInventory === 'function') saveInventory();
-  if (typeof window.updateMapStats === 'function') window.updateMapStats();
-  if (typeof showToast === 'function') showToast(msg, type, 2200);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  else if (typeof window.updateMapStats === 'function') window.updateMapStats();
+  if (typeof showToast === 'function') showToast(msg, type, 2500);
   renderInventoryOverlay();
 };
 
@@ -1010,9 +1107,8 @@ function _renderDecoTab() {
 
   Object.entries(bySlot).forEach(([slot, items]) => {
     // 현재 이 슬롯에 장착된 아이템
-    const equipped = slot === 'background'
-      ? Object.keys(decos).find(k => k === 'background' ? decos.background : null)
-      : decos[slot];
+    // background 슬롯은 decos.background(theme값), 나머지는 decos[slot](itemId)
+    const equipped = decos[slot] || null;
 
     html += `<div class="ptab-costume-section">`;
     html += `<div class="ptab-section-title">${SLOT_LABELS[slot] || slot}</div>`;

@@ -181,9 +181,12 @@ async function loadAllDataFromServer() {
       if (s.dataHistory)              localStorage.setItem('dataHistory',         JSON.stringify(s.dataHistory));
       if (s.playerStats?.equippedPet !== undefined)
         playerStats.equippedPet = s.playerStats.equippedPet;
-      if (s.playerCostume !== undefined) {
-        localStorage.setItem('playerCostume', s.playerCostume);
-        playerStats.playerCostume = s.playerCostume; // 메모리에도 즉시 반영
+      // playerCostume: playerStats 안에 저장된 값 우선, 없으면 최상위 playerCostume 폴백
+      // (이중 저장 구조 통일 — playerStats.playerCostume이 단일 진실 원천)
+      const _pc = s.playerStats?.playerCostume || s.playerCostume || '';
+      if (_pc) {
+        playerStats.playerCostume = _pc;
+        localStorage.setItem('playerCostume', _pc);
       }
       if (s.storePurchased)           localStorage.setItem('storePurchased',      JSON.stringify(s.storePurchased));
 
