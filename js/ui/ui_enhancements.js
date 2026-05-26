@@ -94,15 +94,16 @@ if (_origOrderFood_toast) {
   };
 }
 
-// buyStore 후킹
-const _origBuyStore_toast = window.buyStore;
-if (_origBuyStore_toast) {
-  window.buyStore = function(id) {
+// buyStoreItem 후킹 (구매 토스트 알림)
+// buyStore → buyStoreItem으로 교체됨 (ITEM_DB 통합 이후)
+const _origBuyStoreItem_toast = window.buyStoreItem;
+if (_origBuyStoreItem_toast) {
+  window.buyStoreItem = function(id) {
     const before = playerStats.data;
-    _origBuyStore_toast(id);
+    _origBuyStoreItem_toast(id);
     if (playerStats.data < before) {
-      const names = { hp_potion:'HP 포션', sp_potion:'SP 포션', full_potion:'풀 회복 포션', dmg_boost:'데미지 부스터', shield:'방어막' };
-      showToast('🛒 ' + (names[id] || id) + ' 구매!', 'success', 2000);
+      const name = window.ITEM_DB?.get(id)?.name || id;
+      showToast('🛒 ' + name + ' 구매!', 'success', 2000);
     }
   };
 }

@@ -1312,50 +1312,53 @@ window.doGacha = function() {
 }
 
 // ================================================================
-// 아이템 가게 (편의점)
+// ================================================================
+// 아이템 가게
+// STORE_ITEMS — items.js의 ITEM_DB Proxy로 대체됨
 // ================================================================
 
-const STORE_ITEMS = {
-  hp_potion:   { name: 'HP 포션',       cost: 5,  clerk: '체력 회복에 딱이죠~ 많이 사 가세요!' },
-  sp_potion:   { name: 'SP 포션',       cost: 4,  clerk: '집중력 포션이에요! 공부할 때 좋아요 😊' },
-  full_potion: { name: '풀 회복 포션',  cost: 15, clerk: '저희 가게 최고 인기 상품이에요! ✨' },
-  dmg_boost:   { name: '데미지 부스터', cost: 8,  clerk: '전투 전에 꼭 챙겨가세요 💪' },
-  shield:      { name: '방어막',        cost: 8,  clerk: '안전이 최우선이죠! 방어막 추천해요 🛡️' },
-  // ★ BugFix #18: 주간 신상품 아이템을 STORE_ITEMS에 등록 — 미등록 시 buyStore()에서 STORE_ITEMS[id] undefined로 구매 불가
-  //   getStoreNewItem()이 반환하는 id와 일치하는 키로 등록.
-  //   사이드이펙트: getStoreStock()의 STORE_STOCK_LIMIT에 없어 재고 무제한이지만, 신상품은 의도적으로 주 1회 제한이므로 별도 구매 처리.
-  mem_potion:  { name: '기억력 포션', cost: 10, clerk: '공부 전에 딱이에요! 🧠' },
-  cloak:       { name: '투명 망토',   cost: 18, clerk: '이면세계 탐험가 필수템! 🫥' },
-  charm:       { name: '청룡 부적',   cost: 12, clerk: '위기의 순간 당신을 지켜줘요 🧧' },
-};
-
-const STORE_CLERK_DEFAULT = [
-  '어서오세요~ 필요한 거 있으면 말씀해 주세요!',
-  '오늘 날씨 좋죠? 포션 한 병 어떠세요? 😊',
-  '이면 세계 탐험 가세요? 미리 준비해두세요!',
-  '데이터 조각 많이 모으셨네요! 좋은 거 사 가세요 🎉',
+// ── 탭 정의 ──
+const STORE_TABS = [
+  { key: 'food',           label: '🍚 음식' },
+  { key: 'equip',          label: '⚔️ 착용' },
+  { key: 'deco',           label: '🎨 꾸미기' },
+  { key: 'pet',            label: '🐾 펫' },
+  { key: 'player_costume', label: '👤 플레이어' },
+  { key: 'puang_costume',  label: '🐨 푸앙이' },
 ];
 
-window.enterStore = function() {
-  document.getElementById('game-container').style.display = 'none';
-  document.getElementById('store-container').style.display = '';
-  document.getElementById('store-container').classList.add('visible');
-  document.getElementById('store-data-val').textContent = playerStats.data;
+// ── 재고 한도 (food/equip 일부만 적용, 나머지 무제한) ──
+const STORE_STOCK_LIMIT = { hp_potion: 5, sp_potion: 5, full_potion: 2, dmg_boost: 3, shield: 3 };
 
-  const el = document.getElementById('store-clerk-text');
-  if (el) el.textContent = STORE_CLERK_DEFAULT[Math.floor(Math.random() * STORE_CLERK_DEFAULT.length)];
+let _storeCurrentTab = 'food';
+let _storeCart = [];
 
-  const timeEl = document.getElementById('store-receipt-time');
-  if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
+// ── 재고 관리 ──
+function getStoreStock() {
+  const today = new Date().toDateString();
+  const raw = JSON.parse(localStorage.getItem('storeStock') || '{}');
+  if (raw.date !== today) {
+    const fresh = { date: today };
+    Object.keys(STORE_STOCK_LIMIT).forEach(k => fresh[k] = STORE_STOCK_LIMIT[k]);
+    localStorage.setItem('storeStock', JSON.stringify(fresh));
+    return fresh;
+  }
+  return raw;
+}
+function saveStoreStock(stock) { localStorage.setItem('storeStock', JSON.stringify(stock)); }
+function getStockLeft(id) {
+  if (!STORE_STOCK_LIMIT[id]) return Infinity;
+  return getStoreStock()[id] ?? STORE_STOCK_LIMIT[id];
 }
 
-window.leaveStore = function() {
-  if (typeof window.clearPlaceBg==='function') window.clearPlaceBg();
-  document.getElementById('store-container').classList.remove('visible');
-  document.getElementById('store-container').style.display = 'none';
-  document.getElementById('game-container').style.display = 'flex';
+// ── 영구 소유 목록 (deco/pet/costume 중복 구매 방지) ──
+function getStorePurchased() { return JSON.parse(localStorage.getItem('storePurchased') || '[]'); }
+function addStorePurchased(id) {
+  const list = getStorePurchased();
+  if (!list.includes(id)) { list.push(id); localStorage.setItem('storePurchased', JSON.stringify(list)); }
 }
 
+// ── 영수증 로그 ──
 function addStoreLog(msg, cls) {
   const box = document.getElementById('store-receipt-body');
   if (!box) return;
@@ -1364,32 +1367,290 @@ function addStoreLog(msg, cls) {
   if (receipt) receipt.scrollTop = receipt.scrollHeight;
 }
 
-window.buyStore = function(id) {
-  const item = STORE_ITEMS[id];
-  if (!item) return;
+// ── 점원 멘트 ──
+function setStoreClerk(msg) {
+  const el = document.getElementById('store-clerk-text');
+  if (el) el.textContent = msg;
+}
 
-  if (playerStats.data < item.cost) {
-    addStoreLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개, 보유: ' + playerStats.data + '개)', 'store-log-err');
-    const el = document.getElementById('store-clerk-text');
-    if (el) el.textContent = '앗, 데이터 조각이 부족하네요... 더 모아오세요! 😅';
+// ── 가게 진입 ──
+window.enterStore = function() {
+  document.getElementById('game-container').style.display = 'none';
+  const cont = document.getElementById('store-container');
+  cont.style.display = '';
+  cont.classList.add('visible');
+  document.getElementById('store-data-val').textContent = playerStats.data;
+  const timeEl = document.getElementById('store-receipt-time');
+  if (timeEl) timeEl.textContent = new Date().toLocaleTimeString();
+  _storeCart = [];
+  renderStoreTabs();
+  switchStoreTab('food');
+  updateStoreCartUI();
+  setStoreClerk('어서오세요~ 필요한 거 있으면 말씀해 주세요!');
+};
+
+// ── 가게 퇴장 ──
+window.leaveStore = function() {
+  if (typeof window.clearPlaceBg === 'function') window.clearPlaceBg();
+  document.getElementById('store-container').classList.remove('visible');
+  document.getElementById('store-container').style.display = 'none';
+  document.getElementById('game-container').style.display = 'flex';
+};
+
+// ── 탭 버튼 렌더링 ──
+function renderStoreTabs() {
+  const wrap = document.getElementById('store-tabs');
+  if (!wrap) return;
+  wrap.innerHTML = STORE_TABS.map(t =>
+    `<button class="store-tab-btn${t.key === _storeCurrentTab ? ' active' : ''}"
+      data-tab="${t.key}" onclick="switchStoreTab('${t.key}')">${t.label}</button>`
+  ).join('');
+}
+
+// ── 탭 전환 ──
+window.switchStoreTab = function(tabKey) {
+  _storeCurrentTab = tabKey;
+  _storePage[tabKey] = 0; // 탭 전환 시 항상 1페이지부터
+  document.querySelectorAll('.store-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabKey);
+  });
+  renderStoreTabItems(tabKey, 0);
+};
+
+// ── 탭별 현재 페이지 관리 ──
+const _storePage = {};
+const STORE_PAGE_SIZE = 12;
+
+// ── 탭 아이템 렌더링 (페이지네이션) ──
+function renderStoreTabItems(tabKey, page) {
+  const shelf = document.getElementById('store-tab-shelf');
+  if (!shelf) return;
+
+  // 페이지 초기화 또는 유지
+  if (page === undefined) page = _storePage[tabKey] || 0;
+  _storePage[tabKey] = page;
+
+  const allItems = window.ITEM_DB.getByCategory(tabKey);
+  const totalPages = Math.ceil(allItems.length / STORE_PAGE_SIZE);
+  const items = allItems.slice(page * STORE_PAGE_SIZE, (page + 1) * STORE_PAGE_SIZE);
+
+  const stock = getStoreStock();
+  const purchased = getStorePurchased();
+  const nonStackable = ['deco', 'pet', 'player_costume', 'puang_costume'];
+  const rarityColor = { common: '#aaa', rare: '#378add', epic: '#a855f7', legendary: '#ef9f27' };
+
+  if (allItems.length === 0) {
+    shelf.innerHTML = '<div style="color:#888;padding:20px;text-align:center;">준비 중입니다...</div>';
     return;
   }
 
-  playerStats.data -= item.cost;
+  const cards = items.map(item => {
+    const stockLeft  = STORE_STOCK_LIMIT[item.id] !== undefined ? (stock[item.id] ?? STORE_STOCK_LIMIT[item.id]) : null;
+    const soldOut    = stockLeft !== null && stockLeft <= 0;
+    const alreadyOwn = nonStackable.includes(item.category) && purchased.includes(item.id);
+    const disabled   = soldOut || alreadyOwn;
+    const rarityBadge = item.rarity
+      ? `<span style="color:${rarityColor[item.rarity]||'#aaa'};font-size:9px;">◆ ${item.rarity.toUpperCase()}</span>` : '';
+    const stockBadge = stockLeft !== null
+      ? `<div style="font-size:9px;color:${soldOut?'#f09595':'#888'};">재고 ${stockLeft}/${STORE_STOCK_LIMIT[item.id]}</div>` : '';
+    const ownBadge   = alreadyOwn ? `<div style="font-size:9px;color:#5dcaa5;">✓ 보유 중</div>` : '';
+    const priceLabel = item.price === 0 ? '무료' : `💎 ${item.price}개`;
 
-  if      (id === 'hp_potion')   { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); }
-  else if (id === 'sp_potion')   { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); }
-  else if (id === 'full_potion') { playerStats.hp = playerStats.maxHp; playerStats.sp = playerStats.maxSp; }
-  else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost', name: item.name, icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
-  else if (id === 'shield')      { inventory.push({ id: 'shield',    name: item.name, icon: '🛡️', desc: '다음 전투 피해 -50%'  }); saveInventory(); }
+    return `
+      <div class="store-item${disabled ? ' store-item-locked' : ''}"
+           onclick="${disabled ? '' : `buyStoreItem('${item.id}')`}">
+        <div class="store-item-icon">${item.icon}</div>
+        <div class="store-item-name">${item.name}</div>
+        ${rarityBadge}
+        <div class="store-item-desc">${item.desc}</div>
+        <div class="store-item-price">${priceLabel}</div>
+        ${stockBadge}${ownBadge}
+        ${disabled ? '' : `
+        <div style="display:flex;gap:4px;margin-top:4px;">
+          <button onclick="event.stopPropagation();addToCart('${item.id}')"
+            style="flex:1;background:#1a1408;border:1px solid #3a3010;border-radius:4px;
+                   padding:3px;color:#ef9f27;cursor:pointer;font-size:10px;font-family:inherit;">🛒</button>
+        </div>`}
+      </div>`;
+  }).join('');
 
-  const el = document.getElementById('store-clerk-text');
-  if (el) el.textContent = item.clerk;
+  // 페이지네이션 버튼
+  const pagination = totalPages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;
+                padding:10px 0;width:100%;grid-column:1/-1;">
+      <button onclick="storeGoPage('${tabKey}',${page - 1})"
+        ${page === 0 ? 'disabled' : ''}
+        style="background:#1a1408;border:1px solid #3a3010;border-radius:6px;
+               padding:4px 12px;color:${page===0?'#555':'#ef9f27'};cursor:${page===0?'default':'pointer'};
+               font-size:12px;font-family:inherit;">◀</button>
+      <span style="font-size:11px;color:#aaa;">${page + 1} / ${totalPages}
+        <span style="color:#666;">(총 ${allItems.length}개)</span>
+      </span>
+      <button onclick="storeGoPage('${tabKey}',${page + 1})"
+        ${page >= totalPages - 1 ? 'disabled' : ''}
+        style="background:#1a1408;border:1px solid #3a3010;border-radius:6px;
+               padding:4px 12px;color:${page>=totalPages-1?'#555':'#ef9f27'};cursor:${page>=totalPages-1?'default':'pointer'};
+               font-size:12px;font-family:inherit;">▶</button>
+    </div>` : '';
 
-  addStoreLog('[✅] ' + item.name + ' 구매 완료! · 💎 -' + item.cost + '개', 'store-log-ok');
+  shelf.innerHTML = cards + pagination;
+}
 
+// ── 페이지 이동 ──
+window.storeGoPage = function(tabKey, page) {
+  const allItems = window.ITEM_DB.getByCategory(tabKey);
+  const totalPages = Math.ceil(allItems.length / STORE_PAGE_SIZE);
+  if (page < 0 || page >= totalPages) return;
+  renderStoreTabItems(tabKey, page);
+};
+
+// ── 단건 구매 ──
+window.buyStoreItem = function(id) {
+  const item = window.ITEM_DB.get(id);
+  if (!item) return;
+
+  // 잔액 확인
+  if (playerStats.data < item.price) {
+    addStoreLog('[❌] 데이터 조각 부족! (필요: ' + item.price + '개, 보유: ' + playerStats.data + '개)', 'store-log-err');
+    setStoreClerk('앗, 데이터 조각이 부족하네요... 더 모아오세요! 😅');
+    return;
+  }
+
+  // 재고 확인
+  if (STORE_STOCK_LIMIT[id] !== undefined) {
+    if (getStockLeft(id) <= 0) {
+      addStoreLog('[❌] ' + item.name + ' 재고 없음! 내일 다시 입고됩니다.', 'store-log-err');
+      return;
+    }
+    const stock = getStoreStock();
+    stock[id]--;
+    saveStoreStock(stock);
+  }
+
+  // 중복 구매 방지 (deco/pet/costume)
+  const nonStackable = ['deco', 'pet', 'player_costume', 'puang_costume'];
+  if (nonStackable.includes(item.category) && getStorePurchased().includes(id)) {
+    addStoreLog('[❌] ' + item.name + ' 이미 보유 중입니다!', 'store-log-err');
+    return;
+  }
+
+  // 결제
+  playerStats.data -= item.price;
   document.getElementById('store-data-val').textContent = playerStats.data;
+
+  // 카테고리별 처리
+  if (item.category === 'food' || item.category === 'equip') {
+    inventory.push({ id: item.id, name: item.name, icon: item.icon, desc: item.desc, category: item.category });
+    if (typeof saveInventory === 'function') saveInventory();
+
+  } else if (item.category === 'deco') {
+    if (!playerStats.ownedRoomItems) playerStats.ownedRoomItems = [];
+    if (!playerStats.ownedRoomItems.includes(id)) playerStats.ownedRoomItems.push(id);
+    addStorePurchased(id);
+
+  } else if (item.category === 'pet') {
+    playerStats.equippedPet = id;
+    addStorePurchased(id);
+
+  } else if (item.category === 'player_costume') {
+    localStorage.setItem('playerCostume', id);
+    addStorePurchased(id);
+
+  } else if (item.category === 'puang_costume') {
+    if (!playerStats.roomDecorations) playerStats.roomDecorations = {};
+    playerStats.roomDecorations.costume = id;
+    if (typeof window.applyRoomDecorations === 'function') window.applyRoomDecorations();
+    addStorePurchased(id);
+  }
+
+  addStoreLog('[✅] ' + item.icon + ' ' + item.name + ' 구매! · 💎 -' + item.price, 'store-log-ok');
+  setStoreClerk(item.clerk || '좋은 선택이에요! 😊');
   if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  renderStoreTabItems(_storeCurrentTab);
+};
+
+// ── 카트 담기 ──
+window.addToCart = function(id) {
+  _storeCart.push(id);
+  updateStoreCartUI();
+  addStoreLog('[🛒] ' + (window.ITEM_DB.get(id)?.name || id) + ' 카트에 추가', 'store-log-info');
+};
+
+// ── 카트 초기화 ──
+window.clearCart = function() {
+  _storeCart = [];
+  updateStoreCartUI();
+};
+
+// ── 카트 일괄 구매 (10% 할인 적용) ──
+window.buyCart = function() {
+  if (_storeCart.length === 0) { addStoreLog('[❌] 카트가 비어 있어요.', 'store-log-err'); return; }
+
+  // 총액 계산
+  let total = _storeCart.reduce((sum, id) => sum + (window.ITEM_DB.get(id)?.price || 0), 0);
+  const discount = _storeCart.length >= 3;
+  if (discount) total = Math.floor(total * 0.9);
+
+  if (playerStats.data < total) {
+    addStoreLog('[❌] 데이터 조각 부족! (필요: ' + total + '개)', 'store-log-err');
+    return;
+  }
+
+  // 할인 총액으로 한 번에 차감
+  playerStats.data -= total;
+  document.getElementById('store-data-val').textContent = playerStats.data;
+
+  // 각 아이템 효과만 적용 (결제는 위에서 완료)
+  const nonStackable = ['deco', 'pet', 'player_costume', 'puang_costume'];
+  for (const id of _storeCart) {
+    const item = window.ITEM_DB.get(id);
+    if (!item) continue;
+
+    if (STORE_STOCK_LIMIT[id] !== undefined) {
+      const stock = getStoreStock();
+      stock[id] = Math.max(0, (stock[id] || 0) - 1);
+      saveStoreStock(stock);
+    }
+
+    if (item.category === 'food' || item.category === 'equip') {
+      inventory.push({ id: item.id, name: item.name, icon: item.icon, desc: item.desc, category: item.category });
+      if (typeof saveInventory === 'function') saveInventory();
+    } else if (item.category === 'deco') {
+      if (!playerStats.ownedRoomItems) playerStats.ownedRoomItems = [];
+      if (!playerStats.ownedRoomItems.includes(id)) playerStats.ownedRoomItems.push(id);
+      addStorePurchased(id);
+    } else if (item.category === 'pet') {
+      playerStats.equippedPet = id;
+      addStorePurchased(id);
+    } else if (item.category === 'player_costume') {
+      localStorage.setItem('playerCostume', id);
+      addStorePurchased(id);
+    } else if (item.category === 'puang_costume') {
+      if (!playerStats.roomDecorations) playerStats.roomDecorations = {};
+      playerStats.roomDecorations.costume = id;
+      if (typeof window.applyRoomDecorations === 'function') window.applyRoomDecorations();
+      addStorePurchased(id);
+    }
+  }
+
+  addStoreLog('[✅ 카트 구매 완료]' + (discount ? ' 3개↑ 10% 할인!' : '') + ' · 💎 -' + total, 'store-log-ok');
+  setStoreClerk('감사합니다~ 또 오세요! 🙏');
+  _storeCart = [];
+  updateStoreCartUI();
+  renderStoreTabItems(_storeCurrentTab);
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+};
+
+// ── 카트 UI 업데이트 ──
+function updateStoreCartUI() {
+  const countEl = document.getElementById('store-cart-count');
+  const totalEl = document.getElementById('store-cart-total');
+  if (countEl) countEl.textContent = _storeCart.length + '개';
+  if (totalEl) {
+    let total = _storeCart.reduce((sum, id) => sum + (window.ITEM_DB.get(id)?.price || 0), 0);
+    if (_storeCart.length >= 3) total = Math.floor(total * 0.9);
+    totalEl.textContent = total + '💎' + (_storeCart.length >= 3 ? ' (10%↓)' : '');
+  }
 }
 
 // ================================================================
@@ -2568,217 +2829,6 @@ window.enterUnion = function() {
     saleEl.style.display = isUnionSaleDay() ? 'block' : 'none';
   }
 };
-
-
-// ================================================================
-// 아이템 가게 — 신규: 재고 시스템 / 묶음 할인 / 찜 목록 / 신상품 알림
-// ================================================================
-
-// 재고 시스템: 아이템별 일일 한도
-const STORE_STOCK_LIMIT = { hp_potion: 5, sp_potion: 5, full_potion: 2, dmg_boost: 3, shield: 3 };
-
-function getStoreStock() {
-  const today = new Date().toDateString();
-  const raw   = JSON.parse(localStorage.getItem('storeStock') || '{}');
-  if (raw.date !== today) {
-    const fresh = { date: today };
-    Object.keys(STORE_STOCK_LIMIT).forEach(k => fresh[k] = STORE_STOCK_LIMIT[k]);
-    localStorage.setItem('storeStock', JSON.stringify(fresh));
-    return fresh;
-  }
-  return raw;
-}
-function saveStoreStock(stock) {
-  localStorage.setItem('storeStock', JSON.stringify(stock));
-}
-
-// 찜 목록
-function getStoreWishlist() { return JSON.parse(localStorage.getItem('storeWishlist') || '[]'); }
-function saveStoreWishlist(list) { localStorage.setItem('storeWishlist', JSON.stringify(list)); }
-
-window.toggleStoreWishlist = function(id) {
-  let list = getStoreWishlist();
-  if (list.includes(id)) {
-    list = list.filter(x => x !== id);
-    addStoreLog('[🤍 찜 해제] ' + STORE_ITEMS[id]?.name, 'store-log-info');
-  } else {
-    list.push(id);
-    addStoreLog('[❤️ 찜 추가] ' + STORE_ITEMS[id]?.name, 'store-log-ok');
-  }
-  saveStoreWishlist(list);
-  updateStoreWishlistUI();
-  updateStoreStockUI();
-};
-
-function updateStoreWishlistUI() {
-  const el = document.getElementById('store-wishlist');
-  if (!el) return;
-  const list = getStoreWishlist();
-  el.textContent = list.length > 0
-    ? '❤️ 찜: ' + list.map(id => STORE_ITEMS[id]?.name || id).join(', ')
-    : '찜한 아이템 없음';
-}
-
-function updateStoreStockUI() {
-  const stock = getStoreStock();
-  const wishlist = getStoreWishlist();
-  Object.keys(STORE_STOCK_LIMIT).forEach(id => {
-    const el = document.getElementById('store-stock-' + id);
-    if (el) {
-      el.textContent = '재고 ' + (stock[id] || 0) + '/' + STORE_STOCK_LIMIT[id];
-      el.style.color = stock[id] === 0 ? '#f09595' : '#888';
-    }
-    // 찜 버튼 상태
-    const wishBtn = document.getElementById('store-wish-' + id);
-    if (wishBtn) wishBtn.textContent = wishlist.includes(id) ? '❤️' : '🤍';
-  });
-}
-
-// 묶음 구매 카트
-let storeCart = [];
-
-window.addToCart = function(id) {
-  storeCart.push(id);
-  updateStoreCartUI();
-  addStoreLog('[🛒 카트] ' + STORE_ITEMS[id]?.name + ' 추가', 'store-log-info');
-};
-
-window.clearCart = function() {
-  storeCart = [];
-  updateStoreCartUI();
-};
-
-window.buyCart = function() {
-  if (storeCart.length === 0) { addStoreLog('[❌] 카트가 비어 있어요.', 'store-log-err'); return; }
-
-  const stock = getStoreStock();
-  // 재고 체크
-  const countMap = {};
-  for (const id of storeCart) countMap[id] = (countMap[id] || 0) + 1;
-  for (const [id, count] of Object.entries(countMap)) {
-    if ((stock[id] || 0) < count) { addStoreLog('[❌] ' + STORE_ITEMS[id]?.name + ' 재고 부족!', 'store-log-err'); return; }
-  }
-
-  // 총액 계산 (3개 이상 10% 할인)
-  let total = storeCart.reduce((sum, id) => sum + (STORE_ITEMS[id]?.cost || 0), 0);
-  const discount = storeCart.length >= 3;
-  if (discount) total = Math.floor(total * 0.9);
-
-  if (playerStats.data < total) { addStoreLog('[❌] 데이터 조각 부족! (필요: ' + total + '개)', 'store-log-err'); return; }
-
-  playerStats.data -= total;
-  // 아이템 효과 적용
-  // ★ BugFix #4: 기존에 hp/sp_potion, full_potion은 즉시 회복만 하고 인벤토리에 추가하지 않아
-  //   단일 구매(buyStore)와 동작 불일치. inventory에 추가하도록 통일.
-  //   origBuy 변수는 실제로 사용되지 않았으므로 제거(사이드이펙트 없음).
-  //   원본 즉시 회복 로직은 주석으로 보존 ↓
-  for (const id of storeCart) {
-    const origBuy = _origBuyStore; // 원본 선언 보존 (미사용 변수였으나 원본 코드 유지)
-    // 재고 차감
-    stock[id] = (stock[id] || 0) - 1;
-    // 원본 효과 직접 적용 코드 (주석으로 보존):
-    // if      (id === 'hp_potion')   { playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + 30); }
-    // else if (id === 'sp_potion')   { playerStats.sp = Math.min(playerStats.maxSp, playerStats.sp + 20); }
-    // else if (id === 'full_potion') { playerStats.hp = playerStats.maxHp; playerStats.sp = playerStats.maxSp; }
-    // else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost', name: STORE_ITEMS[id].name, icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
-    // else if (id === 'shield')      { inventory.push({ id: 'shield',    name: STORE_ITEMS[id].name, icon: '🛡️', desc: '다음 전투 피해 -50%'  }); saveInventory(); }
-    // 효과 적용 — buyStore와 동일한 방식(인벤토리 추가)으로 통일
-    if      (id === 'hp_potion')   { inventory.push({ id: 'hp_potion',   name: STORE_ITEMS[id]?.name || 'HP 포션',      icon: '🧃', desc: 'HP +30 회복' });           saveInventory(); }
-    else if (id === 'sp_potion')   { inventory.push({ id: 'sp_potion',   name: STORE_ITEMS[id]?.name || 'SP 포션',      icon: '💙', desc: 'SP +20 회복' });           saveInventory(); }
-    else if (id === 'full_potion') { inventory.push({ id: 'full_potion', name: STORE_ITEMS[id]?.name || '풀 회복 포션', icon: '✨', desc: 'HP+SP 완전 회복' });       saveInventory(); }
-    else if (id === 'dmg_boost')   { inventory.push({ id: 'dmg_boost',   name: STORE_ITEMS[id]?.name || '데미지 부스터', icon: '🔥', desc: '다음 전투 데미지 +50%' }); saveInventory(); }
-    else if (id === 'shield')      { inventory.push({ id: 'shield',      name: STORE_ITEMS[id]?.name || '방어막',        icon: '🛡️', desc: '다음 전투 피해 -50%' });  saveInventory(); }
-  }
-  saveStoreStock(stock);
-  storeCart = [];
-  updateStoreCartUI();
-  updateStoreStockUI();
-  document.getElementById('store-data-val').textContent = playerStats.data;
-  if (typeof window.syncAndSave === 'function') window.syncAndSave();
-  addStoreLog('[✅ 카트 구매 완료]' + (discount ? ' 3개 이상 10% 할인 적용!' : '') + ' · 💎 -' + total, 'store-log-ok');
-  const npc = document.getElementById('store-clerk-text');
-  if (npc) npc.textContent = '감사합니다~ 또 오세요! 🙏';
-};
-
-function updateStoreCartUI() {
-  const el = document.getElementById('store-cart-count');
-  if (el) el.textContent = storeCart.length + '개';
-  const totalEl = document.getElementById('store-cart-total');
-  if (totalEl) {
-    let total = storeCart.reduce((sum, id) => sum + (STORE_ITEMS[id]?.cost || 0), 0);
-    if (storeCart.length >= 3) total = Math.floor(total * 0.9);
-    totalEl.textContent = total + '💎' + (storeCart.length >= 3 ? ' (10%↓)' : '');
-  }
-}
-
-// 신상품 알림: 주 1회 새 아이템 입고
-// ★ BugFix #18: id 필드를 STORE_ITEMS 키와 일치시킴
-// 원본 배열 (id 없어 buyStore 불가 — 주석으로 보존):
-// { name: '기억력 포션', icon: '🧠', cost: 10, desc: '도서관 정답률 +20% (5분)' },
-// { name: '투명 망토',   icon: '🫥', cost: 18, desc: '이면세계 몬스터 조우율 -30%' },
-// { name: '청룡 부적',   icon: '🧧', cost: 12, desc: '전투 사망 시 HP 15로 부활 1회' },
-function getStoreNewItem() {
-  const week = getWeekKey();
-  const weekNum = parseInt(week.split('-W')[1]) || 1;
-  const newItems = [
-    { id: 'mem_potion', name: '기억력 포션', icon: '🧠', cost: 10, desc: '도서관 정답률 +20% (5분)' },
-    { id: 'cloak',      name: '투명 망토',   icon: '🫥', cost: 18, desc: '이면세계 몬스터 조우율 -30%' },
-    { id: 'charm',      name: '청룡 부적',   icon: '🧧', cost: 12, desc: '전투 사망 시 HP 15로 부활 1회' },
-  ];
-  return newItems[weekNum % newItems.length];
-}
-
-// ★ BugFix #18: 신상품 구매 함수 — 주 1회 한도
-window.buyNewStoreItem = function() {
-  const item = getStoreNewItem();
-  const weekKey = 'newItem_' + getWeekKey();
-  if (localStorage.getItem(weekKey)) {
-    addStoreLog('[❌] 이번 주 신상품은 이미 구매하셨어요!', 'store-log-err');
-    return;
-  }
-  if (playerStats.data < item.cost) {
-    addStoreLog('[❌] 데이터 조각 부족! (필요: ' + item.cost + '개)', 'store-log-err');
-    return;
-  }
-  playerStats.data -= item.cost;
-  inventory.push({ id: item.id, name: item.name, icon: item.icon, desc: item.desc });
-  saveInventory();
-  localStorage.setItem(weekKey, '1');
-  if (typeof window.syncAndSave === 'function') window.syncAndSave();
-  document.getElementById('store-data-val').textContent = playerStats.data;
-  addStoreLog('[🆕 신상품 구매!] ' + item.icon + ' ' + item.name + ' · 💎 -' + item.cost, 'store-log-ok');
-  const npc = document.getElementById('store-clerk-text');
-  if (npc) npc.textContent = '좋은 선택이에요! 이번 주 한정이에요 😊';
-};
-
-// buyStore 후크: 재고 차감 적용
-const _origBuyStore = window.buyStore;
-window.buyStore = function(id) {
-  const stock = getStoreStock();
-  if ((stock[id] || 0) <= 0) {
-    addStoreLog('[❌] ' + (STORE_ITEMS[id]?.name || id) + ' 재고가 없어요! 내일 다시 입고됩니다.', 'store-log-err');
-    return;
-  }
-  stock[id]--;
-  saveStoreStock(stock);
-  _origBuyStore(id);
-  updateStoreStockUI();
-};
-
-// enterStore 후크
-const _origEnterStore = window.enterStore;
-window.enterStore = function() {
-  _origEnterStore();
-  updateStoreStockUI();
-  updateStoreWishlistUI();
-  updateStoreCartUI();
-  // 신상품 표시
-  const newItem = getStoreNewItem();
-  const el = document.getElementById('store-new-item');
-  if (el) el.textContent = '🆕 이번 주 신상품: ' + newItem.icon + ' ' + newItem.name + ' (💎 ' + newItem.cost + ') — ' + newItem.desc;
-};
-
-
 
 
 // ================================================================
