@@ -750,6 +750,9 @@ window.getActiveTitle = function getActiveTitle() { // ★ Fix 1: window 노출 
   return TITLES[0];
 }
 
+// ── 프로필 탭 상태 ──
+let _profileTab = 'stat'; // 'stat' | 'costume' | 'pet'
+
 window.openProfile = function() {
   let overlay = document.getElementById('profile-overlay');
   if (!overlay) {
@@ -762,15 +765,47 @@ window.openProfile = function() {
         <div class="profile-avatar" id="profile-avatar-display">🧑‍💻</div>
         <div class="profile-name" id="profile-name">탐험가</div>
         <div class="profile-title-badge" id="profile-title">신입 탐험가</div>
-        <div class="profile-stats-grid" id="profile-stats"></div>
-        <div class="profile-titles-section">
-          <div class="profile-section-label">🏷️ 칭호 목록</div>
-          <div class="profile-titles-list" id="profile-titles"></div>
+
+        <div class="profile-tab-bar">
+          <button class="profile-tab-btn active" id="ptab-stat"    onclick="switchProfileTab('stat')">📊 스탯</button>
+          <button class="profile-tab-btn"        id="ptab-costume" onclick="switchProfileTab('costume')">👗 코스튬</button>
+          <button class="profile-tab-btn"        id="ptab-pet"     onclick="switchProfileTab('pet')">🐾 펫</button>
         </div>
+
+        <div id="profile-tab-content"></div>
       </div>`;
     overlay.addEventListener('click', e => { if (e.target === overlay) closeProfile(); });
     document.body.appendChild(overlay);
+
+    // 탭 바 스타일 주입 (한 번만)
+    if (!document.getElementById('profile-tab-style')) {
+      const st = document.createElement('style');
+      st.id = 'profile-tab-style';
+      st.textContent = `
+        .profile-tab-bar{display:flex;gap:6px;margin:10px 0 14px;padding:0 2px;}
+        .profile-tab-btn{flex:1;padding:7px 4px;border:1px solid #1a3a5c;border-radius:8px;background:rgba(10,20,40,0.6);color:#6090b0;font-size:12px;cursor:pointer;transition:all .18s;}
+        .profile-tab-btn.active{background:#0f2a40;border-color:#378add;color:#a0c4ff;font-weight:700;}
+        .profile-tab-btn:hover:not(.active){border-color:#2a5a8c;color:#80b0d0;}
+
+        .ptab-costume-section{margin-bottom:14px;}
+        .ptab-section-title{font-size:11px;color:#5080a0;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase;}
+        .ptab-item-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+        .ptab-item{border:1px solid #1a3a5c;border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;background:rgba(10,20,40,0.5);transition:all .15s;position:relative;}
+        .ptab-item:hover{border-color:#378add;background:rgba(15,42,64,0.8);}
+        .ptab-item.equipped{border-color:#5dcaa5;background:rgba(13,50,36,0.6);}
+        .ptab-item.equipped::after{content:'착용중';position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#1d9e75;color:#e0ffe0;font-size:9px;padding:1px 6px;border-radius:8px;white-space:nowrap;}
+        .ptab-item.locked{opacity:.45;cursor:default;}
+        .ptab-item-icon{font-size:28px;margin-bottom:4px;}
+        .ptab-item-name{font-size:10px;color:#8ab0c8;line-height:1.3;}
+        .ptab-item-price{font-size:10px;color:#ef9f27;margin-top:2px;}
+        .ptab-unequip-btn{width:100%;margin-top:10px;padding:6px;border:1px solid #2a4a6c;border-radius:7px;background:transparent;color:#6090b0;font-size:11px;cursor:pointer;}
+        .ptab-unequip-btn:hover{border-color:#378add;color:#a0c4ff;}
+        .ptab-empty{text-align:center;padding:20px 0;color:#3a5a7a;font-size:12px;line-height:1.8;}
+      `;
+      document.head.appendChild(st);
+    }
   }
+  _profileTab = 'stat';
   renderProfile();
   overlay.classList.add('profile-open');
 };
@@ -780,25 +815,59 @@ window.closeProfile = function() {
   if (o) o.classList.remove('profile-open');
 };
 
+// ── 탭 전환 ──
+window.switchProfileTab = function(tab) {
+  _profileTab = tab;
+  ['stat','costume','pet'].forEach(t => {
+    const btn = document.getElementById('ptab-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  renderProfileTabContent();
+};
+
 function renderProfile() {
-  const nameEl   = document.getElementById('profile-name');
-  const titleEl  = document.getElementById('profile-title');
-  const statsEl  = document.getElementById('profile-stats');
-  const titlesEl = document.getElementById('profile-titles');
+  const nameEl  = document.getElementById('profile-name');
+  const titleEl = document.getElementById('profile-title');
+  const avatarEl = document.getElementById('profile-avatar-display');
 
   const name   = playerStats.name || localStorage.getItem('playerName') || '탐험가';
   const active = getActiveTitle();
 
-  if (nameEl)  nameEl.textContent = name;
-  if (titleEl) { titleEl.textContent = active.name; titleEl.style.color = active.color; titleEl.style.borderColor = active.color + '55'; }
+  if (nameEl)   nameEl.textContent  = name;
+  if (titleEl)  { titleEl.textContent = active.name; titleEl.style.color = active.color; titleEl.style.borderColor = active.color + '55'; }
 
-  if (statsEl) statsEl.innerHTML = [
+  // 아바타: 펫 착용 중이면 펫 아이콘 우선 표시
+  if (avatarEl) {
+    const petIcon  = _getPetIcon(playerStats.equippedPet);
+    const avatar   = localStorage.getItem('playerAvatar') || '🧑‍💻';
+    avatarEl.textContent = petIcon || avatar;
+  }
+
+  renderProfileTabContent();
+}
+
+function renderProfileTabContent() {
+  const el = document.getElementById('profile-tab-content');
+  if (!el) return;
+
+  if (_profileTab === 'stat') {
+    el.innerHTML = _renderStatTab();
+  } else if (_profileTab === 'costume') {
+    el.innerHTML = _renderCostumeTab();
+  } else if (_profileTab === 'pet') {
+    el.innerHTML = _renderPetTab();
+  }
+}
+
+// ── 스탯 탭 ──
+function _renderStatTab() {
+  const stats = [
     { icon:'❤️', label:'HP',       val: playerStats.hp + '/' + playerStats.maxHp },
     { icon:'💙', label:'SP',       val: playerStats.sp + '/' + playerStats.maxSp },
     { icon:'💎', label:'데이터',   val: playerStats.data + '개' },
     { icon:'⚔️', label:'전투 승리', val: (playerStats._battleWins || 0) + '회' },
     { icon:'🗺️', label:'탐험 수',  val: (playerStats._explorationCount || 0) + '회' },
-    { icon:'🐉', label:'호감도',   val: puangState.favorability + '/ 100' },  // 랭킹 호감도 '/' 표시 안 되는 것 UI 수정 완료
+    { icon:'🐉', label:'호감도',   val: puangState.favorability + '/ 100' },
   ].map(s => `
     <div class="profile-stat-card">
       <div class="profile-stat-icon">${s.icon}</div>
@@ -806,18 +875,227 @@ function renderProfile() {
       <div class="profile-stat-val">${s.val}</div>
     </div>`).join('');
 
-  if (titlesEl) titlesEl.innerHTML = TITLES.map(t => {
+  const titles = TITLES.map(t => {
     const unlocked = t.check();
     return `<div class="profile-title-row ${unlocked ? 'unlocked' : 'locked'}">
       <span style="color:${unlocked ? t.color : '#444'};font-weight:700;">${unlocked ? '🔓' : '🔒'} ${t.name}</span>
     </div>`;
   }).join('');
+
+  return `
+    <div class="profile-stats-grid">${stats}</div>
+    <div class="profile-titles-section">
+      <div class="profile-section-label">🏷️ 칭호 목록</div>
+      <div class="profile-titles-list">${titles}</div>
+    </div>`;
+}
+
+// ── 코스튬 탭 ──
+function _renderCostumeTab() {
+  const curPlayerCostume = localStorage.getItem('playerCostume') || '';
+  const curPuangCostume  = (playerStats.roomDecorations || {}).costume || '';
+  // 플레이어 성별에 맞는 코스튬만 표시
+  const gender = localStorage.getItem('playerGender') || playerStats.gender || 'male';
+
+  const allPlayerCostumes = _getCostumeItems('player_costume');
+  // 성별 필터: gender 필드가 없거나 일치하는 것만
+  const playerCostumes = allPlayerCostumes.filter(item => !item.gender || item.gender === gender);
+  const puangCostumes  = _getCostumeItems('puang_costume');
+
+  const renderItems = (items, equipped, onSelect) => {
+    if (items.length === 0)
+      return `<div class="ptab-empty">구매한 코스튬이 없어요<br>아이템 가게에서 구매하세요 🛒</div>`;
+    return `<div class="ptab-item-grid">` + items.map(item => {
+      const isEquipped = equipped === item.id;
+      return `<div class="ptab-item ${isEquipped ? 'equipped' : ''}" onclick="${onSelect}('${item.id}')">
+        <div class="ptab-item-icon">${item.icon || '👗'}</div>
+        <div class="ptab-item-name">${item.name}</div>
+      </div>`;
+    }).join('') + `</div>`;
+  };
+
+  const genderLabel = gender === 'female' ? '여학생' : '남학생';
+  return `
+    <div style="max-height:340px;overflow-y:auto;padding-right:2px;">
+      <div class="ptab-costume-section">
+        <div class="ptab-section-title">👤 플레이어 코스튬 (${genderLabel})</div>
+        ${renderItems(playerCostumes, curPlayerCostume, 'equipPlayerCostume')}
+        ${curPlayerCostume ? `<button class="ptab-unequip-btn" onclick="equipPlayerCostume('')">해제</button>` : ''}
+      </div>
+      <div class="ptab-costume-section">
+        <div class="ptab-section-title">🐨 푸앙이 코스튬</div>
+        ${renderItems(puangCostumes, curPuangCostume, 'equipPuangCostume')}
+        ${curPuangCostume ? `<button class="ptab-unequip-btn" onclick="equipPuangCostume('')">해제</button>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── 펫 탭 ──
+function _renderPetTab() {
+  const purchased = _getStorePurchased();
+  const equippedPet = playerStats.equippedPet || '';
+  const petItems = _getCostumeItems('pet');
+
+  if (petItems.length === 0)
+    return `<div class="ptab-empty">구매한 펫이 없어요<br>아이템 가게에서 구매하세요 🛒</div>`;
+
+  const grid = `<div class="ptab-item-grid">` + petItems.map(item => {
+    const isEquipped = equippedPet === item.id;
+    return `<div class="ptab-item ${isEquipped ? 'equipped' : ''}" onclick="equipPet('${item.id}')">
+      <div class="ptab-item-icon">${item.icon || '🐾'}</div>
+      <div class="ptab-item-name">${item.name}</div>
+      ${item.desc ? `<div class="ptab-item-price">${item.desc}</div>` : ''}
+    </div>`;
+  }).join('') + `</div>`;
+
+  return `
+    <div style="max-height:340px;overflow-y:auto;padding-right:2px;">
+      <div class="ptab-section-title">동행 펫 선택</div>
+      ${grid}
+      ${equippedPet ? `<button class="ptab-unequip-btn" onclick="equipPet('')">펫 해제</button>` : ''}
+    </div>`;
+}
+
+// ── 헬퍼: 구매한 카테고리 아이템 조회 ──
+function _getCostumeItems(category) {
+  const purchased = _getStorePurchased();
+  if (!window.ITEM_DB) return [];
+  return window.ITEM_DB.getByCategory(category).filter(item => purchased.includes(item.id));
+}
+
+function _getStorePurchased() {
+  return JSON.parse(localStorage.getItem('storePurchased') || '[]');
+}
+
+function _getPetIcon(petId) {
+  if (!petId || !window.ITEM_DB) return null;
+  const item = window.ITEM_DB.get(petId);
+  return item ? item.icon : null;
+}
+
+// ── 코스튬 / 펫 장착 함수 ──
+window.equipPlayerCostume = function(id) {
+  if (id) {
+    localStorage.setItem('playerCostume', id);
+    if (typeof showToast === 'function') {
+      const item = window.ITEM_DB && window.ITEM_DB.get(id);
+      showToast('👗 ' + (item ? item.name : id) + ' 착용!', 'success', 2000);
+    }
+  } else {
+    localStorage.removeItem('playerCostume');
+    if (typeof showToast === 'function') showToast('코스튬 해제', 'info', 1500);
+  }
+  // 맵 플레이어 이미지 업데이트
+  _applyPlayerCostumeToMap();
+  renderProfileTabContent();
+};
+
+window.equipPuangCostume = function(id) {
+  if (!playerStats.roomDecorations) playerStats.roomDecorations = {};
+  playerStats.roomDecorations.costume = id || null;
+
+  // 1) 푸앙이 방 캐릭터 이미지 반영
+  if (typeof window.applyRoomDecorations === 'function') window.applyRoomDecorations();
+
+  // 2) 맵 블루미르홀 버튼 이미지 반영
+  const mapPuangImg = document.querySelector('.map-spot[onclick*="dormitory"] .map-spot-icon img');
+  if (mapPuangImg) {
+    const item = id && window.ITEM_DB ? window.ITEM_DB.get(id) : null;
+    mapPuangImg.src = (item && item.imgFile) ? item.imgFile : 'images/puang/puang_battle.png';
+  }
+
+  // 3) 푸앙이 방 room-puang-img (전신 이미지)
+  const roomImg = document.getElementById('puang-room-img');
+  if (roomImg) {
+    const item = id && window.ITEM_DB ? window.ITEM_DB.get(id) : null;
+    roomImg.src = (item && item.imgFile) ? item.imgFile : 'images/puang/puang_normal.png';
+  }
+
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  if (typeof showToast === 'function') {
+    if (id) {
+      const item = window.ITEM_DB && window.ITEM_DB.get(id);
+      showToast('🐨 ' + (item ? item.name : id) + ' 착용!', 'success', 2000);
+    } else {
+      showToast('푸앙이 코스튬 해제', 'info', 1500);
+    }
+  }
+  renderProfileTabContent();
+};
+
+window.equipPet = function(id) {
+  playerStats.equippedPet = id || null;
+  if (typeof window.syncAndSave === 'function') window.syncAndSave();
+  // stat-avatar에 펫 아이콘 반영
+  _updateAvatarWithPet();
+  if (typeof showToast === 'function') {
+    if (id) {
+      const item = window.ITEM_DB && window.ITEM_DB.get(id);
+      showToast('🐾 ' + (item ? item.name : id) + ' 동행!', 'success', 2000);
+    } else {
+      showToast('펫 해제', 'info', 1500);
+    }
+  }
+  renderProfileTabContent();
+};
+
+// stat-avatar에 펫 아이콘 표시
+function _updateAvatarWithPet() {
+  const ae = document.getElementById('stat-avatar');
+  if (!ae) return;
+  const petIcon = _getPetIcon(playerStats.equippedPet);
+  const baseAvatar = localStorage.getItem('playerAvatar') || '🧑‍💻';
+  ae.textContent = petIcon || baseAvatar;
+  // 프로필 패널 아바타도 동기화
+  const pae = document.getElementById('profile-avatar-display');
+  if (pae) pae.textContent = petIcon || baseAvatar;
+}
+
+// 맵 플레이어 이미지 적용 — imgFile 경로 직접 사용
+function _applyPlayerCostumeToMap() {
+  const costumeId = localStorage.getItem('playerCostume') || '';
+  const gender    = localStorage.getItem('playerGender') || playerStats.gender || 'male';
+  const battleImg = document.getElementById('player-img');
+  if (!battleImg) return;
+
+  if (costumeId && window.ITEM_DB) {
+    const item = window.ITEM_DB.get(costumeId);
+    // imgFile은 'images/player/...' 전체 경로로 저장되어 있음
+    if (item && item.imgFile) {
+      battleImg.src = item.imgFile;
+      return;
+    }
+  }
+  // 코스튬 없으면 성별 기본 이미지
+  battleImg.src = 'images/player/player_' + gender + '_battle.png';
+}
+
+// 푸앙이 코스튬 초기 복원 — Firebase 로드 후 저장된 코스튬 이미지 반영
+function _restorePuangCostume() {
+  const costumeId = (playerStats.roomDecorations || {}).costume;
+  if (!costumeId || !window.ITEM_DB) return;
+  const item = window.ITEM_DB.get(costumeId);
+  if (!item || !item.imgFile) return;
+
+  // 맵 블루미르홀 버튼 이미지
+  const mapPuangImg = document.querySelector('.map-spot[onclick*="dormitory"] .map-spot-icon img');
+  if (mapPuangImg) mapPuangImg.src = item.imgFile;
+
+  // 푸앙이 방 이미지
+  const roomImg = document.getElementById('puang-room-img');
+  if (roomImg) roomImg.src = item.imgFile;
 }
 
 // stat-brand 클릭으로 프로필 열기 (DOMContentLoaded에서 등록)
 document.addEventListener('DOMContentLoaded', () => {
   const brand = document.querySelector('.stat-brand');
   if (brand) { brand.style.cursor = 'pointer'; brand.addEventListener('click', window.openProfile); }
+  // 초기 펫/코스튬 상태 반영 (Firebase 로드 완료 후 실행되도록 지연)
+  setTimeout(() => {
+    _updateAvatarWithPet();
+    _applyPlayerCostumeToMap();
+    _restorePuangCostume();
+  }, 1200);
 });
 
 

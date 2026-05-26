@@ -241,9 +241,15 @@ function updateStatBrand() {
   const ne=document.getElementById('stat-brand-name');
   const te=document.getElementById('stat-brand-title');
   if(!ae&&!ne) return;
-  const avatar=localStorage.getItem('playerAvatar')||'🧑\u200d💻';
+  const baseAvatar=localStorage.getItem('playerAvatar')||'🧑\u200d💻';
   const name=(typeof playerStats!=='undefined'&&playerStats.name)||localStorage.getItem('playerName')||'탐험가';
-  if(ae){ ae.textContent=avatar; ae.classList.toggle('avatar-danger',typeof playerStats!=='undefined'&&playerStats.hp/playerStats.maxHp<=.25); }
+  // 펫 착용 중이면 펫 아이콘 우선 표시
+  let displayAvatar = baseAvatar;
+  if(typeof playerStats!=='undefined' && playerStats.equippedPet && window.ITEM_DB){
+    const petItem = window.ITEM_DB.get(playerStats.equippedPet);
+    if(petItem && petItem.icon) displayAvatar = petItem.icon;
+  }
+  if(ae){ ae.textContent=displayAvatar; ae.classList.toggle('avatar-danger',typeof playerStats!=='undefined'&&playerStats.hp/playerStats.maxHp<=.25); }
   if(ne) ne.textContent=name;
   if(te&&typeof getActiveTitle==='function'){
     const t=getActiveTitle();
