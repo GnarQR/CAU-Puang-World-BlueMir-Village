@@ -214,7 +214,13 @@ async function loadAllDataFromServer() {
         placeInfo.bluedragonlake.locked = !isUnlocked;
         if (isUnlocked) {
           const lakeBtn = document.querySelector('.map-spot[onclick*="bluedragonlake"]');
-          if (lakeBtn) lakeBtn.classList.remove('locked');
+          if (lakeBtn) {
+            lakeBtn.classList.remove('locked');
+            const icon = lakeBtn.querySelector('.map-spot-icon');
+            if (icon) icon.textContent = '🏞️';
+            const badge = lakeBtn.querySelector('.map-badge');
+            if (badge) badge.remove();
+          }
         }
       }
 

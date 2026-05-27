@@ -324,10 +324,59 @@ window.finishEndingVideo = function() {
   if (video) video.pause();
   if (cont)  { cont.classList.add('hidden'); cont.style.display = 'none'; }
 
+  const gameCont = document.getElementById('game-container');
+  if (gameCont) gameCont.style.display = 'flex';
+
+  // 청룡호 버튼 아이콘 교체 (🔒 → 🏞️) + locked 클래스 제거
+  const lakeBtn = document.querySelector('.map-spot[onclick*="bluedragonlake"]');
+  if (lakeBtn) {
+    setTimeout(() => _unlockLakeAnimation(lakeBtn), 800); // 토스트 뜬 후 시작
+  }
+
   // 청룡호 해금 알림
   if (typeof showToast === 'function') showToast('🐉 청룡호가 해금되었습니다!', 'success', 4000);
   if (typeof updateMapStats === 'function') updateMapStats();
 };
+
+// ── 청룡호 잠금 해제 연출 ──
+function _unlockLakeAnimation(lakeBtn) {
+  const icon = lakeBtn.querySelector('.map-spot-icon');
+  const badge = lakeBtn.querySelector('.map-badge');
+  if (!icon) return;
+
+  // 1단계: 흔들기
+  icon.style.transition = 'transform 0.1s';
+  let shake = 0;
+  const shakeInterval = setInterval(() => {
+    shake++;
+    icon.style.transform = shake % 2 === 0 ? 'rotate(-15deg)' : 'rotate(15deg)';
+    if (shake >= 8) {
+      clearInterval(shakeInterval);
+      icon.style.transform = 'rotate(0deg)';
+
+      // 2단계: 페이드 아웃
+      icon.style.transition = 'opacity 0.3s, transform 0.3s';
+      icon.style.opacity = '0';
+      icon.style.transform = 'scale(1.5)';
+
+      setTimeout(() => {
+        // 3단계: 아이콘 교체 + 페이드 인
+        icon.textContent = '🏞️';
+        icon.style.transform = 'scale(0.5)';
+        icon.style.opacity = '0';
+
+        setTimeout(() => {
+          icon.style.transition = 'opacity 0.4s, transform 0.4s';
+          icon.style.opacity = '1';
+          icon.style.transform = 'scale(1)';
+
+          lakeBtn.classList.remove('locked');
+          if (badge) badge.remove();
+        }, 50);
+      }, 300);
+    }
+  }, 80);
+}
 
 // ================================================================
 // DOMContentLoaded — 재방문 유저 처리
