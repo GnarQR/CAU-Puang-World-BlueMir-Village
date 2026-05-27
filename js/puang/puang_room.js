@@ -211,6 +211,23 @@ function renderSlot(slotId, itemId) {
   >`;
 }
 
+// 아이템 가게 UI 열기
+window.openRoomShop = function() {
+  const modal = document.getElementById('room-shop-modal');
+  const content = document.getElementById('room-shop-content');
+  if (!modal || !content) return;
+  content.innerHTML = renderRoomShop();
+  modal.style.display = 'flex';
+  // 바깥 클릭 시 닫기
+  modal.onclick = (e) => { if (e.target === modal) closeRoomShop(); };
+};
+
+// 아이템 가게 UI 닫기
+window.closeRoomShop = function() {
+  const modal = document.getElementById('room-shop-modal');
+  if (modal) modal.style.display = 'none';
+};
+
 // ── 아이템 구매 ──
 window.buyRoomItem = function(itemId) {
   const item = ROOM_ITEMS[itemId];
@@ -231,6 +248,11 @@ window.buyRoomItem = function(itemId) {
   installRoomItem(itemId);
   saveAllDataToServer();
   updateMapStats();
+
+  // ★ 상점 UI 실시간 갱신
+  const content = document.getElementById('room-shop-content');
+  if (content) content.innerHTML = renderRoomShop();
+
   return true;
 };
  
@@ -254,6 +276,91 @@ window.installRoomItem = function(itemId) {
 };
 
 // ── 상점 UI 렌더링 ──
+window.renderRoomShop = function() {
+  const owned     = playerStats.ownedRoomItems || [];
+  const installed = playerStats.roomDecorations || {};
+
+  const categories = {
+    '🛏️ 가구':    ['item_bed','item_desk','item_carpet','item_bookshelf_small','item_bookshelf_big','item_lamp','item_hanging_plant'],
+    '🖼️ 벽 장식': ['item_shelf_left','item_shelf_right','item_painting_left','item_painting_right','item_wall_plant','item_hanging_deco','item_memo_poster','item_dreamcatcher'],
+    '🎨 배경 테마': ['item_night','item_sakura','item_dark'],
+  };
+
+  let html = `
+    <div style="padding:4px 0 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div>
+          <div style="font-size:11px;letter-spacing:2px;color:#2a3a5a;margin-bottom:4px;">블루미르홀</div>
+          <div style="font-size:20px;font-weight:800;color:#e0e0e0;">🛒 방 꾸미기 상점</div>
+        </div>
+        <div style="background:rgba(93,202,165,.15);border:1px solid #5dcaa5;border-radius:20px;padding:6px 14px;font-size:13px;color:#5dcaa5;font-weight:700;">
+          💎 ${playerStats.data} 보유
+        </div>
+      </div>`;
+
+  for (const [catName, ids] of Object.entries(categories)) {
+    html += `<div style="font-size:12px;font-weight:700;color:#5dcaa5;letter-spacing:1px;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid #0f3460;">${catName}</div>`;
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;">`;
+
+    for (const id of ids) {
+      const item = ROOM_ITEMS[id];
+      if (!item) continue;
+      const isOwned     = owned.includes(id);
+      const isInstalled = installed[item.slot] === id ||
+                          (item.slot === 'background' && installed.background === item.theme);
+      const canBuy      = !isOwned && playerStats.data >= item.price;
+
+      const cardBorder = isInstalled ? '#5dcaa5' : isOwned ? '#1e3a5a' : '#0f3460';
+      const cardBg     = isInstalled ? 'rgba(93,202,165,.08)' : 'rgba(10,14,26,.8)';
+
+      let btnHtml = '';
+      if (!isOwned) {
+        btnHtml = `<button onclick="buyRoomItem('${id}')" ${canBuy ? '' : 'disabled'}
+          style="width:100%;padding:6px 0;border-radius:6px;font-size:12px;font-weight:700;
+          cursor:${canBuy ? 'pointer' : 'default'};
+          background:${canBuy ? 'rgba(93,202,165,.2)' : 'rgba(22,22,22,.5)'};
+          border:1px solid ${canBuy ? '#5dcaa5' : '#1a1a2e'};
+          color:${canBuy ? '#5dcaa5' : '#2a2a4a'};">
+          💎 ${item.price} 구매
+        </button>`;
+      } else if (isInstalled) {
+        btnHtml = `<button disabled style="width:100%;padding:6px 0;border-radius:6px;font-size:12px;
+          background:rgba(93,202,165,.1);border:1px solid #5dcaa5;color:#5dcaa5;">✅ 설치됨</button>`;
+      } else {
+        btnHtml = `<button onclick="installRoomItem('${id}')"
+          style="width:100%;padding:6px 0;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;
+          background:rgba(93,162,255,.15);border:1px solid #3a6abf;color:#a0c4ff;">설치하기</button>`;
+      }
+
+      const imgSrc = item.imgFile ? `images/furniture/${item.imgFile}` : null;
+      const imgHtml = imgSrc
+        ? `<img src="${imgSrc}" style="width:80px;height:80px;object-fit:contain;image-rendering:pixelated;"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+           <div style="display:none;font-size:36px;line-height:80px;">${item.emoji}</div>`
+        : `<div style="font-size:36px;line-height:80px;">${item.emoji}</div>`;
+
+      html += `
+        <div style="background:${cardBg};border:1px solid ${cardBorder};border-radius:12px;
+          padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <div style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;
+            background:rgba(22,33,62,.6);border-radius:8px;overflow:hidden;">
+            ${imgHtml}
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:13px;font-weight:700;color:#e0e0e0;margin-bottom:2px;">${item.name}</div>
+            <div style="font-size:10px;color:#6c8ebf;line-height:1.4;">${item.desc}</div>
+          </div>
+          ${btnHtml}
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+};
+
+/*
 window.renderRoomShop = function() {
   const owned    = playerStats.ownedRoomItems || [];
   const installed = playerStats.roomDecorations || {};
@@ -302,6 +409,7 @@ window.renderRoomShop = function() {
   html += `</div>`;
   return html;
 };
+*/
  
 // ── 유틸 ──
 function posToStyle(pos) {
@@ -322,137 +430,3 @@ function posToStyle(pos) {
 //     - addChatMsg() 사용 (addChatMessage 미정의 오류 없음)
 //     - saveAllDataToServer() 포함 (구매 후 Firebase 저장)
 // ================================================================
-
-/*
-function renderSlot(slotId, itemId, pos) {
-  const el = document.getElementById(`room-slot-${slotId}`);
-  if (!el) return;
-
-  // 빈 슬롯이면 힌트 점선만
-  if (!itemId) {
-    el.className = 'room-slot-hint';
-    el.innerHTML = '';
-    Object.assign(el.style, {
-      ...posToStyle(pos),
-      width: '48px', height: '48px',
-      zIndex: pos.zIndex || 5,
-    });
-    return;
-  }
-
-  const item = ROOM_ITEMS[itemId];
-  if (!item) return;
-
-  el.className = 'room-slot-target';
-  el.innerHTML = '';
-  Object.assign(el.style, posToStyle(pos));
-  el.style.zIndex = pos.zIndex || 5;
-
-  if (item.sprite && item.sprite !== 'none') {
-    // 스프라이트 이미지 아이템
-    const div = document.createElement('div');
-    div.className = `room-item ${item.sprite}`;
-    el.appendChild(div);
-  } else {
-    // 이모지 아이템 (스프라이트 없는 경우)
-    const span = document.createElement('span');
-    span.style.cssText = 'font-size:32px; filter:drop-shadow(0 3px 3px rgba(0,0,0,0.25));';
-    span.textContent = item.emoji;
-    el.appendChild(span);
-  }
-}
-
-// ── 아이템 구매 ──
-window.buyRoomItem = function(itemId) {
-  const item = ROOM_ITEMS[itemId];
-  if (!item) return false;
-
-  // 이미 구매했는지 확인
-  if (playerStats.ownedRoomItems.includes(itemId)) {
-    addChatMessage('system', '이미 갖고 있는 아이템이에요!');
-    return false;
-  }
-
-  // 다이아 확인
-  if (playerStats.data < item.price) {
-    addChatMessage('system', `💎가 부족해요! (필요: ${item.price}, 보유: ${playerStats.data})`);
-    return false;
-  }
-
-  // 구매 처리
-  playerStats.data -= item.price;
-  playerStats.ownedRoomItems.push(itemId);
-  addChatMessage('system', `${item.emoji} ${item.name}을(를) 구매했어요!`);
-  updateMapStats();
-  return true;
-}
-
-// ── 아이템 설치 ──
-window.installRoomItem = function(itemId) {
-  const item = ROOM_ITEMS[itemId];
-  if (!item) return;
-
-  if (!playerStats.ownedRoomItems.includes(itemId)) {
-    addChatMessage('system', '먼저 구매해야 해요!');
-    return;
-  }
-
-  if (item.slot === 'background') {
-    playerStats.roomDecorations.background = item.theme;
-  } else if (item.slot === 'costume') {
-    playerStats.roomDecorations.costume = itemId; // ★ 코스튬 저장
-  } else {
-    playerStats.roomDecorations[item.slot] = itemId;
-  }
-
-  applyRoomDecorations();
-  addChatMessage('system', `${item.emoji} ${item.name}을(를) 설치했어요!`);
-}
-
-// ── 상점 UI 렌더링 ──
-window.renderRoomShop = function() {
-  const owned = playerStats.ownedRoomItems;
-  const installed = playerStats.roomDecorations;
-
-  let html = `<div class="room-shop">`;
-  html += `<div class="room-shop-header">🛒 방 꾸미기 상점 <span class="diamond-badge">💎 ${playerStats.data}</span></div>`;
-  html += `<div class="room-shop-grid">`;
-
-  for (const [id, item] of Object.entries(ROOM_ITEMS)) {
-    const isOwned     = owned.includes(id);
-    const isInstalled = Object.values(installed).includes(id) ||
-                        (item.slot === 'background' && installed.background === item.theme);
-    const canBuy      = !isOwned && playerStats.data >= item.price;
-
-    html += `
-      <div class="shop-item ${isOwned ? 'owned' : ''} ${isInstalled ? 'installed' : ''}">
-        <div class="shop-item-emoji">${item.emoji}</div>
-        <div class="shop-item-name">${item.name}</div>
-        <div class="shop-item-desc">${item.desc}</div>
-        <div class="shop-item-price">💎 ${item.price}</div>
-        <div class="shop-item-btns">
-          ${!isOwned
-            ? `<button onclick="buyRoomItem('${id}')" ${canBuy ? '' : 'disabled'}>구매</button>`
-            : isInstalled
-              ? `<button disabled>설치됨</button>`
-              : `<button onclick="installRoomItem('${id}')">설치</button>`
-          }
-        </div>
-      </div>`;
-  }
-
-  html += `</div></div>`;
-  return html;
-}
-
-// ── 유틸 ──
-function posToStyle(pos) {
-  const style = {};
-  if (pos.left   !== undefined) style.left   = pos.left;
-  if (pos.right  !== undefined) style.right  = pos.right;
-  if (pos.top    !== undefined) style.top    = pos.top;
-  if (pos.bottom !== undefined) style.bottom = pos.bottom;
-  style.position = 'absolute';
-  return style;
-}
-*/
