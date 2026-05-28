@@ -1722,12 +1722,13 @@
 
   <script src="js/battle/monsters.js"></script>
   <script src="js/core/state.js"></script>
-  <script src="js/puang/puang_room.js"></script>
   <script src="js/core/intro.js"></script>
   <script src="js/locations/map.js"></script>
   <script src="js/battle/battle_explore.js"></script>
   <script src="js/battle/battle.js"></script>
+  <script src="js/puang/puang_room.js"></script>
   <script src="js/puang/puang.js"></script>
+  <script src="js/puang/puang_battle.js"></script> 
   <script src="js/locations/locations.js"></script>
   <script src="js/ui/ui_enhancements.js"></script>
   <script src="js/ui/ui_ideas4.js"></script>
@@ -1742,6 +1743,7 @@
       </div>
       <button onclick="leaveBluedragonLake()" style="background:transparent;border:1px solid #0f3460;border-radius:8px;padding:6px 14px;color:#6c8ebf;cursor:pointer;font-family:inherit;">← 맵으로</button>
     </div>
+
     <!-- 호수 씬 -->
     <div style="width:100%;max-width:600px;background:linear-gradient(180deg,#0d2a4a,#0a3a5a);border-radius:16px;border:1px solid #0f3460;padding:24px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden;">
       <div style="font-size:60px;margin-bottom:8px;filter:drop-shadow(0 0 20px #5dcaa5);">🏞️</div>
@@ -1750,6 +1752,7 @@
       <!-- 파티클 효과 -->
       <div id="lake-particles" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
     </div>
+
     <!-- 특별 대화 패널 -->
     <div style="width:100%;max-width:600px;background:rgba(13,17,23,0.9);border:1px solid #0f3460;border-radius:12px;padding:16px;margin-bottom:12px;">
       <div style="font-size:12px;color:#6c8ebf;margin-bottom:10px;">🐉 푸앙이와 특별 대화</div>
@@ -1759,6 +1762,7 @@
         <button onclick="sendLakeChat()" style="background:#1d9e75;border:none;border-radius:8px;padding:8px 16px;color:#fff;cursor:pointer;font-family:inherit;font-size:12px;">전송</button>
       </div>
     </div>
+
     <!-- 산책 보상 -->
     <div style="width:100%;max-width:600px;display:flex;gap:10px;flex-wrap:wrap;">
       <button onclick="lakeWalk()" style="flex:1;background:#0d1a2e;border:1px solid #5dcaa5;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;color:#5dcaa5;font-size:12px;font-weight:600;">🚶 함께 산책하기<br><span style="font-size:10px;color:#4a8a4a;">호감도 +3 · 💎 +5</span></button>
@@ -1920,28 +1924,6 @@
         <div class="credits-text">2026.04 ~ 2026.06</div>
         <div class="credits-text">약 2개월</div>
       </div>
-
-      <!--
-      <div class="credits-block">
-        <div class="credits-section">게임 정보</div>
-        <div class="credits-text">방문 가능 장소 13곳</div>
-        <div class="credits-text">일반 몬스터 5종</div>
-        <div class="credits-text">보스 3종</div>
-        <div class="credits-text">총 8종의 적과 싸워라</div>
-      </div>
-
-      <div class="credits-block">
-        <div class="credits-section">사용 기술</div>
-        <div class="credits-name">Groq API (llama-3.3-70b)</div>
-        <div class="credits-role">AI 대화</div>
-        <div class="credits-name">Firebase</div>
-        <div class="credits-role">클라우드 세이브</div>
-        <div class="credits-name">LimeZu</div>
-        <div class="credits-role">실내 스프라이트 에셋</div>
-        <div class="credits-name">배경 이미지</div>
-        <div class="credits-role">AI 생성</div>
-      </div>
-      -->
       
       <div style="height: 100vh;"></div>
 

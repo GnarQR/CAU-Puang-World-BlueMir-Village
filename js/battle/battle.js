@@ -74,6 +74,9 @@ window.initBattle = function(origin = 'map', bossId = null) {
   battleTurn = 1;
   buffActive = false;
 
+  // ★ 푸앙이 전투 agent 난입 카운터 초기화
+  if (typeof window.resetPuangIntervention === 'function') window.resetPuangIntervention();
+
   // ── ★ 버프 연동: 전투 시작 시 패시브 적용 로그 ──
   setTimeout(() => {
     const lines = [];
@@ -548,6 +551,7 @@ async function enemyTurn() {
       addBattleLog('[버프] 예방접종 — 피해 30% 감소', 'log-success');
     }
   }
+
   // 방어막 아이템
   if (typeof inventory !== 'undefined') {
     const shieldIdx = inventory.findIndex(i => i.id === 'shield');
@@ -558,7 +562,8 @@ async function enemyTurn() {
       addBattleLog('[아이템 소모] 방어막 — 피해 50% 감소!', 'log-success');
     }
   }
-  dmg = Math.max(0, dmg);
+  dmg = typeof window.applyPuangShield === 'function' ? window.applyPuangShield(dmg) : dmg;  // 푸앙이 버프 : 황금 보호막
+  dmg = Math.max(0, dmg);  // 방어막 아이템
 
   // 플레이어 피격 애니메이션
   const playerImg = document.getElementById('player-img');
@@ -615,6 +620,10 @@ async function enemyTurn() {
 
   if (typeof setBattleButtons === 'function') setBattleButtons(false);
   battleBusy = false;
+
+  // 적 턴 끝난 후 푸앙이 agent 난입 체크
+  if (typeof window.checkPuangIntervention === 'function') await window.checkPuangIntervention();
+  battleBusy = false;  // 적 턴 끝나고 난입 체크까지 완료 후에야 입력 허용
 }
 
 // ── 커맨드 버튼 핸들러 ──
@@ -632,7 +641,7 @@ window.doCmd = async function(cmd) {
     addBattleLog('[룰 판정] 벡터 캐논! 주사위: ' + roll + '/20', 'log-dice');
     await sleepMs(300);
 
-    if (roll >= 8) {  // 8 이상 명중 (밸런스 조정 시 이 숫자 수정)
+    if (roll >= 6) {  // 6 이상 명중 (밸런스 조정 시 이 숫자 수정)
       let dmg = Math.floor(roll / 1.5);  // 딜량 조정 시 이 공식 수정
 
       // 하이퍼 프롬프트 버프 발동 시 데미지 2배
@@ -653,6 +662,7 @@ window.doCmd = async function(cmd) {
         dmg = Math.floor(dmg * 0.7);
         addBattleLog('[상태이상] 피로 — 데미지 30% 감소', 'log-damage');
       }
+
       // 인벤토리 dmg_boost / speed 아이템
       if (typeof inventory !== 'undefined') {
         const boostIdx = inventory.findIndex(i => i.id === 'dmg_boost' || i.id === 'speed');
@@ -663,6 +673,8 @@ window.doCmd = async function(cmd) {
           addBattleLog('[아이템 소모] 공격 강화 — 데미지 1.5배!', 'log-success');
         }
       }
+
+      dmg = typeof window.applyPuangAttackUp === 'function' ? window.applyPuangAttackUp(dmg) : dmg;  // 푸앙이 버프 : 황금 공격
       dmg = Math.max(1, dmg);
 
       // 적 피격 애니메이션
@@ -675,8 +687,8 @@ window.doCmd = async function(cmd) {
       document.getElementById('dice-result').textContent = '명중! ' + dmg + ' 데미지';
     } 
     
-    else {  // 명중 실패
-      addBattleLog('[결과] 빗나갔다! (판정 실패: ' + roll + ' < 8)', 'log-damage');
+    else {  // 명중 실패 (주사위 1~5)
+      addBattleLog('[결과] 빗나갔다! (판정 실패: ' + roll + ' < 6)', 'log-damage');
       document.getElementById('dice-result').textContent = '빗나감 (roll: ' + roll + ')';
     }
 
@@ -687,25 +699,31 @@ window.doCmd = async function(cmd) {
         reward = Math.floor(reward * 0.5);
         addBattleLog('[상태이상] 저주 — 보상 50% 감소', 'log-damage');
       }
+
       // 베테랑 탐험가 스킬 보너스
       reward += (playerStats._battleBonusReward || 0);
+
       // 축제 2× 버프
       if (typeof window.hasFestDoubleBuff === 'function' && window.hasFestDoubleBuff()) {
         reward *= 2;
         addBattleLog('[이벤트] 축제 2× 버프 — 보상 2배!', 'log-success');
       }
+
       // ★ Fix 2: battle_bonus (수요일 요일 보너스) — 보상 +5
       if (window._todayBonusKey === 'battle_bonus') {
         reward += 5;
         addBattleLog('[🗓️ 수요일 보너스] 전투 보상 +5 💎', 'log-success');
       }
+
       // ★ Fix 7: data_bonus (토요일 요일 보너스) — 모든 💎 획득 +2
       if (window._todayBonusKey === 'data_bonus') {
         reward += 2;
         addBattleLog('[🗓️ 토요일 보너스] 💎 +2', 'log-success');
       }
+
       // 전투 승리 횟수 누적 (업적용)
       playerStats._battleWins = (playerStats._battleWins || 0) + 1;
+
       // 과식 패널티 해제
       if (typeof window.clearCafOvereatPenalty === 'function') window.clearCafOvereatPenalty();
 
@@ -778,7 +796,8 @@ window.doCmd = async function(cmd) {
 
     // 효과: 광역 폭발 데미지 + 자신 소량 회복
     let dmg   = roll + 8;  // 기본 대미지 높음
-    const heal = Math.floor(roll / 3);
+    const heal = Math.floor(roll / 2);  // 회복량 조절 시 이 부분 수정
+    dmg = typeof window.applyPuangAttackUp === 'function' ? window.applyPuangAttackUp(dmg) : dmg;  // 푸앙이 버프 : 황금 공격
 
     // 패시브 데미지 버프 적용
     if (typeof window.hasLibEffect === 'function' && window.hasLibEffect('battle_dmg')) dmg += 5;

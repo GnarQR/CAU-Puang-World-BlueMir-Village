@@ -1,0 +1,282 @@
+// ================================================================
+// puang_battle.js — 푸앙이 전투 난입 시스템
+// 조건: 청룡호 해금 (lakeUnlocked) + 전투당 최대 1회
+// 흐름: 매 enemyTurn 종료 후 LLM이 상황 판단 → 난입 여부 결정
+//       → puang_dice.mp4 연출 → 버프 적용
+// ================================================================
+
+// ── 전투당 난입 횟수 카운터 ──
+let puangInterventionCount = 0;
+const PUANG_MAX_INTERVENTIONS = 1;
+
+// ── 버프 종류 정의 ──
+const PUANG_BUFFS = {
+  heal: {
+    name: '💚 황금 치유',
+    desc: 'HP 30% 회복',
+    apply: () => {
+      const amt = Math.floor(battlePlayerMaxHp * 0.3);
+      battlePlayerHp = Math.min(battlePlayerMaxHp, battlePlayerHp + amt);
+      localStorage.setItem('battlePlayerHp', battlePlayerHp);
+      updateBattleBars();
+      addBattleLog(`[푸앙 버프] 황금 치유 — HP +${amt}!`, 'log-success');
+    }
+  },
+  shield: {
+    name: '🛡️ 황금 방어막',
+    desc: '다음 공격 무효화',
+    apply: () => {
+      window._puangShield = true;
+      addBattleLog('[푸앙 버프] 황금 방어막 — 다음 공격을 막아냅니다!', 'log-success');
+    }
+  },
+  attack_up: {
+    name: '⚡ 황금 강화',
+    desc: '다음 턴 공격력 2배',
+    apply: () => {
+      window._puangAttackUp = true;
+      addBattleLog('[푸앙 버프] 황금 강화 — 다음 공격이 2배로 강해집니다!', 'log-success');
+    }
+  },
+  extra_turn: {
+    name: '🌀 황금 연속기',
+    desc: '이번 턴 한 번 더',
+    apply: () => {
+      window._puangExtraTurn = true;
+      addBattleLog('[푸앙 버프] 황금 연속기 — 한 번 더 공격하세요!', 'log-success');
+      // 버튼 재활성화
+      if (typeof setBattleButtons === 'function') setBattleButtons(false);
+      battleBusy = false;
+    }
+  },
+  regen: {
+    name: '✨ 황금 재생',
+    desc: '3턴간 매 턴 HP 회복',
+    apply: () => {
+      playerStats._regenPerTurn = (playerStats._regenPerTurn || 0) + 8;
+      playerStats._regenTurns  = 3;
+      addBattleLog('[푸앙 버프] 황금 재생 — 3턴간 매 턴 HP +8!', 'log-success');
+    }
+  },
+  damage_reduce: {
+    name: '💫 황금 결계',
+    desc: '3턴간 피해 40% 감소',
+    apply: () => {
+      window._puangDamageReduce = 3;
+      addBattleLog('[푸앙 버프] 황금 결계 — 3턴간 피해가 40% 감소합니다!', 'log-success');
+    }
+  }
+};
+
+// ================================================================
+// LLM 판단 함수
+// ================================================================
+async function askPuangIntervene() {
+  if (!GROQ_API_KEY) return null;
+  if (!localStorage.getItem('lakeUnlocked')) return null;
+  if (puangInterventionCount >= PUANG_MAX_INTERVENTIONS) return null;
+
+  const hpRatio   = battlePlayerHp / battlePlayerMaxHp;
+  const enemyRatio = enemyHp / enemyMaxHp;
+
+  const prompt = `너는 푸앙이야. 지금 친구가 이면 세계에서 전투 중이야.
+현재 상황:
+- 플레이어 HP: ${battlePlayerHp}/${battlePlayerMaxHp} (${Math.round(hpRatio*100)}%)
+- 적 HP: ${enemyHp}/${enemyMaxHp} (${Math.round(enemyRatio*100)}%)
+- 현재 턴: ${battleTurn}턴
+- 남은 개입 횟수: ${PUANG_MAX_INTERVENTIONS - puangInterventionCount}회
+
+이 상황에서 지금 개입해야 할 것 같아? 위기 상황이거나 도움이 필요할 것 같을 때 개입해줘.
+
+다음 JSON 형식으로만 답해 (다른 텍스트 금지):
+{"intervene": true/false, "reason": "한 줄 이유", "buff": "heal/shield/attack_up/extra_turn/regen/damage_reduce"}`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + GROQ_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 100,
+        temperature: 0.7,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content?.trim() || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch (e) {
+    console.warn('[푸앙 난입] LLM 판단 실패:', e);
+    return null;
+  }
+}
+
+// ================================================================
+// 난입 연출 + 버프 적용
+// ================================================================
+window.triggerPuangIntervention = async function(buffType) {
+  puangInterventionCount++;
+
+  // 전투 버튼 잠금
+  if (typeof setBattleButtons === 'function') setBattleButtons(true);
+  battleBusy = true;
+
+  // 1단계: 배경 어둡게
+  const overlay = _createBattleOverlay();
+  await sleepMs(300);
+
+  // 2단계: 푸앙이 등장 텍스트
+  addBattleLog('✨ 푸앙이가 나타났다!', 'log-system2');
+  _showPuangAppearText(overlay);
+  await sleepMs(800);
+
+  // 3단계: 황금주사위 영상 재생
+  await _playPuangDiceVideo(overlay);
+
+  // 4단계: 버프 적용
+  const buff = PUANG_BUFFS[buffType] || PUANG_BUFFS['heal'];
+  addBattleLog(`[✨ 푸앙 난입] ${buff.name} — ${buff.desc}`, 'log-system2');
+  buff.apply();
+  await sleepMs(500);
+
+  // 5단계: 오버레이 제거
+  overlay.remove();
+
+  // extra_turn이 아닐 때만 버튼 복귀
+  if (buffType !== 'extra_turn') {
+    if (typeof setBattleButtons === 'function') setBattleButtons(false);
+    battleBusy = false;
+  }
+
+  updateBattleBars();
+};
+
+// ================================================================
+// 배경 오버레이 생성
+// ================================================================
+function _createBattleOverlay() {
+  const existing = document.getElementById('puang-battle-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'puang-battle-overlay';
+  overlay.style.cssText = `
+    position:fixed; inset:0; background:rgba(0,0,10,0); z-index:3000;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:background .4s;
+  `;
+  document.body.appendChild(overlay);
+
+  // 페이드인
+  requestAnimationFrame(() => {
+    overlay.style.background = 'rgba(0,0,10,0.85)';
+  });
+
+  return overlay;
+}
+
+// ================================================================
+// 푸앙이 등장 텍스트 연출
+// ================================================================
+function _showPuangAppearText(overlay) {
+  const text = document.createElement('div');
+  text.style.cssText = `
+    color:#ffd700; font-size:22px; font-weight:800;
+    letter-spacing:3px; opacity:0; transform:scale(0.8);
+    transition:all .4s; text-align:center; margin-bottom:12px;
+    text-shadow:0 0 20px rgba(255,215,0,0.8);
+  `;
+  text.textContent = '✨ 푸앙이 난입! ✨';
+  overlay.appendChild(text);
+
+  requestAnimationFrame(() => {
+    text.style.opacity = '1';
+    text.style.transform = 'scale(1.1)';
+  });
+}
+
+// ================================================================
+// 황금주사위 영상 재생
+// ================================================================
+function _playPuangDiceVideo(overlay) {
+  return new Promise(resolve => {
+    const video = document.createElement('video');
+    video.src = 'videos/puang_dice.mp4';
+    video.style.cssText = `
+      max-width:480px; width:90%; border-radius:16px;
+      box-shadow:0 0 40px rgba(255,215,0,0.5);
+    `;
+    video.muted = false;
+    video.autoplay = true;
+    overlay.appendChild(video);
+
+    video.onended = () => resolve();
+    video.onerror = () => resolve(); // 영상 실패해도 진행
+
+    // 최대 5초 대기 (영상이 너무 길면 강제 진행)
+    setTimeout(() => { video.pause(); resolve(); }, 5000);
+  });
+}
+
+// ================================================================
+// enemyTurn 이후 자동 호출 — battle.js에서 연결
+// ================================================================
+window.checkPuangIntervention = async function() {
+  if (!localStorage.getItem('lakeUnlocked')) return;
+  if (puangInterventionCount >= PUANG_MAX_INTERVENTIONS) return;
+  if (enemyHp <= 0 || battlePlayerHp <= 0) return;
+
+  const result = await askPuangIntervene();
+  if (!result) return;
+
+  if (result.intervene === true) {
+    console.log(`[푸앙 난입] 이유: ${result.reason}, 버프: ${result.buff}`);
+    await sleepMs(400);
+    await window.triggerPuangIntervention(result.buff || 'heal');
+  }
+};
+
+// ================================================================
+// 전투 시작 시 카운터 초기화 (battle.js의 initBattle에서 호출)
+// ================================================================
+window.resetPuangIntervention = function() {
+  puangInterventionCount = 0;
+  window._puangShield      = false;
+  window._puangAttackUp    = false;
+  window._puangExtraTurn   = false;
+  window._puangDamageReduce = 0;
+};
+
+// ================================================================
+// 방어막 버프 적용 (battle.js의 enemyTurn에서 참조)
+// ================================================================
+window.applyPuangShield = function(dmg) {
+  if (window._puangShield) {
+    window._puangShield = false;
+    addBattleLog('[푸앙 방어막] 공격을 완전히 막아냈다!', 'log-success');
+    return 0;
+  }
+  if (window._puangDamageReduce > 0) {
+    window._puangDamageReduce--;
+    addBattleLog(`[푸앙 결계] 피해 40% 감소! (${window._puangDamageReduce}턴 남음)`, 'log-success');
+    return Math.floor(dmg * 0.6);
+  }
+  return dmg;
+};
+
+// ================================================================
+// 공격력 강화 버프 적용 (battle.js의 doCmd attack에서 참조)
+// ================================================================
+window.applyPuangAttackUp = function(dmg) {
+  if (window._puangAttackUp) {
+    window._puangAttackUp = false;
+    addBattleLog('[푸앙 강화] 공격력 2배 발동!', 'log-success');
+    return dmg * 2;
+  }
+  return dmg;
+};
