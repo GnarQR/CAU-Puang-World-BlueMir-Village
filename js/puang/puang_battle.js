@@ -71,26 +71,27 @@ const PUANG_BUFFS = {
 // ================================================================
 // LLM 판단 함수
 // ================================================================
-async function askPuangIntervene() {
-  if (!GROQ_API_KEY) return null;
-  if (!localStorage.getItem('lakeUnlocked')) return null;
-  if (puangInterventionCount >= PUANG_MAX_INTERVENTIONS) return null;
-
-  const hpRatio   = battlePlayerHp / battlePlayerMaxHp;
+async function askPuangBuff(buffPool) {
+  if (!GROQ_API_KEY) {
+    // API 없으면 풀에서 랜덤 선택
+    return buffPool[Math.floor(Math.random() * buffPool.length)];
+  }
+ 
+  const hpRatio    = battlePlayerHp / battlePlayerMaxHp;
   const enemyRatio = enemyHp / enemyMaxHp;
-
-  const prompt = `너는 푸앙이야. 지금 친구가 이면 세계에서 전투 중이야.
+ 
+  const prompt = `너는 푸앙이야. 지금 친구가 전투 중이야.
 현재 상황:
 - 플레이어 HP: ${battlePlayerHp}/${battlePlayerMaxHp} (${Math.round(hpRatio*100)}%)
 - 적 HP: ${enemyHp}/${enemyMaxHp} (${Math.round(enemyRatio*100)}%)
 - 현재 턴: ${battleTurn}턴
-- 남은 개입 횟수: ${PUANG_MAX_INTERVENTIONS - puangInterventionCount}회
-
-이 상황에서 지금 개입해야 할 것 같아? 위기 상황이거나 도움이 필요할 것 같을 때 개입해줘.
-
-다음 JSON 형식으로만 답해 (다른 텍스트 금지):
-{"intervene": true/false, "reason": "한 줄 이유", "buff": "heal/shield/attack_up/extra_turn/regen/damage_reduce"}`;
-
+ 
+사용 가능한 버프: ${buffPool.join(', ')}
+이 중에서 지금 상황에 가장 적합한 버프 하나만 골라줘.
+ 
+JSON 형식으로만 답해:
+{"buff": "${buffPool[0]}"}`;
+ 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -100,19 +101,24 @@ async function askPuangIntervene() {
       },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        max_tokens: 100,
+        max_tokens: 50,
         temperature: 0.7,
         messages: [{ role: 'user', content: prompt }]
       })
     });
-
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim() || '';
+ 
+    const data  = await res.json();
+    const text  = data.choices?.[0]?.message?.content?.trim() || '';
     const clean = text.replace(/```json|```/g, '').trim();
-    return JSON.parse(clean);
-  } catch (e) {
-    console.warn('[푸앙 난입] LLM 판단 실패:', e);
-    return null;
+    const parsed = JSON.parse(clean);
+ 
+    // 버프 풀에 없는 값이면 랜덤 선택
+    return buffPool.includes(parsed.buff) ? parsed.buff : buffPool[Math.floor(Math.random() * buffPool.length)];
+  } 
+  
+  catch (e) {
+    console.warn('[푸앙 버프] LLM 실패, 랜덤 선택:', e);
+    return buffPool[Math.floor(Math.random() * buffPool.length)];
   }
 }
 
@@ -231,14 +237,26 @@ window.checkPuangIntervention = async function() {
   if (puangInterventionCount >= PUANG_MAX_INTERVENTIONS) return;
   if (enemyHp <= 0 || battlePlayerHp <= 0) return;
 
-  const result = await askPuangIntervene();
-  if (!result) return;
+  // ★ 1단계: HP 비율에 따른 발동 확률 체크
+  const hpRatio = battlePlayerHp / battlePlayerMaxHp;
+  const triggerChance = hpRatio < 0.3 ? 0.90   // 위급(HP 40% 미만) — 90%
+                      : hpRatio < 0.7 ? 0.50   // 위험(HP 40-70%) — 50%
+                      : 0.15;                   // 여유(HP 70% 이상) — 15%
+  if (Math.random() > triggerChance) return;
+ 
+  // ★ 2단계: HP 비율에 따른 버프 풀 결정
+  const buffPool = hpRatio < 0.3
+    ? ['heal', 'shield', 'damage_reduce']
+    : hpRatio < 0.6
+      ? ['shield', 'damage_reduce', 'regen', 'attack_up']
+      : ['attack_up', 'extra_turn', 'regen'];
 
-  if (result.intervene === true) {
-    console.log(`[푸앙 난입] 이유: ${result.reason}, 버프: ${result.buff}`);
-    await sleepMs(400);
-    await window.triggerPuangIntervention(result.buff || 'heal');
-  }
+  const buff = await askPuangBuff(buffPool);
+  if (!buff) return;
+ 
+  console.log(`[푸앙 난입] 버프: ${buff}, HP: ${Math.round(hpRatio*100)}%`);
+  await sleepMs(400);
+  await window.triggerPuangIntervention(buff);
 };
 
 // ================================================================

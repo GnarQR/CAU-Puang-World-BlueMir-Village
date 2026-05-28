@@ -90,14 +90,14 @@ function _loadExploreAssets(floor) {
 // ================================================================
 
 // 방 종류
-const ROOM_TYPES = ['empty', 'empty', 'item', 'bonfire', 'empty'];
+const ROOM_TYPES = ['empty', 'empty', 'empty', 'empty', 'item', 'empty', 'empty', 'bonfire', 'empty', 'empty'];
 // empty 비중 높게, bonfire(모닥불)와 item 적당히
 
 function generateRooms(floor) {
   roomGrid = {};
 
-  // 층마다 방 개수 증가 (1층=8개, 10층=16개) + 약간의 랜덤
-  const roomCount = 8 + Math.floor(floor * 0.8) + Math.floor(Math.random() * 4);
+  // 한 개의 층에 방 30 ~ 40개 생성
+  const roomCount = 30 + Math.floor(Math.random() * 11);
 
   // 시작방
   roomGrid['start'] = {
@@ -332,7 +332,7 @@ function moveToRoom(roomId) {
 
 function _onEnterRoom(room) {
   // 전투 확률: 빈방 30%, 아이템방 20%, 모닥불 0%
-  const fightChance = { empty: 0.30, item: 0.20, bonfire: 0 }[room.type] ?? 0.25;
+  const fightChance = { empty: 0.60, item: 0.40, bonfire: 0 }[room.type] ?? 0.50;
 
   if (Math.random() < fightChance) {
     room.hasFought = true;
@@ -399,10 +399,7 @@ function _triggerBonfireRoom(room) {
 function _showBonfireConfirm() {
   const room = roomGrid[currentRoomId];
   if (!room) return;
-  if (room.bonfireUsed) {
-    if (typeof showToast === 'function') showToast('🔥 이미 사용한 모닥불이에요.', 'warning', 1500);
-    return;
-  }
+  if (room.bonfireUsed) return;
 
   const container = document.getElementById('explore-container');
   if (!container) return;
@@ -446,22 +443,30 @@ function _showBonfireConfirm() {
 // ── 상자 열기 ──
 function _openChest() {
   const room = roomGrid[currentRoomId];
-  if (!room || room.chestOpened) {
-    if (typeof showToast === 'function') showToast('📦 이미 열린 상자예요.', 'warning', 1500);
-    return;
-  }
+  if (!room || room.chestOpened) return;  // 이미 열린 상자면 조용히 무시
   room.chestOpened = true;
   _chestPos = null;
 
+  // 실제 인벤토리 아이템 ID 사용
   const items = [
-    { id: 'potion_small',   name: '소형 포션',      emoji: '🧪' },
-    { id: 'potion_large',   name: '대형 포션',      emoji: '💊' },
-    { id: 'data_chip',      name: '데이터 조각',    emoji: '💎' },
-    { id: 'energy_drink',   name: '에너지 드링크',  emoji: '⚡' },
+    { id: 'hp_potion',    name: 'HP 포션',       emoji: '🧪' },
+    { id: 'sp_potion',    name: 'SP 포션',       emoji: '💙' },
+    { id: 'full_potion',  name: '완전 회복제',    emoji: '💊' },
+    { id: 'dmg_boost',    name: '공격 강화제',    emoji: '⚡' },
+    //{ id: 'shield',       name: '방어막',         emoji: '🛡️' }, 일단 밸런스 용으로 방어막은 제거
+    { id: 'regen',        name: '재생 물약',      emoji: '✨' },
   ];
   const pick = items[Math.floor(Math.random() * items.length)];
 
-  if (typeof inventory !== 'undefined') inventory.push(pick.id);
+  if (typeof inventory !== 'undefined') {
+    // inventory가 객체 배열이면 그대로, 아니면 ITEM_DB에서 찾아서 push
+    const itemObj = window.ITEM_DB ? window.ITEM_DB.get(pick.id) : null;
+
+    if (itemObj) inventory.push({ ...itemObj });
+    else inventory.push({ id: pick.id, name: pick.name, icon: pick.emoji, qty: 1 });
+
+    if (typeof saveInventory === 'function') saveInventory();
+  }
   if (typeof saveAllDataToServer === 'function') saveAllDataToServer();
   if (typeof showToast === 'function') showToast(`${pick.emoji} 상자에서 [${pick.name}] 획득!`, 'success', 2500);
 }
@@ -633,11 +638,13 @@ function renderMiniMap() {
 
   let svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
 
-  // 연결선
+  // 연결선 - 양쪽 모두 탐험한 방 사이만 표시
   rooms.forEach(room => {
+    if (!room.cleared && room.id !== currentRoomId) return;
     room.connections.forEach(connId => {
       const conn = roomGrid[connId];
       if (!conn) return;
+      if (!conn.cleared && conn.id !== currentRoomId) return; // 미탐험 방은 연결선 숨김
       const x1 = (room.x - minX) * CELL + PAD + CELL/2;
       const y1 = (room.y - minY) * CELL + PAD + CELL/2;
       const x2 = (conn.x - minX) * CELL + PAD + CELL/2;
@@ -660,6 +667,7 @@ function renderMiniMap() {
       bonfire: '#2a1a0a',
       stairs:  '#0a2a3a',
     };
+
     const icons = { empty: '·', item: '📦', bonfire: '🔥', stairs: '🪜' };
 
     const fill   = colors[room.type] || '#16213e';
