@@ -101,10 +101,21 @@ async function loadAllDataFromServer() {
   );
 
   try {
+    const configSnap = await getDoc(doc(db, 'config', 'app_keys'));
+    if (configSnap.exists) {
+    const cfg = configSnap.data();
+      window.DIFY_PUANG_CHAT_KEY   = cfg.dify_chat_key;
+      window.DIFY_BATTLE_KEY       = cfg.dify_battle_key;
+      window.DIFY_DIARY_KEY        = cfg.dify_diary_key;
+      console.log('[Dify 키 로드]', window.DIFY_PUANG_CHAT_KEY);
+    }
+
+
     const docSnap = await Promise.race([
       getDoc(doc(db, 'gameData', GROQ_API_KEY)),
       timeoutPromise
     ]);
+
 
     if (docSnap.exists) {
       const s = docSnap.data();
