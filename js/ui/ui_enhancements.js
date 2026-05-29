@@ -150,9 +150,16 @@ if (_origStartStudy_toast) {
       // finishLibTyping이 비동기적으로 실행되므로 타임아웃으로 감지
       setTimeout(() => {
         const diff = playerStats.data - _dataBefore;
-        if (diff > 0) showToast('📚 공부 완료! 💎 +' + diff, 'success', 2500);
+        if (diff > 0) {
+          showToast('📚 공부 완료! 💎 +' + diff, 'success', 2500);
+          // 누적 공부 횟수 기록 ('중앙대 수석' 칭호용)
+          playerStats._studyCount = (playerStats._studyCount || 0) + 1;
+          if (typeof window.syncAndSave === 'function') window.syncAndSave();
+        }
       }, 12000);
-    } else {
+    } 
+    
+    else {
       _origStartStudy_toast(subjectId);
     }
   };
@@ -833,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const TITLES = [
   { id: 't_newbie',   name: '신입 탐험가',    check: () => true,  color: '#6c8ebf' },
   { id: 't_fighter',  name: '이면세계 용사',   check: () => (playerStats._battleWins || 0) >= 5,  color: '#ef9f27' },
-  { id: 't_scholar',  name: '중앙대 수석',     check: () => (typeof libStudyCount !== 'undefined' ? libStudyCount : 0) >= 10, color: '#c9a84c' },
+  { id: 't_scholar',  name: '중앙대 수석',     check: () => (playerStats._studyCount || 0) >= 10, color: '#c9a84c' },
   { id: 't_friend',   name: '푸앙이 친구',     check: () => (puangState._maxFavorability || 0) >= 80, color: '#d4537e' },
   { id: 't_rich',     name: '데이터 재벌',     check: () => (playerStats._maxData || 0) >= 100, color: '#fcd34d' },
   { id: 't_veteran',  name: '베테랑 탐험가',   check: () => (playerStats._explorationCount || 0) >= 20, color: '#5dcaa5' },

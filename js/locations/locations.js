@@ -2081,12 +2081,15 @@ function updateLabSlotsUI() {
 
 // ── 업적 시스템 ──
 const LAB_ACHIEVEMENTS = [
-  { id: 'first_battle',  name: '첫 전투',         desc: '이면세계 첫 전투 승리',         check: () => (playerStats._battleWins || 0) >= 1,  reward: 5  },
-  { id: 'study_10',      name: '공부벌레',         desc: '도서관 공부 10회 달성',          check: () => libStudyCount >= 10,                   reward: 8  },
-  { id: 'visit_all',     name: '탐험가',           desc: '모든 장소 1번씩 방문',           check: () => (playerStats._visitedAll || false),    reward: 15 },
-  { id: 'favor_80',      name: '푸앙이 친구',      desc: '푸앙이 호감도 80 이상',          check: () => puangState.favorability >= 80,         reward: 10 },
-  { id: 'data_100',      name: '데이터 부자',      desc: '데이터 조각 100개 이상 보유',    check: () => playerStats.data >= 100,               reward: 0  },
+  { id: 'first_battle', name: '첫 전투',      desc: '이면세계 첫 전투 승리',          check: () => (playerStats._battleWins || 0) >= 1,                                                    reward: 5  },
+  { id: 'battle_5',     name: '이면세계 용사', desc: '전투 5회 승리',                  check: () => (playerStats._battleWins || 0) >= 5,                                                    reward: 8  },
+  { id: 'study_10',     name: '중앙대 수석',   desc: '도서관 공부 10회 달성',           check: () => (playerStats._studyCount || 0) >= 10,                                                   reward: 8  },
+  { id: 'favor_80',     name: '푸앙이 친구',   desc: '푸앙이 호감도 80 이상 달성',     check: () => (puangState._maxFavorability || 0) >= 80,                                               reward: 10 },
+  { id: 'data_100',     name: '데이터 재벌',   desc: '데이터 조각 100개 이상 보유',    check: () => (playerStats._maxData || 0) >= 100,                                                     reward: 0  },
+  { id: 'explore_20',   name: '베테랑 탐험가', desc: '탐험 20회 달성',                 check: () => (playerStats._explorationCount || 0) >= 20,                                             reward: 10 },
+  { id: 'legend',       name: '캠퍼스 전설',   desc: '전투 20승 + 호감도 90 달성',     check: () => (playerStats._battleWins || 0) >= 20 && (puangState._maxFavorability || 0) >= 90,      reward: 30 },
 ];
+
 
 window.checkAchievements = function() {
   const earned = JSON.parse(localStorage.getItem('labAchievements') || '[]');
