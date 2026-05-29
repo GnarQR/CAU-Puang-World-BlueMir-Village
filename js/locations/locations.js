@@ -77,6 +77,43 @@ const cafNpcTexts = [
   '커피 한 잔 어때요? SP가 확 올라요 ☕',
 ];
 
+async function loadCafeteriaNpcText() {
+  if (!window.DIFY_CAFETERIA_KEY) return;
+  try {
+    console.log('[식당 NPC inputs]', playerStats.hp, playerStats.maxHp, playerStats.data)
+    const res = await fetch('https://api.dify.ai/v1/chat-messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + window.DIFY_CAFETERIA_KEY
+      },
+      body: JSON.stringify({
+        inputs: {
+          hp:          String(playerStats.hp || 0),
+          maxHp:       String(playerStats.maxHp || 100),
+          data:        String(playerStats.data || 0),
+          favorability: String(puangState.favorability || 0),
+        },
+        query: '학생한테 한마디 해줘',
+        user: 'puang-cafeteria',
+        conversation_id: '',  // ← 매번 새 대화
+        response_mode: 'blocking'
+      })
+    
+    });
+
+    const data = await res.json();
+    const jsonMatch = data.answer?.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const el = document.getElementById('caf-npc-text');
+      if (el && parsed.dialog) el.textContent = parsed.dialog;
+    }
+  } catch(e) {
+    console.warn('[식당 NPC]', e);
+  }
+}
+
 window.enterCafeteria = function() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('cafeteria-container').style.display = '';
@@ -86,7 +123,7 @@ window.enterCafeteria = function() {
   // NPC 랜덤 멘트
   const el = document.getElementById('caf-npc-text');
   if (el) el.textContent = cafNpcTexts[Math.floor(Math.random() * cafNpcTexts.length)];
-
+  loadCafeteriaNpcText();
   // 남은 주문 횟수
   const remain = document.getElementById('caf-remain');
   if (remain) remain.textContent = remainDaily('cafeteria');
@@ -1382,6 +1419,42 @@ function setStoreClerk(msg) {
   if (el) el.textContent = msg;
 }
 
+async function loadStoreNpcText() {
+   console.log('[가게NPC] 호출됨', window.DIFY_STORE_KEY);
+  if (!window.DIFY_STORE_KEY) return;
+  try {
+    console.log('[가게 NPC inputs]', playerStats.hp, playerStats.maxHp, playerStats.data);
+    const res = await fetch('https://api.dify.ai/v1/chat-messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + window.DIFY_STORE_KEY
+      },
+      body: JSON.stringify({
+        inputs: {
+          hp:           String(playerStats.hp || 0),
+          maxHp:        String(playerStats.maxHp || 100),
+          data:         String(playerStats.data || 0),
+          favorability: String(puangState.favorability || 0)
+        },
+        query:           '손님한테 한마디 해줘',
+        user:            'puang-store',
+        conversation_id: '',
+        response_mode:   'blocking'
+      })
+    });
+
+    const data = await res.json();
+    const jsonMatch = data.answer?.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.dialog) setStoreClerk(parsed.dialog);
+    }
+  } catch(e) {
+    console.warn('[가게 NPC]', e);
+  }
+}
+
 // ── 가게 진입 ──
 window.enterStore = function() {
   document.getElementById('game-container').style.display = 'none';
@@ -1395,7 +1468,9 @@ window.enterStore = function() {
   renderStoreTabs();
   switchStoreTab('food');
   updateStoreCartUI();
-  setStoreClerk('어서오세요~ 필요한 거 있으면 말씀해 주세요!');
+  setStoreClerk('...');
+  setTimeout(() => loadStoreNpcText(), 500); // 0.5초 후 호출
+  loadStoreNpcText();
 };
 
 // ── 가게 퇴장 ──
