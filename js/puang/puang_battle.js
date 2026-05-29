@@ -74,27 +74,131 @@ const PUANG_BUFFS = {
 // ================================================================
 // LLM 판단 함수
 // ================================================================
+// async function askPuangBuff(buffPool) {
+//   if (!GROQ_API_KEY) {
+//     // API 없으면 풀에서 랜덤 선택
+//     return buffPool[Math.floor(Math.random() * buffPool.length)];
+//   }
+
+  
+ 
+//   const hpRatio    = battlePlayerHp / battlePlayerMaxHp;
+//   const enemyRatio = enemyHp / enemyMaxHp;
+ 
+//   const prompt = `너는 푸앙이야. 지금 친구가 전투 중이야.
+// 현재 상황:
+// - 플레이어 HP: ${battlePlayerHp}/${battlePlayerMaxHp} (${Math.round(hpRatio*100)}%)
+// - 적 HP: ${enemyHp}/${enemyMaxHp} (${Math.round(enemyRatio*100)}%)
+// - 현재 턴: ${battleTurn}턴
+ 
+// 사용 가능한 버프: ${buffPool.join(', ')}
+// 이 중에서 지금 상황에 가장 적합한 버프 하나만 골라줘.
+ 
+// JSON 형식으로만 답해:
+// {"buff": "${buffPool[0]}"}`;
+ 
+//   try {
+//     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': 'Bearer ' + GROQ_API_KEY
+//       },
+//       body: JSON.stringify({
+//         model: 'llama-3.3-70b-versatile',
+//         max_tokens: 50,
+//         temperature: 0.7,
+//         messages: [{ role: 'user', content: prompt }]
+//       })
+//     });
+ 
+//     const data  = await res.json();
+//     const text  = data.choices?.[0]?.message?.content?.trim() || '';
+//     const clean = text.replace(/```json|```/g, '').trim();
+//     const parsed = JSON.parse(clean);
+ 
+//     // 버프 풀에 없는 값이면 랜덤 선택
+//     return buffPool.includes(parsed.buff) ? parsed.buff : buffPool[Math.floor(Math.random() * buffPool.length)];
+//   } 
+  
+//   catch (e) {
+//     console.warn('[푸앙 버프] LLM 실패, 랜덤 선택:', e);
+//     return buffPool[Math.floor(Math.random() * buffPool.length)];
+//   }
+// }
+
+
 async function askPuangBuff(buffPool) {
+  // Dify 키 있으면 Dify 사용
+  if (window.DIFY_BATTLE_KEY) {
+    try {
+      const res = await fetch('https://api.dify.ai/v1/chat-messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + window.DIFY_BATTLE_KEY
+        },
+        body: JSON.stringify({
+          inputs: {
+            playerHp:    String(battlePlayerHp),
+            playerMaxHp: String(battlePlayerMaxHp),
+            enemyName:   window.currentEnemy?.name || currentMonster?.name || '몬스터',
+            enemyHp:     String(enemyHp),
+            enemyMaxHp:  String(enemyMaxHp),
+            turn:        String(battleTurn),
+            buffPool:    buffPool.join(', ')
+          },
+          query:         '지금 상황에 가장 좋은 버프를 골라줘',
+          user:          'puang-battle',
+          response_mode: 'blocking'
+        })
+      });
+
+      const data = await res.json();
+      console.log('[전투 Agent 응답]', JSON.stringify(data));
+      let buff = buffPool[0];
+      let reason = '';
+
+      const answer = data.answer?.replace(/\\"/g, '"') || '';
+      const jsonMatch = answer.match(/\{[\s\S]*\}/);
+      console.log('[jsonMatch]',jsonMatch)
+
+      // const jsonMatch = data.answer?.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        buff   = buffPool.includes(parsed.buff) ? parsed.buff : buffPool[0];
+        reason = parsed.reason || '';
+      }
+
+      //if (reason) addBattleLog(`[푸앙 판단] ${reason}`, 'log-system2');
+      addBattleLog(`[푸앙 판단] ${reason}`, 'log-system2');
+      return buff;
+
+    } catch(e) {
+      console.warn('[전투 Agent] Dify 실패, Groq로 폴백:', e);
+    }
+  }
+
+  // Dify 없으면 기존 Groq 직접 호출
   if (!GROQ_API_KEY) {
-    // API 없으면 풀에서 랜덤 선택
     return buffPool[Math.floor(Math.random() * buffPool.length)];
   }
- 
-  const hpRatio    = battlePlayerHp / battlePlayerMaxHp;
+
+  const hpRatio   = battlePlayerHp / battlePlayerMaxHp;
   const enemyRatio = enemyHp / enemyMaxHp;
- 
+
   const prompt = `너는 푸앙이야. 지금 친구가 전투 중이야.
 현재 상황:
 - 플레이어 HP: ${battlePlayerHp}/${battlePlayerMaxHp} (${Math.round(hpRatio*100)}%)
 - 적 HP: ${enemyHp}/${enemyMaxHp} (${Math.round(enemyRatio*100)}%)
 - 현재 턴: ${battleTurn}턴
- 
+
 사용 가능한 버프: ${buffPool.join(', ')}
 이 중에서 지금 상황에 가장 적합한 버프 하나만 골라줘.
- 
+
 JSON 형식으로만 답해:
 {"buff": "${buffPool[0]}"}`;
- 
+
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -109,17 +213,15 @@ JSON 형식으로만 답해:
         messages: [{ role: 'user', content: prompt }]
       })
     });
- 
-    const data  = await res.json();
-    const text  = data.choices?.[0]?.message?.content?.trim() || '';
-    const clean = text.replace(/```json|```/g, '').trim();
+
+    const data   = await res.json();
+    const text   = data.choices?.[0]?.message?.content?.trim() || '';
+    const clean  = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
- 
-    // 버프 풀에 없는 값이면 랜덤 선택
+
     return buffPool.includes(parsed.buff) ? parsed.buff : buffPool[Math.floor(Math.random() * buffPool.length)];
-  } 
-  
-  catch (e) {
+
+  } catch(e) {
     console.warn('[푸앙 버프] LLM 실패, 랜덤 선택:', e);
     return buffPool[Math.floor(Math.random() * buffPool.length)];
   }
@@ -244,9 +346,10 @@ window.checkPuangIntervention = async function() {
 
   // ★ 1단계: HP 비율에 따른 발동 확률 체크
   const hpRatio = battlePlayerHp / battlePlayerMaxHp;
-  const triggerChance = hpRatio < 0.4 ? 0.90   // 위급(HP 40% 미만) — 90%
-                      : hpRatio < 0.7 ? 0.50   // 위험(HP 40-70%) — 50%
-                      : 0.01;                   // 여유(HP 70% 이상) — 1%
+
+ const triggerChance = hpRatio < 0.3 ? 0.90 // 위급
+                    : hpRatio < 0.7 ? 0.70  // 위험 
+                    : 0.30;                  // 보통
   if (Math.random() > triggerChance) return;
  
   // ★ 2단계: HP 비율에 따른 버프 풀 결정
