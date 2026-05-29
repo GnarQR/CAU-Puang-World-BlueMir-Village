@@ -3298,6 +3298,51 @@ window.lakeMeditate = function() {
   addLakeMsg('puang', '숨 들이쉬고... 내쉬고... 기분 어때 푸앙? 나는 좋아 푸앙~');
 };
 
+// window.sendLakeChat = function() {
+//   const input = document.getElementById('lake-chat-input');
+//   const text  = input ? input.value.trim() : '';
+//   if (!text) return;
+//   addLakeMsg('player', text);
+//   input.value = '';
+//   addLakeMsg('puang', '...');
+
+//   // ★ NewBugFix N-10: addLakeMsg('puang','...') 직후 lastChild를 변수에 고정
+//   //   기존: .then()/.catch()에서 log.lastChild 참조 → 응답 대기 중 새 메시지가 추가되면
+//   //   lastChild가 바뀌어 엉뚱한 메시지가 삭제되는 레이스 컨디션 발생
+//   //   수정: 임시 '...' DOM 노드를 미리 캡처해두어 항상 올바른 노드를 삭제
+//   //   사이드이펙트: 없음 — 참조 고정만, 기존 동작 변경 없음
+//   const lakeLog = document.getElementById('lake-chat-log');
+//   const pendingMsg = lakeLog ? lakeLog.lastChild : null;
+
+//   if (!GROQ_API_KEY) {
+//     // 원본: if (log && log.lastChild) log.lastChild.textContent = '미안 푸앙...';
+//     if (pendingMsg) pendingMsg.textContent = '미안 푸앙, 지금 말 못 해 푸앙...';
+//     return;
+//   }
+
+//   fetch('https://api.groq.com/openai/v1/chat/completions', {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_API_KEY },
+//     body: JSON.stringify({
+//       model: 'llama-3.3-70b-versatile',
+//       max_tokens: 150,
+//       response_format: { type: 'json_object' },
+//       messages: [{
+//         role: 'system',
+//         content: `You must respond only in Korean Hangul. 너는 중앙대학교 마스코트 푸앙이야. 청룡호에서 둘이 특별한 시간을 보내고 있어. 호감도 MAX 달성한 특별한 상황이야. 문장 끝에 반드시 "푸앙"을 붙여. 반말. 귀엽고 감성적으로. {"dialog": "대사 1~2문장"}`
+//       }, { role: 'user', content: text }]
+//     })
+//   }).then(r => r.json()).then(d => {
+//     const parsed = JSON.parse(d.choices[0].message.content);
+//     // 원본: const log = ...; if (log && log.lastChild) { log.lastChild.textContent = ''; log.lastChild.remove(); }
+//     if (pendingMsg && pendingMsg.parentNode) { pendingMsg.textContent = ''; pendingMsg.remove(); }
+//     addLakeMsg('puang', parsed.dialog);
+//   }).catch(() => {
+//     // 원본: const log = ...; if (log && log.lastChild) log.lastChild.textContent = '잠깐 멍했어...';
+//     if (pendingMsg) pendingMsg.textContent = '잠깐 멍했어 푸앙... 다시 말해줘 푸앙';
+//   });
+// };
+
 window.sendLakeChat = function() {
   const input = document.getElementById('lake-chat-input');
   const text  = input ? input.value.trim() : '';
@@ -3306,16 +3351,55 @@ window.sendLakeChat = function() {
   input.value = '';
   addLakeMsg('puang', '...');
 
-  // ★ NewBugFix N-10: addLakeMsg('puang','...') 직후 lastChild를 변수에 고정
-  //   기존: .then()/.catch()에서 log.lastChild 참조 → 응답 대기 중 새 메시지가 추가되면
-  //   lastChild가 바뀌어 엉뚱한 메시지가 삭제되는 레이스 컨디션 발생
-  //   수정: 임시 '...' DOM 노드를 미리 캡처해두어 항상 올바른 노드를 삭제
-  //   사이드이펙트: 없음 — 참조 고정만, 기존 동작 변경 없음
   const lakeLog = document.getElementById('lake-chat-log');
   const pendingMsg = lakeLog ? lakeLog.lastChild : null;
 
+  // Dify 있으면 Dify 사용
+  if (window.DIFY_LAKE_KEY) {
+    fetch('https://api.dify.ai/v1/chat-messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + window.DIFY_LAKE_KEY
+      },
+      body: JSON.stringify({
+        inputs: {
+          favorability: String(puangState.favorability || 100),
+          hp:           String(playerStats.hp || 0),
+          data:         String(playerStats.data || 0)
+        },
+        query:           text,
+        conversation_id: puangState.difyLakeConversationId || '',
+        user:            'puang-lake',
+        response_mode:   'blocking'
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.conversation_id) {
+        puangState.difyLakeConversationId = data.conversation_id;
+        debouncedSave();
+      }
+      if (pendingMsg && pendingMsg.parentNode) {
+        pendingMsg.textContent = '';
+        pendingMsg.remove();
+      }
+      let dialog = data.answer || '';
+      const jsonMatch = dialog.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        dialog = parsed.dialog || dialog;
+      }
+      addLakeMsg('puang', dialog);
+    })
+    .catch(() => {
+      if (pendingMsg) pendingMsg.textContent = '잠깐 멍했어 푸앙... 다시 말해줘 푸앙';
+    });
+    return;
+  }
+
+  // Groq 폴백
   if (!GROQ_API_KEY) {
-    // 원본: if (log && log.lastChild) log.lastChild.textContent = '미안 푸앙...';
     if (pendingMsg) pendingMsg.textContent = '미안 푸앙, 지금 말 못 해 푸앙...';
     return;
   }
@@ -3332,13 +3416,14 @@ window.sendLakeChat = function() {
         content: `You must respond only in Korean Hangul. 너는 중앙대학교 마스코트 푸앙이야. 청룡호에서 둘이 특별한 시간을 보내고 있어. 호감도 MAX 달성한 특별한 상황이야. 문장 끝에 반드시 "푸앙"을 붙여. 반말. 귀엽고 감성적으로. {"dialog": "대사 1~2문장"}`
       }, { role: 'user', content: text }]
     })
-  }).then(r => r.json()).then(d => {
+  })
+  .then(r => r.json())
+  .then(d => {
     const parsed = JSON.parse(d.choices[0].message.content);
-    // 원본: const log = ...; if (log && log.lastChild) { log.lastChild.textContent = ''; log.lastChild.remove(); }
     if (pendingMsg && pendingMsg.parentNode) { pendingMsg.textContent = ''; pendingMsg.remove(); }
     addLakeMsg('puang', parsed.dialog);
-  }).catch(() => {
-    // 원본: const log = ...; if (log && log.lastChild) log.lastChild.textContent = '잠깐 멍했어...';
+  })
+  .catch(() => {
     if (pendingMsg) pendingMsg.textContent = '잠깐 멍했어 푸앙... 다시 말해줘 푸앙';
   });
 };

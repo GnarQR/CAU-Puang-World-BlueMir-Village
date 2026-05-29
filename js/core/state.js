@@ -108,6 +108,7 @@ async function loadAllDataFromServer() {
       window.DIFY_BATTLE_KEY       = cfg.dify_battle_key;
       window.DIFY_DIARY_KEY        = cfg.dify_diary_key;
       window.DIFY_NPC_KEY          = cfg.dify_npc_key;
+      window.DIFY_LAKE_KEY         = cfg.dify_lake_key;
       console.log('[Dify 키 로드]', window.DIFY_PUANG_CHAT_KEY);
     }
 
