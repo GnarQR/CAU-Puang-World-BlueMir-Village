@@ -745,7 +745,8 @@ window.toggleMiniMap = function() {
 
 window.showFloorSelectScreen = function() {
   const clearedFloor = parseInt(localStorage.getItem('exploreFloorCleared') || '0');
-  const maxSelectable = Math.min(clearedFloor + 1, MAX_FLOOR);
+  const isDungeonClear = clearedFloor >= MAX_FLOOR;
+  const maxSelectable = isDungeonClear ? MAX_FLOOR : Math.min(clearedFloor + 1, MAX_FLOOR);
 
   const overlay = document.getElementById('explore-floor-select');
   if (!overlay) return;
@@ -753,7 +754,8 @@ window.showFloorSelectScreen = function() {
   const btnHTML = Array.from({ length: MAX_FLOOR }, (_, i) => {
     const f        = i + 1;
     const unlocked = f <= maxSelectable;
-    const isCurrent = f === exploreFloor;
+    const isCleared = f <= clearedFloor;
+    const isCurrent = !isDungeonClear && f === exploreFloor;
     const bg     = unlocked ? (isCurrent ? 'rgba(93,202,165,.2)' : 'rgba(22,33,62,.9)') : 'rgba(10,12,20,.6)';
     const border = unlocked ? (isCurrent ? '#5dcaa5' : '#0f3460') : '#1a1a2e';
     const color  = unlocked ? (isCurrent ? '#5dcaa5' : '#e0e0e0') : '#2a2a4a';
