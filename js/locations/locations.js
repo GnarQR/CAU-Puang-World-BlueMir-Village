@@ -2124,15 +2124,87 @@ function updateLabAchievementsUI() {
 }
 
 // ── 오늘의 일지 (Groq 생성) ──
+// window.generateLabDiary = async function() {
+//   if (!GROQ_API_KEY) { addLabLog('[일지] API 키가 없습니다.', 'lab-log-warning'); return; }
+
+//   const summary = `오늘 데이터 조각: ${playerStats.data}개, HP: ${playerStats.hp}/${playerStats.maxHp}, ` +
+//     `푸앙이 호감도: ${puangState.favorability}, 도서관 공부: ${libStudyCount}회`;
+
+//   addLabLog('[일지] 오늘의 탐험 기록을 작성 중...', 'lab-log-info');
+//   const el = document.getElementById('lab-diary-content');
+//   if (el) el.textContent = '생성 중...';
+
+//   try {
+//     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_API_KEY },
+//       body: JSON.stringify({
+//         model: 'llama-3.3-70b-versatile',
+//         max_tokens: 200,
+//         messages: [{
+//           role: 'system',
+//           content: '너는 중앙대 RPG 게임의 일지 작가야. 플레이어의 오늘 활동을 2~3문장으로 요약한 일기를 한국어로 써줘. 게임 분위기에 맞게 재미있게 작성해.'
+//         }, {
+//           role: 'user',
+//           content: '오늘 활동: ' + summary
+//         }]
+//       })
+//     });
+//     const data = await res.json();
+//     const diary = data.choices[0].message.content;
+//     if (el) el.textContent = diary;
+//     addLabLog('[일지] 오늘의 탐험 기록 완성!', 'lab-log-save');
+//   } catch(e) {
+//     if (el) el.textContent = '일지 작성에 실패했어요.';
+//     addLabLog('[일지] 생성 실패: ' + e.message, 'lab-log-warning');
+//   }
+// };
+
 window.generateLabDiary = async function() {
+  addLabLog('[일지] 오늘의 탐험 기록을 작성 중...', 'lab-log-info');
+  const el = document.getElementById('lab-diary-content');
+  if (el) el.textContent = '생성 중...';
+
+  // Dify 있으면 Dify 사용
+  if (window.DIFY_DIARY_KEY) {
+    try {
+      const res = await fetch('https://api.dify.ai/v1/workflows/run', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + window.DIFY_DIARY_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: {
+            data:         String(playerStats.data || 0),
+            hp:           String(playerStats.hp || 0),
+            maxHp:        String(playerStats.maxHp || 100),
+            favorability: String(puangState.favorability || 0),
+            libCount:     String(libStudyCount || 0)
+          },
+          user: 'puang-diary'
+        })
+      });
+
+      const data = await res.json();
+      console.log('[일지 응답]', JSON.stringify(data));
+      const diary = data.data?.outputs?.text || data.data?.outputs?.answer || '';
+
+      if (diary) {
+        if (el) el.textContent = diary;
+        addLabLog('[일지] 오늘의 탐험 기록 완성!', 'lab-log-save');
+        return;
+      }
+    } catch(e) {
+      console.warn('[일지 RAG] Dify 실패, Groq로 폴백:', e);
+    }
+  }
+
+  // Groq 폴백
   if (!GROQ_API_KEY) { addLabLog('[일지] API 키가 없습니다.', 'lab-log-warning'); return; }
 
   const summary = `오늘 데이터 조각: ${playerStats.data}개, HP: ${playerStats.hp}/${playerStats.maxHp}, ` +
     `푸앙이 호감도: ${puangState.favorability}, 도서관 공부: ${libStudyCount}회`;
-
-  addLabLog('[일지] 오늘의 탐험 기록을 작성 중...', 'lab-log-info');
-  const el = document.getElementById('lab-diary-content');
-  if (el) el.textContent = '생성 중...';
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
