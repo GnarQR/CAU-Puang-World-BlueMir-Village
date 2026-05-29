@@ -218,7 +218,6 @@ function renderRoomArrows() {
     btn.className = 'room-arrow';
     btn.dataset.connId = connId;
     btn.textContent = symbol;
-    btn.title = _getRoomLabel(conn.type) + (conn.cleared ? ' ✅' : '');
     btn.style.cssText = `
       position:absolute; left:${left}px; top:${top}px;
       background:rgba(10,12,20,.85); border:1px solid ${isNear ? '#5dcaa5' : '#0f3460'};
@@ -608,7 +607,7 @@ function _showDungeonClearScreen() {
     <div style="font-size:13px;color:#6c8ebf;margin-bottom:32px;">
       B1F ~ B10F 모든 층을 정복했습니다.
     </div>
-    <button onclick="this.parentElement.remove();document.getElementById('game-container').style.display='flex';"
+    <button onclick="this.parentElement.remove();document.getElementById('game-container').style.display='none';"
       style="background:rgba(93,202,165,.2);border:1px solid #5dcaa5;border-radius:10px;
       color:#5dcaa5;font-size:14px;font-weight:700;padding:12px 32px;cursor:pointer;">
       ← 맵으로 돌아가기
