@@ -77,42 +77,42 @@ const cafNpcTexts = [
   '커피 한 잔 어때요? SP가 확 올라요 ☕',
 ];
 
-async function loadCafeteriaNpcText() {
-  if (!window.DIFY_CAFETERIA_KEY) return;
-  try {
-    console.log('[식당 NPC inputs]', playerStats.hp, playerStats.maxHp, playerStats.data)
-    const res = await fetch('https://api.dify.ai/v1/chat-messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + window.DIFY_CAFETERIA_KEY
-      },
-      body: JSON.stringify({
-        inputs: {
-          hp:          String(playerStats.hp || 0),
-          maxHp:       String(playerStats.maxHp || 100),
-          data:        String(playerStats.data || 0),
-          favorability: String(puangState.favorability || 0),
-        },
-        query: '학생한테 한마디 해줘',
-        user: 'puang-cafeteria',
-        conversation_id: '',  // ← 매번 새 대화
-        response_mode: 'blocking'
-      })
+// async function loadCafeteriaNpcText() {
+//   if (!window.DIFY_CAFETERIA_KEY) return;
+//   try {
+//     console.log('[식당 NPC inputs]', playerStats.hp, playerStats.maxHp, playerStats.data)
+//     const res = await fetch('https://api.dify.ai/v1/chat-messages', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': 'Bearer ' + window.DIFY_CAFETERIA_KEY
+//       },
+//       body: JSON.stringify({
+//         inputs: {
+//           hp:          String(playerStats.hp || 0),
+//           maxHp:       String(playerStats.maxHp || 100),
+//           data:        String(playerStats.data || 0),
+//           favorability: String(puangState.favorability || 0),
+//         },
+//         query: '학생한테 한마디 해줘',
+//         user: 'puang-cafeteria',
+//         conversation_id: '',  // ← 매번 새 대화
+//         response_mode: 'blocking'
+//       })
     
-    });
+//     });
 
-    const data = await res.json();
-    const jsonMatch = data.answer?.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      const el = document.getElementById('caf-npc-text');
-      if (el && parsed.dialog) el.textContent = parsed.dialog;
-    }
-  } catch(e) {
-    console.warn('[식당 NPC]', e);
-  }
-}
+//     const data = await res.json();
+//     const jsonMatch = data.answer?.match(/\{[\s\S]*\}/);
+//     if (jsonMatch) {
+//       const parsed = JSON.parse(jsonMatch[0]);
+//       const el = document.getElementById('caf-npc-text');
+//       if (el && parsed.dialog) el.textContent = parsed.dialog;
+//     }
+//   } catch(e) {
+//     console.warn('[식당 NPC]', e);
+//   }
+// }
 
 window.enterCafeteria = function() {
   document.getElementById('game-container').style.display = 'none';
@@ -123,7 +123,7 @@ window.enterCafeteria = function() {
   // NPC 랜덤 멘트
   const el = document.getElementById('caf-npc-text');
   if (el) el.textContent = cafNpcTexts[Math.floor(Math.random() * cafNpcTexts.length)];
-  loadCafeteriaNpcText();
+
   // 남은 주문 횟수
   const remain = document.getElementById('caf-remain');
   if (remain) remain.textContent = remainDaily('cafeteria');
@@ -1419,26 +1419,64 @@ function setStoreClerk(msg) {
   if (el) el.textContent = msg;
 }
 
-async function loadStoreNpcText() {
-   console.log('[가게NPC] 호출됨', window.DIFY_STORE_KEY);
-  if (!window.DIFY_STORE_KEY) return;
+// async function loadStoreNpcText() {
+//    console.log('[가게NPC] 호출됨', window.DIFY_STORE_KEY);
+//   if (!window.DIFY_STORE_KEY) return;
+//   try {
+//     console.log('[가게 NPC inputs]', playerStats.hp, playerStats.maxHp, playerStats.data);
+//     const res = await fetch('https://api.dify.ai/v1/chat-messages', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': 'Bearer ' + window.DIFY_STORE_KEY
+//       },
+//       body: JSON.stringify({
+//         inputs: {
+//           hp:           String(playerStats.hp || 0),
+//           maxHp:        String(playerStats.maxHp || 100),
+//           data:         String(playerStats.data || 0),
+//           favorability: String(puangState.favorability || 0)
+//         },
+//         query:           '손님한테 한마디 해줘',
+//         user:            'puang-store',
+//         conversation_id: '',
+//         response_mode:   'blocking'
+//       })
+//     });
+
+//     const data = await res.json();
+//     const jsonMatch = data.answer?.match(/\{[\s\S]*\}/);
+//     if (jsonMatch) {
+//       const parsed = JSON.parse(jsonMatch[0]);
+//       if (parsed.dialog) setStoreClerk(parsed.dialog);
+//     }
+//   } catch(e) {
+//     console.warn('[가게 NPC]', e);
+//   }
+// }
+
+// ── 가게 진입 ──
+
+async function loadNpcText(location) {
+  if (!window.DIFY_NPC_KEY) return;
   try {
-    console.log('[가게 NPC inputs]', playerStats.hp, playerStats.maxHp, playerStats.data);
     const res = await fetch('https://api.dify.ai/v1/chat-messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + window.DIFY_STORE_KEY
+        'Authorization': 'Bearer ' + window.DIFY_NPC_KEY
       },
       body: JSON.stringify({
         inputs: {
-          hp:           String(playerStats.hp || 0),
-          maxHp:        String(playerStats.maxHp || 100),
-          data:         String(playerStats.data || 0),
-          favorability: String(puangState.favorability || 0)
+          location:    location,
+          hp:          String(playerStats.hp || 0),
+          maxHp:       String(playerStats.maxHp || 100),
+          data:        String(playerStats.data || 0),
+          favorability: String(puangState.favorability || 0),
+          hour:        String(new Date().getHours())
         },
-        query:           '손님한테 한마디 해줘',
-        user:            'puang-store',
+        query:           '플레이어한테 한마디 해줘',
+        user:            'puang-npc',
         conversation_id: '',
         response_mode:   'blocking'
       })
@@ -1448,14 +1486,14 @@ async function loadStoreNpcText() {
     const jsonMatch = data.answer?.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      if (parsed.dialog) setStoreClerk(parsed.dialog);
+      return parsed.dialog || '';
     }
   } catch(e) {
-    console.warn('[가게 NPC]', e);
+    console.warn('[NPC]', e);
   }
+  return '';
 }
 
-// ── 가게 진입 ──
 window.enterStore = function() {
   document.getElementById('game-container').style.display = 'none';
   const cont = document.getElementById('store-container');
@@ -1469,8 +1507,9 @@ window.enterStore = function() {
   switchStoreTab('food');
   updateStoreCartUI();
   setStoreClerk('...');
-  setTimeout(() => loadStoreNpcText(), 500); // 0.5초 후 호출
-  loadStoreNpcText();
+  loadNpcText('store').then(dialog => {
+  if (dialog) setStoreClerk(dialog);
+});
 };
 
 // ── 가게 퇴장 ──
@@ -1920,6 +1959,23 @@ function updateCafLoyaltyUI() {
 
 // enterCafeteria 후크: 신규 UI 초기화
 const _origEnterCafeteria = window.enterCafeteria;
+// window.enterCafeteria = function() {
+//   _origEnterCafeteria();
+//   // 오늘의 특선 메뉴 표시
+//   const special = getTodaySpecial();
+//   const tagEl = document.getElementById('caf-special-tag');
+//   const nameEl = document.getElementById('caf-special-name');
+//   const bonusEl = document.getElementById('caf-special-bonus');
+//   if (tagEl)   tagEl.textContent  = special.tag;
+//   if (nameEl)  nameEl.textContent = special.name;
+//   if (bonusEl) bonusEl.textContent = (special.bonus.hp ? 'HP +' + special.bonus.hp + ' ' : '') + (special.bonus.sp ? 'SP +' + special.bonus.sp : '');
+//   // 단골 UI
+//   updateCafLoyaltyUI();
+//   // 과식 경고
+//   const ovEl = document.getElementById('caf-overeat-warn');
+//   if (ovEl) ovEl.style.display = window.getCafOvereatPenalty() ? 'block' : 'none';
+// };
+
 window.enterCafeteria = function() {
   _origEnterCafeteria();
   // 오늘의 특선 메뉴 표시
@@ -1935,8 +1991,15 @@ window.enterCafeteria = function() {
   // 과식 경고
   const ovEl = document.getElementById('caf-overeat-warn');
   if (ovEl) ovEl.style.display = window.getCafOvereatPenalty() ? 'block' : 'none';
-};
 
+  // ← 여기 추가
+  loadNpcText('cafeteria').then(dialog => {
+    if (dialog) {
+      const el = document.getElementById('caf-npc-text');
+      if (el) el.textContent = dialog;
+    }
+  });
+};
 
 // ================================================================
 // 중앙도서관 — 신규: 전공 분야 / 집중모드 2x / 도서 대출 / 열람실 만석
@@ -2103,6 +2166,14 @@ window.enterLibrary = function() {
       syncLibStats();
     }
   }
+
+  // ← 여기 추가
+  loadNpcText('library').then(dialog => {
+    if (dialog) {
+      const el = document.getElementById('lib-npc-text');
+      if (el) el.textContent = dialog;
+    }
+  });
 };
 
 
@@ -2467,7 +2538,45 @@ window.playGymEvent = function() {
 };
 
 // enterGym 후크
+// const _origEnterGym = window.enterGym;
+// window.enterGym = function() {
+//   _origEnterGym();
+//   setTimeout(() => {
+//     checkGymStreak();
+//     // 체육대회 버튼 상태 갱신
+//     const evBtn = document.getElementById('gym-event-btn');
+//     if (evBtn) {
+//       const canPlay = isGymEventDay() && !hasPlayedGymEvent();
+//       evBtn.style.opacity = canPlay ? '1' : '0.4';
+//       evBtn.textContent = isGymEventDay()
+//         ? (hasPlayedGymEvent() ? '🎽 체육대회 (완료)' : '🎽 체육대회 참가!')
+//         : '🎽 체육대회 (월요일 개최)';
+//     }
+//   }, 50);
+// };
+
 const _origEnterGym = window.enterGym;
+// window.enterGym = function() {
+//   _origEnterGym();
+//   setTimeout(() => {
+//     checkGymStreak();
+//     // 체육대회 버튼 상태 갱신
+//     const evBtn = document.getElementById('gym-event-btn');
+//     if (evBtn) {
+//       const canPlay = isGymEventDay() && !hasPlayedGymEvent();
+//       evBtn.style.opacity = canPlay ? '1' : '0.4';
+//       evBtn.textContent = isGymEventDay()
+//         ? (hasPlayedGymEvent() ? '🎽 체육대회 (완료)' : '🎽 체육대회 참가!')
+//         : '🎽 체육대회 (월요일 개최)';
+//     }
+
+//     // ← 여기 추가
+//     loadNpcText('gym').then(dialog => {
+//       if (dialog) addGymLog('[트레이너] ' + dialog, '#ef9f27');
+//     });
+//   }, 50);
+// };
+
 window.enterGym = function() {
   _origEnterGym();
   setTimeout(() => {
@@ -2481,9 +2590,16 @@ window.enterGym = function() {
         ? (hasPlayedGymEvent() ? '🎽 체육대회 (완료)' : '🎽 체육대회 참가!')
         : '🎽 체육대회 (월요일 개최)';
     }
+
+    // ← 수정
+    loadNpcText('gym').then(dialog => {
+      if (dialog) {
+        const el = document.getElementById('gym-npc-text');
+        if (el) el.textContent = dialog;
+      }
+    });
   }, 50);
 };
-
 
 // ================================================================
 // 의무실 — 신규: 상태이상 치료 / 예방접종 / 보험 / 처방전
@@ -2641,11 +2757,25 @@ function updateClinicInsuranceUI() {
 
 // enterClinic 후크
 const _origEnterClinic = window.enterClinic;
+// window.enterClinic = function() {
+//   _origEnterClinic();
+//   updateClinicStatusUI();
+//   updateClinicVaccineUI();
+//   updateClinicInsuranceUI();
+// };
 window.enterClinic = function() {
   _origEnterClinic();
   updateClinicStatusUI();
   updateClinicVaccineUI();
   updateClinicInsuranceUI();
+
+  // ← 여기 추가
+  loadNpcText('clinic').then(dialog => {
+    if (dialog) {
+      const el = document.getElementById('clinic-npc-text');
+      if (el) el.textContent = dialog;
+    }
+  });
 };
 
 
@@ -2743,11 +2873,27 @@ function updateLab2RecipeUI() {
 
 // enterLab2 후크
 const _origEnterLab2 = window.enterLab2;
+// window.enterLab2 = function() {
+//   _origEnterLab2();
+//   window.checkLab2Recipes();
+//   renderEnhancePanel();
+// };
+
 window.enterLab2 = function() {
   _origEnterLab2();
   window.checkLab2Recipes();
   renderEnhancePanel();
+
+  // ← 여기 추가
+  loadNpcText('lab2').then(dialog => {
+    if (dialog) {
+      const el = document.getElementById('lab2-npc-text');
+      if (el) el.textContent = dialog;
+    }
+  });
 };
+
+
 
 function renderEnhancePanel() {
   const el = document.getElementById('lab2-enhance-list');
@@ -2837,19 +2983,40 @@ window.hasFestDoubleBuff = function() {
 
 // enterFestival 후크
 const _origEnterFestival = window.enterFestival;
+// window.enterFestival = function() {
+//   _origEnterFestival();
+//   checkFestRandomEvent();
+//   // 오늘의 한정 아이템 UI
+//   const special = getTodayFestItem();
+//   const el = document.getElementById('fest-limited-name');
+//   if (el) el.textContent = special.icon + ' ' + special.name + ' (💎 ' + special.cost + ')';
+//   const boughtEl = document.getElementById('fest-limited-badge');
+//   if (boughtEl) boughtEl.style.display = (localStorage.getItem('festLimitedBought') === new Date().toDateString()) ? 'inline' : 'none';
+//   // 버프 상태 표시
+//   const buffEl = document.getElementById('fest-buff-status');
+//   if (buffEl) buffEl.textContent = window.hasFestDoubleBuff() ? '🌟 2× 보너스 활성!' : '';
+// };
+
 window.enterFestival = function() {
   _origEnterFestival();
   checkFestRandomEvent();
-  // 오늘의 한정 아이템 UI
   const special = getTodayFestItem();
   const el = document.getElementById('fest-limited-name');
   if (el) el.textContent = special.icon + ' ' + special.name + ' (💎 ' + special.cost + ')';
   const boughtEl = document.getElementById('fest-limited-badge');
   if (boughtEl) boughtEl.style.display = (localStorage.getItem('festLimitedBought') === new Date().toDateString()) ? 'inline' : 'none';
-  // 버프 상태 표시
   const buffEl = document.getElementById('fest-buff-status');
   if (buffEl) buffEl.textContent = window.hasFestDoubleBuff() ? '🌟 2× 보너스 활성!' : '';
+
+  // ← 여기 추가
+  loadNpcText('festival').then(dialog => {
+    if (dialog) {
+      const el = document.getElementById('festival-npc-text');
+      if (el) el.textContent = dialog;
+    }
+  });
 };
+
 
 // 축제 보상에 2× 버프 적용 (answerQuiz, jankenPlay, spinSlot 후크)
 const _origAnswerQuiz = window.answerQuiz;
@@ -2972,10 +3139,29 @@ function updateUnionClubUI() {
 
 // enterUnion 후크
 const _origEnterUnion = window.enterUnion;
+// window.enterUnion = function() {
+//   _origEnterUnion();
+//   updateUnionClubUI();
+//   // 부스 로테이션 UI
+//   const booths = getTodayBooths();
+//   for (let i = 0; i < 3; i++) {
+//     const nameEl  = document.getElementById('union-booth-name-' + i);
+//     const descEl  = document.getElementById('union-booth-desc-' + i);
+//     const costEl  = document.getElementById('union-booth-cost-' + i);
+//     if (nameEl) nameEl.textContent = booths[i].name;
+//     if (descEl) descEl.textContent = booths[i].desc;
+//     if (costEl) costEl.textContent = '💎 ' + booths[i].cost;
+//   }
+//   // 세일 배너
+//   const saleEl = document.getElementById('union-sale-banner');
+//   if (saleEl) {
+//     saleEl.style.display = isUnionSaleDay() ? 'block' : 'none';
+//   }
+// };
+
 window.enterUnion = function() {
   _origEnterUnion();
   updateUnionClubUI();
-  // 부스 로테이션 UI
   const booths = getTodayBooths();
   for (let i = 0; i < 3; i++) {
     const nameEl  = document.getElementById('union-booth-name-' + i);
@@ -2985,11 +3171,16 @@ window.enterUnion = function() {
     if (descEl) descEl.textContent = booths[i].desc;
     if (costEl) costEl.textContent = '💎 ' + booths[i].cost;
   }
-  // 세일 배너
   const saleEl = document.getElementById('union-sale-banner');
-  if (saleEl) {
-    saleEl.style.display = isUnionSaleDay() ? 'block' : 'none';
-  }
+  if (saleEl) saleEl.style.display = isUnionSaleDay() ? 'block' : 'none';
+
+  // ← 여기 추가
+  loadNpcText('union').then(dialog => {
+    if (dialog) {
+      const el = document.getElementById('union-npc-text');
+      if (el) el.innerHTML = dialog;
+    }
+  });
 };
 
 

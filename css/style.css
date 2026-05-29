@@ -6645,3 +6645,54 @@ body.place-bluedragonlake { background-image: url('../images/background/Lake_.pn
 
 /* 맵 화면(#game-container)과 전투화면(#battle-container)은
    미니 스탯바 없으므로 미적용 */
+
+
+   .clinic-npc-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #1a0d0d;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.clinic-npc-bubble { font-size: 11px; }
+.clinic-npc-name { font-size: 10px; color: #f09595; }
+
+.lab2-npc-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #0d0720;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.lab2-npc-bubble { font-size: 11px; }
+.lab2-npc-name { font-size: 10px; color: #c4a0ff; }
+
+.fest-npc-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #1a1408;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.fest-npc-bubble { font-size: 11px; }
+.fest-npc-name { font-size: 10px; color: #ef9f27; }
+
+.gym-npc-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #0d1e2e;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.gym-npc-avatar { font-size: 20px; }
+.gym-npc-bubble { font-size: 11px; color: #e0e0e0; }
+.gym-npc-name { font-size: 10px; color: #a0c4ff; margin-bottom: 2px; }
