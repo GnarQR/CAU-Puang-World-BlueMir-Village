@@ -381,7 +381,7 @@
           <h3 class="popup-title">이면 세계 탈출</h3>
           <p class="popup-desc">지금 캠퍼스로 돌아가면 현재 층의 탐험 기록과<br>전투 상태가 초기화됩니다. 계속하시겠습니까?</p>
           <div class="popup-btns">
-            <button class="popup-confirm" onclick="confirmExitExploration()">확인</button>
+            <button class="popup-confirm" onclick="if(typeof window.clearPlaceBg==='function')window.clearPlaceBg();confirmExitExploration()">확인</button>
             <button class="popup-cancel" onclick="closeExitPopup()">취소</button>
           </div>
         </div>
@@ -1077,7 +1077,7 @@
       <div id="lab-achievements-list" style="background:#070d07;border:1px solid #1a3a1a;border-radius:8px;padding:8px 12px;font-family:'Courier New',monospace;"></div>
     </div>
 
-    
+
     <!-- ★ 신규: 스킬 트리 -->
     <div style="margin-top:10px;margin-bottom:12px;">
       <div class="lab-action-title">&gt; 스킬 트리 (탐험 횟수 기반)</div>
