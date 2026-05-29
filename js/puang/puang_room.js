@@ -183,25 +183,28 @@ function renderSlot(slotId, itemId) {
   const el = document.getElementById(`room-slot-${slotId}`);
   if (!el) return;
  
-  if (!itemId) {  // 빈 슬롯 — 점선 힌트 복원
-    el.className = 'room-slot-hint';
-    el.style.backgroundImage = '';
-    el.style.backgroundColor = '';
-    el.innerHTML = '';
+  if (!itemId) {  // 빈 슬롯 — 이미 비어있으면 스킵 (불필요한 DOM 조작 방지)
+    if (el.dataset.renderedItem) {
+      delete el.dataset.renderedItem;
+      el.className = 'room-slot-hint';
+      el.innerHTML = '';
+    }
     return;
   }
  
   const item = ROOM_ITEMS[itemId];
   if (!item || !item.imgFile) return;
  
-  // 슬롯 div 위치/크기(인라인 style)는 유지, img 태그로 표시
+  // 이미 같은 아이템이 렌더돼있으면 스킵 — 재장전으로 인한 이미지 깜박임 방지
+  if (el.dataset.renderedItem === itemId) return;
+  el.dataset.renderedItem = itemId;
+
   el.className = 'room-slot-filled';
-  el.style.backgroundImage = '';
-  el.style.backgroundColor = 'transparent';
+
   
   // 완성본 방향(좌향)에 맞게 좌우 반전할 가구 모음
-  const flipStyle = (['bed', 'shelf_right', 'memo_poster', 'dreamcatcher'].includes(slotId)) ? 'transform:scaleX(-1);' : '';
-  
+  const flipStyle = (['bed', 'shelf_right', 'memo_poster', 'dreamcatcher'].includes(slotId))
+   ? 'transform:scaleX(-1);' : '';
   
   el.innerHTML = `<img
     src="images/furniture/${item.imgFile}"
@@ -360,57 +363,6 @@ window.renderRoomShop = function() {
   return html;
 };
 
-/*
-window.renderRoomShop = function() {
-  const owned    = playerStats.ownedRoomItems || [];
-  const installed = playerStats.roomDecorations || {};
- 
-  // 카테고리별 분류
-  const categories = {
-    '🛏️ 가구': ['item_bed','item_desk','item_carpet','item_bookshelf_small','item_bookshelf_big','item_lamp','item_hanging_plant'],
-    '🖼️ 벽 장식': ['item_shelf_left','item_shelf_right','item_painting_left','item_painting_right','item_wall_plant','item_hanging_deco','item_memo_poster','item_dreamcatcher'],
-    '🎨 배경 테마': ['item_night','item_sakura','item_dark'],
-  };
- 
-  let html = `<div class="room-shop">`;
-  html += `<div class="room-shop-header">🛒 방 꾸미기 상점 <span class="diamond-badge">💎 ${playerStats.data}</span></div>`;
- 
-  for (const [catName, ids] of Object.entries(categories)) {
-    html += `<div class="shop-category-title">${catName}</div>`;
-    html += `<div class="room-shop-grid">`;
- 
-    for (const id of ids) {
-      const item = ROOM_ITEMS[id];
-      if (!item) continue;
-      const isOwned     = owned.includes(id);
-      const isInstalled = installed[item.slot] === id ||
-                          (item.slot === 'background' && installed.background === item.theme);
-      const canBuy      = !isOwned && playerStats.data >= item.price;
- 
-      html += `
-        <div class="shop-item ${isOwned ? 'owned' : ''} ${isInstalled ? 'installed' : ''}">
-          <div class="shop-item-emoji">${item.emoji}</div>
-          <div class="shop-item-name">${item.name}</div>
-          <div class="shop-item-desc">${item.desc}</div>
-          <div class="shop-item-price">💎 ${item.price}</div>
-          <div class="shop-item-btns">
-            ${!isOwned
-              ? `<button onclick="buyRoomItem('${id}')" ${canBuy ? '' : 'disabled'}>구매</button>`
-              : isInstalled
-                ? `<button disabled>설치됨</button>`
-                : `<button onclick="installRoomItem('${id}')">설치</button>`
-            }
-          </div>
-        </div>`;
-    }
-    html += `</div>`;
-  }
- 
-  html += `</div>`;
-  return html;
-};
-*/
- 
 // ── 유틸 ──
 function posToStyle(pos) {
   const style = {};

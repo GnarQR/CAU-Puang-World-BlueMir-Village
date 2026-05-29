@@ -783,6 +783,7 @@ window.checkDailyQuests = function() {
     if (!done[q.id] && q.check()) {
       done[q.id] = true;
       playerStats.data += q.reward;
+      if (playerStats.data > (playerStats._maxData || 0)) playerStats._maxData = playerStats.data;
       newDone = true;
       if (typeof showToast === 'function') showToast('✅ 미션 완료: ' + q.label + ' +💎' + q.reward, 'success', 3000);
     }
@@ -833,8 +834,8 @@ const TITLES = [
   { id: 't_newbie',   name: '신입 탐험가',    check: () => true,  color: '#6c8ebf' },
   { id: 't_fighter',  name: '이면세계 용사',   check: () => (playerStats._battleWins || 0) >= 5,  color: '#ef9f27' },
   { id: 't_scholar',  name: '중앙대 수석',     check: () => (typeof libStudyCount !== 'undefined' ? libStudyCount : 0) >= 10, color: '#c9a84c' },
-  { id: 't_friend',   name: '푸앙이 친구',     check: () => puangState.favorability >= 80, color: '#d4537e' },
-  { id: 't_rich',     name: '데이터 재벌',     check: () => playerStats.data >= 100, color: '#fcd34d' },
+  { id: 't_friend',   name: '푸앙이 친구',     check: () => (puangState._maxFavorability || 0) >= 80, color: '#d4537e' },
+  { id: 't_rich',     name: '데이터 재벌',     check: () => (playerStats._maxData || 0) >= 100, color: '#fcd34d' },
   { id: 't_veteran',  name: '베테랑 탐험가',   check: () => (playerStats._explorationCount || 0) >= 20, color: '#5dcaa5' },
   { id: 't_legend',   name: '캠퍼스 전설',     check: () => (playerStats._battleWins || 0) >= 20 && puangState.favorability >= 90, color: '#a855f7' },
 ];
@@ -1797,6 +1798,7 @@ function checkCompendiumReward(comp) {
   if (!localStorage.getItem(key) && done >= Math.ceil(total * 0.5)) {
     localStorage.setItem(key, '1');
     playerStats.data += 20;
+    if (playerStats.data > (playerStats._maxData || 0)) playerStats._maxData = playerStats.data;
     if (typeof window.syncAndSave === 'function') window.syncAndSave();
     if (typeof showToast === 'function') showToast('📖 도감 50% 완성! 💎 +20', 'warning', 4000);
   }
@@ -1944,6 +1946,7 @@ function renderCalendar() {
     if (!localStorage.getItem(rewardKey)) {
       localStorage.setItem(rewardKey, '1');
       playerStats.data += special.reward;
+      if (playerStats.data > (playerStats._maxData || 0)) playerStats._maxData = playerStats.data;
       if (typeof window.syncAndSave === 'function') window.syncAndSave();
       if (typeof showToast === 'function') showToast('🎉 ' + special.name + ' 💎 +' + special.reward, 'warning', 5000);
     }

@@ -63,6 +63,12 @@ function updateRoomUI() {
 function changeFavor(amount) {
   const prev = puangState.favorability;
   puangState.favorability = Math.max(0, Math.min(100, puangState.favorability + amount));
+
+  // 역대 최고 호감도 기록 (칭호 뺏기 방지)
+  if (puangState.favorability > (puangState._maxFavorability || 0)) {
+    puangState._maxFavorability = puangState.favorability;
+  }
+
   savePuangState();
   updateRoomUI();
 
