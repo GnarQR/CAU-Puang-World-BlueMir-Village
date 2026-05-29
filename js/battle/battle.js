@@ -74,9 +74,6 @@ window.initBattle = function(origin = 'map', bossId = null) {
   battleTurn = 1;
   buffActive = false;
 
-  // ★ 푸앙이 전투 agent 난입 카운터 초기화
-  if (typeof window.resetPuangIntervention === 'function') window.resetPuangIntervention();
-
   // ── ★ 버프 연동: 전투 시작 시 패시브 적용 로그 ──
   setTimeout(() => {
     const lines = [];

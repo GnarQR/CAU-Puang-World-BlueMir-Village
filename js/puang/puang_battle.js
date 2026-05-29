@@ -1,13 +1,16 @@
 // ================================================================
 // puang_battle.js — 푸앙이 전투 난입 시스템
-// 조건: 청룡호 해금 (lakeUnlocked) + 전투당 최대 1회
+// 조건: 청룡호 해금 (lakeUnlocked) + 층당 최대 2회 난입
 // 흐름: 매 enemyTurn 종료 후 LLM이 상황 판단 → 난입 여부 결정
 //       → puang_dice.mp4 연출 → 버프 적용
 // ================================================================
 
 // ── 전투당 난입 횟수 카운터 ──
-let puangInterventionCount = 0;
-const PUANG_MAX_INTERVENTIONS = 1;
+let puangFloorInterventionCount = 0;   // 층당 카운터 (층 이동 시 초기화)
+let puangBattleInterventionCount = 0;  // 전투당 카운터 (전투 시작 시 초기화)
+
+const PUANG_MAX_PER_FLOOR  = 2;  // 층당 최대 2회로 제한
+const PUANG_MAX_PER_BATTLE = 1;  // 전투당 최대 1회로 제한
 
 // ── 버프 종류 정의 ──
 const PUANG_BUFFS = {
@@ -126,7 +129,8 @@ JSON 형식으로만 답해:
 // 난입 연출 + 버프 적용
 // ================================================================
 window.triggerPuangIntervention = async function(buffType) {
-  puangInterventionCount++;
+  puangFloorInterventionCount++;
+  puangBattleInterventionCount++;
 
   // 전투 버튼 잠금
   if (typeof setBattleButtons === 'function') setBattleButtons(true);
@@ -234,20 +238,21 @@ function _playPuangDiceVideo(overlay) {
 // ================================================================
 window.checkPuangIntervention = async function() {
   if (!localStorage.getItem('lakeUnlocked')) return;
-  if (puangInterventionCount >= PUANG_MAX_INTERVENTIONS) return;
+  if (puangFloorInterventionCount  >= PUANG_MAX_PER_FLOOR)  return;  // 층당 2회
+  if (puangBattleInterventionCount >= PUANG_MAX_PER_BATTLE) return;  // 전투당 1회
   if (enemyHp <= 0 || battlePlayerHp <= 0) return;
 
   // ★ 1단계: HP 비율에 따른 발동 확률 체크
   const hpRatio = battlePlayerHp / battlePlayerMaxHp;
-  const triggerChance = hpRatio < 0.3 ? 0.90   // 위급(HP 40% 미만) — 90%
+  const triggerChance = hpRatio < 0.4 ? 0.90   // 위급(HP 40% 미만) — 90%
                       : hpRatio < 0.7 ? 0.50   // 위험(HP 40-70%) — 50%
-                      : 0.15;                   // 여유(HP 70% 이상) — 15%
+                      : 0.01;                   // 여유(HP 70% 이상) — 1%
   if (Math.random() > triggerChance) return;
  
   // ★ 2단계: HP 비율에 따른 버프 풀 결정
-  const buffPool = hpRatio < 0.3
+  const buffPool = hpRatio < 0.4
     ? ['heal', 'shield', 'damage_reduce']
-    : hpRatio < 0.6
+    : hpRatio < 0.7
       ? ['shield', 'damage_reduce', 'regen', 'attack_up']
       : ['attack_up', 'extra_turn', 'regen'];
 
@@ -263,7 +268,7 @@ window.checkPuangIntervention = async function() {
 // 전투 시작 시 카운터 초기화 (battle.js의 initBattle에서 호출)
 // ================================================================
 window.resetPuangIntervention = function() {
-  puangInterventionCount = 0;
+  puangBattleInterventionCount = 0;
   window._puangShield      = false;
   window._puangAttackUp    = false;
   window._puangExtraTurn   = false;

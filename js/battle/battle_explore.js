@@ -517,10 +517,15 @@ function _getStatueHint() {
 }
 
 function _goNextFloor() {
+  puangFloorInterventionCount  = 0;
+  puangBattleInterventionCount = 0;
+
   if (exploreFloor >= MAX_FLOOR) {
-    if (typeof showToast === 'function') showToast('🏆 최고 층에 도달했어요!', 'success', 3000);
+    _showDungeonClearScreen();
     return;
   }
+
+  if (typeof window.resetPuangIntervention === 'function') window.resetPuangIntervention();  // 층이 넘어가면 푸앙 agent 개입 초기화
 
   // 현재 층 클리어 저장
   const prev = parseInt(localStorage.getItem('exploreFloorCleared') || '0');
@@ -573,6 +578,40 @@ function _showStatueHintPopup() {
     <button onclick="document.getElementById('statue-popup').remove()"
       style="background:rgba(22,33,62,.8);border:1px solid #0f3460;border-radius:8px;color:#6c8ebf;padding:6px 20px;cursor:pointer;">
       확인
+    </button>
+  `;
+  container.appendChild(box);
+}
+
+// 던전 클리어 UI 추가
+function _showDungeonClearScreen() {
+  const container = document.getElementById('explore-container');
+  if (!container) return;
+
+  // 클리어 기록 저장
+  localStorage.setItem('exploreFloorCleared', MAX_FLOOR);
+  if (typeof saveAllDataToServer === 'function') saveAllDataToServer();
+
+  const box = document.createElement('div');
+  box.style.cssText = `
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,10,.92);z-index:200;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;
+  `;
+  box.innerHTML = `
+    <div style="font-size:40px;margin-bottom:16px;">🏆</div>
+    <div style="font-size:11px;letter-spacing:3px;color:#5dcaa5;margin-bottom:8px;">DUNGEON CLEAR</div>
+    <div style="font-size:22px;font-weight:800;color:#e0e0e0;margin-bottom:12px;">
+      205관 이면세계 클리어를 축하합니다!
+    </div>
+    <div style="font-size:13px;color:#6c8ebf;margin-bottom:32px;">
+      B1F ~ B10F 모든 층을 정복했습니다.
+    </div>
+    <button onclick="this.parentElement.remove();document.getElementById('game-container').style.display='flex';"
+      style="background:rgba(93,202,165,.2);border:1px solid #5dcaa5;border-radius:10px;
+      color:#5dcaa5;font-size:14px;font-weight:700;padding:12px 32px;cursor:pointer;">
+      ← 맵으로 돌아가기
     </button>
   `;
   container.appendChild(box);
@@ -760,11 +799,15 @@ window.showFloorSelectScreen = function() {
 };
 
 window.startFloor = function(floor) {
+  puangFloorInterventionCount  = 0;
+  puangBattleInterventionCount = 0;
   exploreFloor = floor;
   localStorage.setItem('exploreFloor', floor);
 
   const overlay = document.getElementById('explore-floor-select');
   if (overlay) overlay.style.display = 'none';
+
+  if (typeof window.resetPuangIntervention === 'function') window.resetPuangIntervention();  // 층이 넘어가면 푸앙 agent 개입 초기화
 
   // 방 생성 및 탐험 시작
   generateRooms(floor);
