@@ -49,7 +49,7 @@ window.MONSTERS = {
     hp:        50,
     attackMin: 3, attackMax: 9,   // 16 → 9 (평균 6)
     reward:    9,
-    image:     'images/monster/normal/sugang_bot.png',
+    image:     'images/monster/normal/sugang_robot.png',
     weakness:  '빠른 손가락 속성',
     intro:     '수강신청봇이 접속을 차단한다!',
     isBoss:    false,

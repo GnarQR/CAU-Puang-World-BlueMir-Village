@@ -619,7 +619,6 @@ async function enemyTurn() {
   document.getElementById('dice-result').textContent  = '커맨드를 선택하세요';
 
   if (typeof setBattleButtons === 'function') setBattleButtons(false);
-  battleBusy = false;
 
   // 적 턴 끝난 후 푸앙이 agent 난입 체크
   if (typeof window.checkPuangIntervention === 'function') await window.checkPuangIntervention();
