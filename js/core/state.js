@@ -247,12 +247,26 @@ async function loadAllDataFromServer() {
 
     serverDataLoaded = true;
 
+    // 기존 유저 마이그레이션용 코드 — _maxData / _maxFavorability 없으면 현재값으로 초기화
+    if (!playerStats._maxData) {
+      playerStats._maxData = playerStats.data || 0;
+    }
+    if (typeof puangState !== 'undefined' && !puangState._maxFavorability) {
+      puangState._maxFavorability = puangState.favorability || 0;
+    }
+
     // _prevData 동기화 — 로드 후 updateMapStats 오발 방지 (BugFix #13 유지)
     _prevData = playerStats.data;
     if (typeof updateMapStats === 'function') updateMapStats();
 
   } catch (e) {
     serverDataLoaded = true; // 에러/타임아웃이어도 게임은 계속
+
+    // ★ 기존 유저 마이그레이션 (로컬 데이터 기반)
+    if (!playerStats._maxData) playerStats._maxData = playerStats.data || 0;
+    if (typeof puangState !== 'undefined' && !puangState._maxFavorability) {
+      puangState._maxFavorability = puangState.favorability || 0;
+    }
 
     if (e.message === 'TIMEOUT') {
       console.warn('[State] Firebase 응답 5초 초과 — 로컬 데이터로 시작');
