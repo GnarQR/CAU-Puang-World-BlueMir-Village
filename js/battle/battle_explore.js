@@ -607,7 +607,7 @@ function _showDungeonClearScreen() {
     <div style="font-size:13px;color:#6c8ebf;margin-bottom:32px;">
       B1F ~ B10F 모든 층을 정복했습니다.
     </div>
-    <button onclick="this.parentElement.remove();document.getElementById('game-container').style.display='none';"
+      onclick="this.parentElement.remove();if(typeof window.clearPlaceBg==='function')window.clearPlaceBg();document.getElementById('game-container').style.display='flex';"
       style="background:rgba(93,202,165,.2);border:1px solid #5dcaa5;border-radius:10px;
       color:#5dcaa5;font-size:14px;font-weight:700;padding:12px 32px;cursor:pointer;">
       ← 맵으로 돌아가기
@@ -788,7 +788,7 @@ window.showFloorSelectScreen = function() {
         ${btnHTML}
       </div>
       <button
-        onclick="document.getElementById('explore-floor-select').style.display='none';document.getElementById('game-container').style.display='flex';"
+       onclick="document.getElementById('explore-floor-select').style.display='none';if(typeof window.clearPlaceBg==='function')window.clearPlaceBg();document.getElementById('game-container').style.display='flex';"
         style="width:100%;padding:11px;border-radius:10px;background:rgba(15,22,40,.8);
           border:1px solid #0f3460;color:#6c8ebf;font-size:13px;cursor:pointer;transition:all .15s;"
         onmouseenter="this.style.color='#a0c4ff';this.style.borderColor='#1e3a60'"
