@@ -638,7 +638,8 @@ window.triggerExploreRoomBattle = function(onBattleEnd) {
 
   // 3. 전투 시스템 초기화
   if (typeof window.initBattle === 'function') {
-    window.initBattle('map', null);  // 일반 몬스터 전투로 초기화
+    // 일반 몬스터 전투로 초기화
+    window.initBattle('map', null, exploreFloor);  // 💡 세 번째 인자로 현재 탐험 중인 층(exploreFloor)을 넣어 호출합니다.
   }
 };
 

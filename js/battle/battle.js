@@ -62,8 +62,8 @@ window.confirmExitExploration = function() {
 // ── 전투 초기화 ──
 // 205관 이면 세계 진입 시 호출
 // 모든 전투 변수를 초기값으로 리셋 (나중에는 플레이어 현재 HP / SP 상태 연동되도록)
-window.initBattle = function(origin = 'map', bossId = null) {
-  // 1. 전역 변수 설정
+window.initBattle = function(origin = 'map', bossId = null, floor = 1) {  // 💡 floor 기본값 탑재
+  // 1. 전역 변수 설정 
   battleOrigin = origin;
   window.battleOrigin = origin; // ★ Fix #5: window에도 동기화
   battleBusy = false;
@@ -116,7 +116,8 @@ window.initBattle = function(origin = 'map', bossId = null) {
     if (savedInBattle && savedMonsterId && window.MONSTERS && window.MONSTERS[savedMonsterId]) {
       currentMonster = window.MONSTERS[savedMonsterId];
     } else {
-      currentMonster = window.getRandomMonster();  // 새 전투 — 랜덤 몬스터 선택
+      // 💡 전달받은 층 정보를 넣어 그 층에 최적화된 몹을 가져오게 변경합니다!
+      currentMonster = window.getRandomMonster(floor);  
     }
   }
 
@@ -697,6 +698,7 @@ window.doCmd = async function(cmd) {
 
     if (enemyHp <= 0) {  // 적 사망 → 승리 처리
       let reward = currentMonster ? currentMonster.reward : 5;
+
       // 저주 상태이상 (-50% 보상)
       if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('curse')) {
         reward = Math.floor(reward * 0.5);
@@ -737,6 +739,45 @@ window.doCmd = async function(cmd) {
       document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀합니다.';
       document.getElementById('dice-display').textContent = '🎉';
       playerStats.data += reward;
+
+      // ================================================================
+      // 🔥 [🆕 추가] 전리품(드롭 아이템) 계산 및 인벤토리 추가 로직
+      // ================================================================
+      if (currentMonster && currentMonster.drops) { //
+        currentMonster.drops.forEach(drop => { //
+          // 각 아이템의 드롭 확률(chance)과 랜덤 값을 비교합니다.
+          if (Math.random() <= drop.chance) { //
+            
+            // 인벤토리(inventory 배열)가 존재할 때만 아이템을 넣어줍니다.
+            if (typeof inventory !== 'undefined') { //
+              // 💡 인벤토리에 이미 같은 아이템이 있는지 먼저 확인합니다 (중복 누적 처리)
+              const existingItem = inventory.find(i => i.id === drop.id); //
+              
+              if (existingItem) {
+                existingItem.qty = (existingItem.qty || 1) + 1; // 이미 있으면 수량(qty) +1
+              } else {
+                // 인벤토리에 없던 아이템이면 새 객체로 추가
+                inventory.push({ 
+                  id: drop.id, 
+                  name: drop.name, 
+                  icon: '⚙️', // 전리품 재료 공통 아이콘 (원하는 이모지로 변경 가능)
+                  qty: 1, 
+                  desc: '결합 및 주사위 강화용 재료' 
+                }); //
+              }
+              
+              // 인벤토리 저장 함수 호출
+              if (typeof saveInventory === 'function') saveInventory(); //
+            }
+            
+            // 유저가 알 수 있도록 전투 로그창에 획득 메시지를 출력합니다.
+            addBattleLog(`[전리품] 📦 몬스터가 [${drop.name}]을(를) 떨어뜨렸습니다!`, 'log-success'); //
+          }
+        });
+      }
+      // ================================================================
+
+      // 3. UI 갱신 및 데이터 서버 저장/종료 처리 (기존 로직 유지)
       updateMapStats();
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof window.updateDailyBadges === 'function') window.updateDailyBadges();
