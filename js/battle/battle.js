@@ -630,7 +630,7 @@ window.doCmd = async function(cmd) {
   battleBusy = true;
   if (typeof setBattleButtons === 'function') setBattleButtons(true);
 
-  // ── 벡터 캐논 (공격) ──
+  // ── 벡터 캐논 (공격) ➔ [벼락치기] 속성 ──
   if (cmd === 'attack') {
     document.getElementById('dice-result').textContent = 'd20 굴리는 중...';
     const roll = await animateDice(20);
@@ -639,6 +639,13 @@ window.doCmd = async function(cmd) {
 
     if (roll >= 6) {  // 6 이상 명중 (밸런스 조정 시 이 숫자 수정)
       let dmg = Math.floor(roll / 1.5);  // 딜량 조정 시 이 공식 수정
+      const skillAttr = '벼락치기';
+
+      // 🔥 속성 상성 체크 (몬스터의 약점과 일치할 시 대미지 1.5배)
+      if (currentMonster && currentMonster.weakness === skillAttr) {
+        dmg = Math.floor(dmg * 1.5);
+        addBattleLog(`[상성 발동] ⚡ 속성 저격! (${skillAttr} ➔ ${currentMonster.name}) 데미지 1.5배 증폭!`, 'log-success');
+      }
 
       // 하이퍼 프롬프트 버프 발동 시 데미지 2배
       if (buffActive) {
@@ -725,6 +732,7 @@ window.doCmd = async function(cmd) {
 
       // ★ 도감 등록
       if (typeof window.registerMonsterCompendium === 'function') window.registerMonsterCompendium(currentMonster);
+
       addBattleLog('[SYSTEM] ' + (currentMonster ? currentMonster.name : '적') + '을(를) 물리쳤다! 데이터 조각 x' + reward + ' 획득', 'log-success');
       document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀합니다.';
       document.getElementById('dice-display').textContent = '🎉';
@@ -733,6 +741,7 @@ window.doCmd = async function(cmd) {
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof window.updateDailyBadges === 'function') window.updateDailyBadges();
       if (typeof showToast === 'function') showToast('⚔️ 전투 승리! 💎 +' + reward, 'success', 3000);
+
       // ★ Fix #3: 승리 시 clearBattleState — 미호출 시 inBattle=true 잔류 → 새로고침마다 전투 루프 재진입
       clearBattleState();
       // 전투 승리 보상 즉시 저장 (탭 닫기 전 손실 방지)
@@ -771,7 +780,7 @@ window.doCmd = async function(cmd) {
     document.getElementById('dice-display').textContent = '⚡';
   }
 
-  // ── ★ 데이터 서지 (SP 스킬) ──
+  // ── ★ 데이터 서지 (SP 스킬) ➔ [광클릭] 속성 ──
   else if (cmd === 'special') {
     const spCost = 15;
     if (battlePlayerSp < spCost) {
@@ -793,6 +802,14 @@ window.doCmd = async function(cmd) {
     // 효과: 광역 폭발 데미지 + 자신 소량 회복
     let dmg   = roll + 8;  // 기본 대미지 높음
     const heal = Math.floor(roll / 2);  // 회복량 조절 시 이 부분 수정
+    const skillAttr = '광클릭'; // 스킬 고유 속성 선언
+
+    // 🔥 속성 상성 체크 (몬스터의 약점과 일치할 시 대미지 1.5배)
+    if (currentMonster && currentMonster.weakness === skillAttr) {
+      dmg = Math.floor(dmg * 1.5);
+      addBattleLog(`[상성 발동] ⚡ 속성 저격! (${skillAttr} ➔ ${currentMonster.name}) 데미지 1.5배 증폭!`, 'log-success');
+    }
+
     dmg = typeof window.applyPuangAttackUp === 'function' ? window.applyPuangAttackUp(dmg) : dmg;  // 푸앙이 버프 : 황금 공격
 
     // 패시브 데미지 버프 적용
@@ -817,6 +834,7 @@ window.doCmd = async function(cmd) {
       if (typeof window.hasStatusEffect === 'function' && window.hasStatusEffect('curse')) reward = Math.floor(reward * 0.5);
       reward += (playerStats._battleBonusReward || 0);
       if (typeof window.hasFestDoubleBuff === 'function' && window.hasFestDoubleBuff()) reward *= 2;
+
       // ★ Fix 2+7: battle_bonus / data_bonus 요일 보너스
       if (window._todayBonusKey === 'battle_bonus') reward += 5;
       if (window._todayBonusKey === 'data_bonus')   reward += 2;
@@ -824,6 +842,7 @@ window.doCmd = async function(cmd) {
       if (typeof window.clearCafOvereatPenalty === 'function') window.clearCafOvereatPenalty();
       // ★ 도감 등록
       if (typeof window.registerMonsterCompendium === 'function') window.registerMonsterCompendium(currentMonster);
+
       addBattleLog('[SYSTEM] 데이터 서지로 격파! 데이터 조각 x' + reward + ' 획득', 'log-success');
       document.getElementById('dice-result').textContent = '전투 승리! 3초 후 복귀';
       document.getElementById('dice-display').textContent = '🎉';
@@ -831,6 +850,7 @@ window.doCmd = async function(cmd) {
       updateMapStats();
       if (typeof window.checkAchievements === 'function') window.checkAchievements();
       if (typeof showToast === 'function') showToast('⚡ 서지로 승리! 💎 +' + reward, 'success', 3000);
+
       // 서지 승리 시 clearBattleState + 즉시 저장
       clearBattleState();
       if (typeof window.syncAndSaveNow === 'function') window.syncAndSaveNow();
@@ -840,6 +860,7 @@ window.doCmd = async function(cmd) {
       return;
     }
   }
+
   // ★ Fix 8: 전투 중 아이템 사용 커맨드
   else if (cmd === 'item') {
     const inv = (typeof inventory !== 'undefined') ? inventory : [];
@@ -879,6 +900,7 @@ window.doCmd = async function(cmd) {
     return;
   }
 
+  // ── 이면 세계 탈출 (도망) ──
   else if (cmd === 'run') {
     document.getElementById('dice-result').textContent = 'd2 굴리는 중...';
     const roll = await animateDice(2, true); // 도망은 황금 주사위 효과 없음
